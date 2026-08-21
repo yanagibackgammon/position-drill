@@ -185,21 +185,29 @@ main {
   border-radius: 8px;
   background: #fff;
 }
-.position-record {
-  min-height: 39px;
-  padding: 7px 14px;
+.records-row {
+  margin-top: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  border-top: 1px solid #283136;
-  color: var(--muted);
-  font-size: 12px;
+  gap: 28px;
+  color: #899399;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
-.position-record strong { color: #fff; font-size: 14px; }
-.record-correct strong { color: var(--good); }
-.record-wrong strong { color: var(--bad); }
+.record-group {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+}
+.record-label { color: #899399; }
+.record-number {
+  font-size: 14px;
+  font-weight: 800;
+}
+.record-correct { color: var(--good); }
+.record-wrong { color: var(--bad); }
 
 .primary-button {
   width: calc(100% - 28px);
@@ -413,16 +421,6 @@ main {
 }
 .empty-state strong { color: #fff; font-size: 17px; }
 .empty-state span { font-size: 13px; }
-.total-record {
-  margin-top: 12px;
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  color: #899399;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-}
-.total-record strong { color: #cfd3d5; }
 
 @media (max-width: 760px) {
   .page-header { min-height: 53px; }
@@ -438,7 +436,6 @@ main {
   .quiz-card { border-radius: 0; border-left: 0; border-right: 0; }
   .board-wrap { padding: 7px 0; }
   .board-wrap img { width: 100%; border-left: 0; border-right: 0; border-radius: 0; }
-  .position-record { gap: 13px; }
   .analysis-grid { grid-template-columns: 1fr; }
   .action-analysis { border-right: 0; border-bottom: 1px solid #2d373c; }
   .summary-analysis { padding: 13px 10px 15px; }
@@ -448,7 +445,8 @@ main {
   .answer-heading strong { font-size: 21px; }
   .primary-button { width: calc(100% - 16px); margin-left: 8px; margin-right: 8px; }
   .answer-button { width: 100%; margin: 0; }
-  .total-record { margin-bottom: 8px; }
+  .records-row { margin: 10px 8px 8px; gap: 20px; }
+  .record-group { gap: 7px; }
 }
 
 /* Desktop two-column quiz layout */

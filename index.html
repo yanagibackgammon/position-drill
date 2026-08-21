@@ -41,11 +41,6 @@
             <img id="board-image" alt="Backgammon quiz position">
           </div>
 
-          <div id="position-record" class="position-record">
-            <span>This Position</span>
-            <span class="record-correct">Correct <strong id="position-correct">0</strong></span>
-            <span class="record-wrong">Incorrect <strong id="position-wrong">0</strong></span>
-          </div>
         </div>
 
         <div class="answer-column">
@@ -83,10 +78,17 @@
       <span>Change the position type or turn off Task mode.</span>
     </section>
 
-    <section class="total-record" aria-label="Overall record">
-      <span>Total</span>
-      <span>Correct <strong id="total-correct">0</strong></span>
-      <span>Incorrect <strong id="total-wrong">0</strong></span>
+    <section class="records-row" aria-label="Quiz records">
+      <div id="position-record" class="record-group" aria-label="This Position record">
+        <span class="record-label">This Position</span>
+        <strong id="position-correct" class="record-number record-correct" aria-label="Correct">0</strong>
+        <strong id="position-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
+      </div>
+      <div class="record-group" aria-label="Total record">
+        <span class="record-label">Total</span>
+        <strong id="total-correct" class="record-number record-correct" aria-label="Correct">0</strong>
+        <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
+      </div>
     </section>
   </main>
 
