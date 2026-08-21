@@ -1,0 +1,11 @@
+{
+  "databaseTitle": "Backgammon Positions",
+  "targetPlayers": ["yanagi"],
+  "errorThreshold": 0.02,
+  "blunderThreshold": 0.08,
+  "includeCheckerErrors": true,
+  "includeCubeErrors": true,
+  "includeTakeErrors": true,
+  "anonymizeOpponents": false,
+  "themeColor": "#B7924B"
+}

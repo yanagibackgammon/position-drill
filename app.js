@@ -1,6 +1,6 @@
 "use strict";
 
-const POSITIONS_ROOT = "https://yanagibackgammon.github.io/positions/";
+const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
