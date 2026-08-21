@@ -70,6 +70,9 @@ h1 {
   text-decoration: none;
 }
 .creator:hover { color: var(--theme); }
+.creator-prefix,
+.creator-name { display: inline; }
+.creator-prefix::after { content: " "; }
 
 main {
   width: min(920px, calc(100% - 24px));
@@ -331,7 +334,7 @@ main {
   font-size: 9px;
 }
 .win-scale > span { position: absolute; transform: translateX(-50%); bottom: 1px; }
-.win-boundary-marker { color: var(--theme) !important; font-size: 10px !important; }
+.win-boundary-marker { color: var(--theme) !important; font-size: 14px !important; line-height: 1; }
 .win-bar {
   position: relative;
   height: 19px;
@@ -664,4 +667,100 @@ main {
     overflow-wrap: normal;
     font-size: 9px;
   }
+}
+
+
+/* Final smartphone layout overrides */
+@media (max-width: 760px) {
+  .page-header {
+    min-height: 53px;
+    padding: 7px 10px;
+  }
+  .title-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  h1 {
+    flex: 0 1 auto;
+    font-size: clamp(23px, 7.2vw, 30px);
+  }
+  .creator {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1px;
+    color: var(--muted);
+    font-size: 9px;
+    line-height: 1.05;
+    text-align: left;
+  }
+  .creator-prefix,
+  .creator-name { display: block; }
+  .creator-prefix::after { content: none; }
+  .creator-name {
+    color: #e4e2dc;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* Four equal-width menu cells: Checker / Double / Take / Task. */
+  .controls {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 0;
+  }
+  .type-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .type-tab,
+  .challenge-toggle {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Position fills the browser width while retaining its desktop aspect ratio. */
+  .board-wrap {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+  }
+  .board-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  /* Keep the analysis frame at the taller four-result height on every question. */
+  .analysis-section {
+    height: 250px;
+    min-height: 250px;
+    max-height: 250px;
+    overflow: hidden;
+  }
+  .analysis-grid {
+    height: 100%;
+    grid-template-columns: 1fr;
+    grid-template-rows: 104px 146px;
+  }
+  .action-analysis,
+  .summary-analysis {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Leave enough vertical room for the larger boundary marker. */
+  .win-scale { height: 18px; }
 }
