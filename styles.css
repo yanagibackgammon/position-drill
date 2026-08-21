@@ -309,19 +309,6 @@ main {
   border: 1px solid #657077;
   background: #fff;
 }
-.win-bar::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 3px;
-  z-index: 6;
-  pointer-events: none;
-  transform: translateX(-50%);
-  border-left: 1px solid rgba(101, 112, 119, .78);
-  border-right: 1px solid rgba(101, 112, 119, .78);
-}
 .win-bar::after {
   content: "";
   position: absolute;
@@ -1230,4 +1217,22 @@ main {
   color: #fff;
   background: #6f5424;
   box-shadow: inset 0 -2px 0 var(--theme);
+}
+
+
+/* Menu label color: non-selected labels are white; counts keep their existing styling. */
+.type-label-full,
+.type-label-short,
+.challenge-label {
+  color: #fff;
+}
+
+/* Smartphone selected menu cells match Task: full fill + thick gold lower edge. */
+@media (max-width: 760px) {
+  .type-tab.is-active,
+  .challenge-toggle:has(input:checked) {
+    color: #fff;
+    background: #6f5424;
+    box-shadow: inset 0 -2px 0 var(--theme);
+  }
 }
