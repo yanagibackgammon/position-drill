@@ -341,10 +341,19 @@ function summaryAnalysisHTML(position) {
   const whiteBackgammon = Number(backgammonLoseRate);
   const blackWidth = Number.isFinite(blackWin) ? Math.max(0, Math.min(100, blackWin * 100)) : 50;
   const whiteWidth = Number.isFinite(whiteWin) ? Math.max(0, Math.min(100, whiteWin * 100)) : 100 - blackWidth;
-  const blackOverlay = Number.isFinite(blackGammon) ? Math.max(0, blackGammon * 100) : 0;
-  const whiteOverlay = Number.isFinite(whiteGammon) ? Math.max(0, whiteGammon * 100) : 0;
-  const blackBackgammonOverlay = Number.isFinite(blackBackgammon) ? Math.max(0, blackBackgammon * 100) : 0;
-  const whiteBackgammonOverlay = Number.isFinite(whiteBackgammon) ? Math.max(0, whiteBackgammon * 100) : 0;
+  // Hide G/BG overlays below 1%. Exactly 1.0% or more remains visible.
+  const blackOverlay = Number.isFinite(blackGammon) && blackGammon >= 0.01
+    ? Math.max(0, blackGammon * 100)
+    : 0;
+  const whiteOverlay = Number.isFinite(whiteGammon) && whiteGammon >= 0.01
+    ? Math.max(0, whiteGammon * 100)
+    : 0;
+  const blackBackgammonOverlay = Number.isFinite(blackBackgammon) && blackBackgammon >= 0.01
+    ? Math.max(0, blackBackgammon * 100)
+    : 0;
+  const whiteBackgammonOverlay = Number.isFinite(whiteBackgammon) && whiteBackgammon >= 0.01
+    ? Math.max(0, whiteBackgammon * 100)
+    : 0;
 
   return `
     <div class="summary-text-scroll" aria-label="Game information">
