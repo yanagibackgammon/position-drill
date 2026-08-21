@@ -4,6 +4,7 @@ const POSITIONS_ROOT = "https://yanagibackgammon.github.io/positions/";
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
+const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 const KIND_LABELS = {
   checker: "Checker Play",
@@ -18,6 +19,7 @@ const state = {
   answered: false,
   judged: false,
   progress: {},
+  dataVersion: "",
 };
 
 const elements = {
@@ -116,7 +118,9 @@ function randomPosition(pool, avoidId = null) {
 
 function absoluteBoardUrl(position) {
   const path = position.quizBoardImage || position.boardImage || "";
-  return new URL(path, POSITIONS_ROOT).href;
+  const url = new URL(path, POSITIONS_ROOT);
+  if (state.dataVersion) url.searchParams.set("v", state.dataVersion);
+  return url.href;
 }
 
 function formatError(value) {
@@ -399,6 +403,36 @@ function installEvents() {
   elements.nextButton.addEventListener("click", selectNext);
 }
 
+async function syncPositions({ initial = false } = {}) {
+  const response = await fetch(`${DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const payload = await response.json();
+  const nextVersion = String(payload.meta?.generatedAt || payload.meta?.positionCount || Date.now());
+  if (!initial && nextVersion === state.dataVersion) return false;
+
+  const previousId = state.current?.id || null;
+  state.positions = (payload.positions || []).filter((position) => decisionKind(position));
+  state.dataVersion = nextVersion;
+
+  const theme = payload.meta?.themeColor;
+  if (theme) document.documentElement.style.setProperty("--theme", theme);
+
+  if (previousId) {
+    state.current = state.positions.find((position) => position.id === previousId) || null;
+  }
+  renderCurrent();
+  return true;
+}
+
+async function refreshPositionsSilently() {
+  try {
+    await syncPositions();
+  } catch (error) {
+    console.warn("positions sync failed", error);
+  }
+}
+
 async function start() {
   state.progress = loadJSON(STORAGE_KEY, {});
   const settings = loadJSON(SETTINGS_KEY, {});
@@ -408,21 +442,18 @@ async function start() {
   installEvents();
 
   try {
-    const response = await fetch(`${DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    state.positions = (payload.positions || []).filter((position) => decisionKind(position));
-
-    const theme = payload.meta?.themeColor;
-    if (theme) document.documentElement.style.setProperty("--theme", theme);
-
-    renderCurrent();
+    await syncPositions({ initial: true });
   } catch (error) {
     console.error(error);
     elements.card.hidden = true;
     elements.empty.hidden = false;
     elements.empty.innerHTML = "<strong>positions のデータを読み込めませんでした。</strong><span>positions 側のGitHub Pages公開とビルド結果を確認してください。</span>";
   }
+
+  window.setInterval(refreshPositionsSilently, SYNC_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshPositionsSilently();
+  });
 }
 
 start();
