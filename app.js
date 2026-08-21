@@ -352,13 +352,23 @@ function summaryAnalysisHTML(position) {
         ${statLine("BK", escapeHTML(playerScoreText))}
         ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
-        ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
       </div>
       <div class="summary-side">
         ${statLine("WH", escapeHTML(opponentScoreText))}
         ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
-        ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
+      </div>
+      <div class="summary-rate-scroll" aria-label="Gammon and backgammon rates">
+        <div class="summary-rate-row">
+          <div aria-hidden="true"></div>
+          ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
+          ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
+        </div>
+        <div class="summary-rate-row">
+          <div aria-hidden="true"></div>
+          ${statLine("BG", escapeHTML(formatPercent(backgammonWinRate)), "", "answer-only-value")}
+          ${statLine("BG", escapeHTML(formatPercent(backgammonLoseRate)), "", "answer-only-value")}
+        </div>
       </div>
     </div>
     <div class="win-scale" aria-hidden="true">
@@ -372,11 +382,6 @@ function summaryAnalysisHTML(position) {
       <div class="win-white answer-only-chart" style="width:${whiteWidth.toFixed(3)}%"></div>
       <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
       <div class="win-white-gammon answer-only-chart" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
-    </div>
-    <div class="summary-bg-row">
-      <div aria-hidden="true"></div>
-      ${statLine("BG", escapeHTML(formatPercent(backgammonWinRate)), "", "answer-only-value")}
-      ${statLine("BG", escapeHTML(formatPercent(backgammonLoseRate)), "", "answer-only-value")}
     </div>`;
 }
 
@@ -475,6 +480,11 @@ function populateAnswerData() {
   elements.sourceFile.textContent = state.current.sourceFile || "";
 }
 
+function resetSummaryRateScroll() {
+  const scroller = elements.summaryAnalysis.querySelector(".summary-rate-scroll");
+  if (scroller) scroller.scrollTop = 0;
+}
+
 function resetAnswerUI() {
   state.answered = false;
   state.pendingResult = null;
@@ -489,6 +499,7 @@ function resetAnswerUI() {
   elements.wrongButton.setAttribute("aria-pressed", "false");
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
+  resetSummaryRateScroll();
   setAnswerDataVisible(false);
 }
 
@@ -545,6 +556,7 @@ function showAnswer() {
   state.answered = true;
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
+  resetSummaryRateScroll();
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
