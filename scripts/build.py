@@ -729,7 +729,7 @@ def render_board_svg(
     opponent_score_label = 0 if is_unlimited else row["onRollOpponentScore"]
     on_roll_score_label = 0 if is_unlimited else row["onRollScore"]
     elements.extend([
-        '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="18">',
+        '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="17">',
         f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle">{opponent_score_label}/{score_match_length}</text>',
         f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle">{on_roll_score_label}/{score_match_length}</text>',
     ])
@@ -834,7 +834,7 @@ def render_board_svg(
     cube_label = "c" if row.get("isCrawford") else str(row["cubeValue"])
     elements.extend([
         f'<rect x="{cube_x:.2f}" y="{cube_y:.2f}" width="{cube_size}" height="{cube_size}" rx="3" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>',
-        f'<text x="{bar_center:.2f}" y="{cube_y+25:.2f}" text-anchor="middle" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="22">{cube_label}</text>',
+        f'<text x="{bar_center:.2f}" y="{cube_y+25:.2f}" text-anchor="middle" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="23">{cube_label}</text>',
     ])
 
     # Dice, placed in the right half near the centre line.
