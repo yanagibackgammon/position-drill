@@ -114,7 +114,6 @@ main {
 .type-tab.is-active {
   color: #fff;
   background: #6f5424;
-  box-shadow: inset 0 -2px 0 var(--theme);
 }
 .type-count {
   margin-left: 5px;
@@ -561,8 +560,7 @@ main {
   .challenge-toggle:has(input:checked) {
     color: #fff;
     background: #6f5424;
-    box-shadow: inset 0 -2px 0 var(--theme);
-  }
+    }
   .type-label-full { display: none; }
   .type-label-short { display: inline; }
   .type-tab {
@@ -1218,7 +1216,6 @@ main {
 .challenge-toggle:has(input:checked) {
   color: #fff;
   background: #6f5424;
-  box-shadow: inset 0 -2px 0 var(--theme);
 }
 
 
@@ -1229,34 +1226,18 @@ main {
   color: #fff;
 }
 
-/* Smartphone selected menu cells match Task: full fill + thick gold lower edge. */
+/* Smartphone selected menu cells share the same filled active appearance. */
 @media (max-width: 760px) {
   .type-tab.is-active,
   .challenge-toggle:has(input:checked) {
     color: #fff;
     background: #6f5424;
-    box-shadow: inset 0 -2px 0 var(--theme);
-  }
+    }
 }
 
 
 
 
-/* Selected decision tabs: show the same visible gold lower accent as Task. */
-.type-tab.is-active {
-  position: relative;
-}
-.type-tab.is-active::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--theme);
-  pointer-events: none;
-  z-index: 2;
-}
 
 
 /* Smartphone: align Checker / Double / Take label + count vertically with Task. */
