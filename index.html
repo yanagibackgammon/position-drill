@@ -23,9 +23,9 @@
   <main>
     <section class="controls" aria-label="Quiz settings">
       <div class="type-tabs" role="group" aria-label="Position type">
-        <button type="button" class="type-tab is-active" data-kind="checker">Checker Play <span class="type-count"><span data-count="checker">0</span></span></button>
-        <button type="button" class="type-tab" data-kind="double">Double Action <span class="type-count"><span data-count="double">0</span></span></button>
-        <button type="button" class="type-tab" data-kind="take">Take Action <span class="type-count"><span data-count="take">0</span></span></button>
+        <button type="button" class="type-tab is-active" data-kind="checker"><span class="type-label-full">Checker Play</span><span class="type-label-short">Checker</span> <span class="type-count"><span data-count="checker">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="double"><span class="type-label-full">Double Action</span><span class="type-label-short">Double</span> <span class="type-count"><span data-count="double">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="take"><span class="type-label-full">Take Action</span><span class="type-label-short">Take</span> <span class="type-count"><span data-count="take">0</span></span></button>
       </div>
       <label class="challenge-toggle">
         <input id="challenge-only" type="checkbox">
@@ -72,20 +72,21 @@
       <span>Change the position type or turn off Task mode.</span>
     </section>
 
-    <section class="records-row" aria-label="Quiz records">
-      <div id="position-record" class="record-group" aria-label="This Position record">
-        <span class="record-label">This Position</span>
-        <strong id="position-correct" class="record-number record-correct" aria-label="Correct">0</strong>
-        <strong id="position-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
-      </div>
-      <div class="record-group" aria-label="Total record">
-        <span class="record-label">Total</span>
-        <strong id="total-correct" class="record-number record-correct" aria-label="Correct">0</strong>
-        <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
-      </div>
-    </section>
-
-    <div id="source-file" class="source-file"></div>
+    <div class="record-source-row">
+      <section class="records-row" aria-label="Quiz records">
+        <div id="position-record" class="record-group" aria-label="This Position record">
+          <span class="record-label">This Position</span>
+          <strong id="position-correct" class="record-number record-correct" aria-label="Correct">0</strong>
+          <strong id="position-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
+        </div>
+        <div class="record-group" aria-label="Total record">
+          <span class="record-label">Total</span>
+          <strong id="total-correct" class="record-number record-correct" aria-label="Correct">0</strong>
+          <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
+        </div>
+      </section>
+      <div id="source-file" class="source-file"></div>
+    </div>
   </main>
 
   <script src="app.js"></script>
