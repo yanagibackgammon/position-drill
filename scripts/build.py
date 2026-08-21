@@ -32,7 +32,6 @@ CONFIG_PATH = ROOT / "config.json"
 def load_config() -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "databaseTitle": "Backgammon Error Positions",
-        "targetPlayers": [],
         "errorThreshold": 0.02,
         "blunderThreshold": 0.08,
         "includeCheckerErrors": True,
@@ -51,8 +50,24 @@ def player_name(match: Any, sign: int) -> str:
     return match.header.player1 if sign == 1 else match.header.player2
 
 
-def target_enabled(name: str, targets: set[str]) -> bool:
-    return not targets or name.casefold() in targets
+def bottom_player_sign(match: Any) -> int:
+    """Return the player displayed on the bottom side in the source XG file.
+
+    Extreme Gammon stores the board orientation in MatchHeader.invert.  In the
+    source files used by Position Drill, a positive value means Player 1 is on
+    the bottom; a negative value means Player 2 is on the bottom.  Position
+    Drill treats that bottom player as the drill owner, independent of name.
+    """
+    invert = int(match.header.invert)
+    if invert > 0:
+        return 1
+    if invert < 0:
+        return -1
+    raise ValueError("XG board orientation is missing: MatchHeader.invert is 0")
+
+
+def is_drill_owner(match: Any, player_sign: int) -> bool:
+    return int(player_sign) == bottom_player_sign(match)
 
 
 def classification(loss: float, blunder_threshold: float) -> str:
@@ -348,8 +363,7 @@ def cube_candidate_payload(
 
 def make_checker_row(match: Any, decision: Any, move: Move, cfg: dict[str, Any]) -> dict[str, Any] | None:
     actor = player_name(match, move.player)
-    targets = {str(v).casefold() for v in cfg["targetPlayers"]}
-    if not target_enabled(actor, targets) or not cfg["includeCheckerErrors"]:
+    if not is_drill_owner(match, move.player) or not cfg["includeCheckerErrors"]:
         return None
 
     played_index = move.played_index
@@ -438,8 +452,7 @@ def best_double_action(cube: CubeAction) -> str:
 def make_double_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, Any]) -> dict[str, Any] | None:
     actor_sign = cube.player
     actor = player_name(match, actor_sign)
-    targets = {str(v).casefold() for v in cfg["targetPlayers"]}
-    if not target_enabled(actor, targets) or not cfg["includeCubeErrors"]:
+    if not is_drill_owner(match, actor_sign) or not cfg["includeCubeErrors"]:
         return None
 
     loss = abs(float(cube.error_double))
@@ -532,8 +545,7 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
 
     taker_sign = -cube.player
     taker = player_name(match, taker_sign)
-    targets = {str(v).casefold() for v in cfg["targetPlayers"]}
-    if not target_enabled(taker, targets):
+    if not is_drill_owner(match, taker_sign):
         return None
 
     loss = abs(float(cube.error_take))
@@ -994,7 +1006,7 @@ def build() -> None:
             "generatedAt": datetime.now(UTC).isoformat(),
             "errorThreshold": cfg["errorThreshold"],
             "blunderThreshold": cfg["blunderThreshold"],
-            "targetPlayers": cfg["targetPlayers"],
+            "targetPlayerMode": "xg-bottom",
             "themeColor": cfg["themeColor"],
             "sourceFileCount": len(imported_files),
             "positionCount": len(rows),

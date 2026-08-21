@@ -209,6 +209,7 @@ def _parse_header_match(rec: bytes) -> MatchHeader:
         player1=player1,
         player2=player2,
         match_length=match_length,
+        invert=invert,
         variation=variation,
         crawford=crawford,
         jacoby=jacoby,

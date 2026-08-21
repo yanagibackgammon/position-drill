@@ -157,6 +157,7 @@ class MatchHeader:
     player1: str
     player2: str
     match_length: int
+    invert: int
     variation: int
     crawford: bool
     jacoby: bool
