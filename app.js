@@ -299,16 +299,38 @@ function summaryAnalysisHTML(position) {
   const pips = pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
   const isTake = position.decisionKind === "take";
-  const playerScore = isTake && position.quizPlayerScore != null ? position.quizPlayerScore : position.playerScore;
-  const opponentScore = isTake && position.quizOpponentScore != null ? position.quizOpponentScore : position.opponentScore;
-  const cubeValue = isTake && position.quizCubeValue != null ? position.quizCubeValue : position.cubeValue;
+  const rawPlayerScore = isTake && position.quizPlayerScore != null ? position.quizPlayerScore : position.playerScore;
+  const rawOpponentScore = isTake && position.quizOpponentScore != null ? position.quizOpponentScore : position.opponentScore;
+  const rawCubeValue = isTake && position.quizCubeValue != null ? position.quizCubeValue : position.cubeValue;
   const winRate = isTake && position.quizWinRate != null ? position.quizWinRate : position.winRate;
   const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
   const gammonWinRate = isTake && position.quizGammonWinRate != null ? position.quizGammonWinRate : position.gammonWinRate;
   const gammonLoseRate = isTake && position.quizGammonLoseRate != null ? position.quizGammonLoseRate : position.gammonLoseRate;
-  const matchLength = Number(position.matchLength) || 0;
-  const playerAway = Math.max(0, matchLength - Number(playerScore || 0));
-  const opponentAway = Math.max(0, matchLength - Number(opponentScore || 0));
+
+  const rawMatchLength = Number(position.matchLength) || 0;
+  const isDmp = rawMatchLength === 1;
+  const isUnlimited = rawMatchLength === 0 || rawMatchLength >= 99999;
+
+  // Display conventions:
+  // - 1-point match (DMP): ML 1 / CB 1 / BK 0 (1a) / WH 0 (1a)
+  // - Unlimited (money game): ML 0 / BK 0 / WH 0; the live cube value remains meaningful.
+  const matchLength = isUnlimited ? 0 : rawMatchLength;
+  const playerScore = isDmp || isUnlimited ? 0 : Number(rawPlayerScore || 0);
+  const opponentScore = isDmp || isUnlimited ? 0 : Number(rawOpponentScore || 0);
+  const cubeValue = isDmp ? 1 : rawCubeValue;
+  const playerAway = Math.max(0, matchLength - playerScore);
+  const opponentAway = Math.max(0, matchLength - opponentScore);
+  const playerScoreText = isDmp
+    ? "0 (1a)"
+    : isUnlimited
+      ? "0"
+      : `${playerScore} (${awayText(position, playerAway)})`;
+  const opponentScoreText = isDmp
+    ? "0 (1a)"
+    : isUnlimited
+      ? "0"
+      : `${opponentScore} (${awayText(position, opponentAway)})`;
+
   const blackWin = Number(winRate);
   const whiteWin = Number(loseRate);
   const blackGammon = Number(gammonWinRate);
@@ -321,17 +343,17 @@ function summaryAnalysisHTML(position) {
   return `
     <div class="summary-top">
       <div class="summary-meta">
-        ${statLine("ML", escapeHTML(position.matchLength))}
-        ${statLine("CB", escapeHTML(cubeStateText(position, cubeValue)))}
+        ${statLine("ML", escapeHTML(matchLength))}
+        ${statLine("CB", escapeHTML(isDmp ? "1" : cubeStateText(position, cubeValue)))}
       </div>
       <div class="summary-side">
-        ${statLine("BK", `${escapeHTML(playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
+        ${statLine("BK", escapeHTML(playerScoreText))}
         ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
       </div>
       <div class="summary-side">
-        ${statLine("WH", `${escapeHTML(opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
+        ${statLine("WH", escapeHTML(opponentScoreText))}
         ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
         ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
