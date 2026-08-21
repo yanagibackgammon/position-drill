@@ -17,7 +17,7 @@ const state = {
   currentKind: "checker",
   current: null,
   answered: false,
-  judged: false,
+  pendingResult: null,
   progress: {},
   dataVersion: "",
 };
@@ -40,7 +40,6 @@ const elements = {
   judgeButtons: document.getElementById("judge-buttons"),
   correctButton: document.getElementById("correct-button"),
   wrongButton: document.getElementById("wrong-button"),
-  judgedMessage: document.getElementById("judged-message"),
   nextButton: document.getElementById("next-button"),
   sourceFile: document.getElementById("source-file"),
   totalCorrect: document.getElementById("total-correct"),
@@ -355,16 +354,16 @@ function populateAnswerData() {
 
 function resetAnswerUI() {
   state.answered = false;
+  state.pendingResult = null;
   elements.card.classList.remove("is-answered");
-  state.judged = false;
   elements.answerPanel.hidden = false;
   elements.answerButton.hidden = false;
   elements.judgeButtons.hidden = true;
-  elements.correctButton.disabled = false;
-  elements.wrongButton.disabled = false;
-  elements.judgedMessage.hidden = true;
-  elements.judgedMessage.textContent = "";
-  elements.nextButton.hidden = true;
+  elements.nextButton.hidden = false;
+  elements.correctButton.classList.remove("is-selected");
+  elements.wrongButton.classList.remove("is-selected");
+  elements.correctButton.setAttribute("aria-pressed", "false");
+  elements.wrongButton.setAttribute("aria-pressed", "false");
   setAnswerDataVisible(false);
 }
 
@@ -395,8 +394,18 @@ function renderCurrent() {
   resetAnswerUI();
 }
 
+function commitPendingResult() {
+  if (!state.current || !state.pendingResult) return;
+  const record = recordFor(state.current.id);
+  if (state.pendingResult === "correct") record.correct += 1;
+  else record.wrong += 1;
+  state.progress[state.current.id] = record;
+  saveProgress();
+}
+
 function selectNext() {
   const previousId = state.current?.id || null;
+  commitPendingResult();
   state.current = randomPosition(activePool(), previousId);
   renderCurrent();
 }
@@ -412,24 +421,13 @@ function showAnswer() {
 }
 
 function judge(result) {
-  if (!state.current || !state.answered || state.judged) return;
-  const record = recordFor(state.current.id);
-  if (result === "correct") record.correct += 1;
-  else record.wrong += 1;
-  state.progress[state.current.id] = record;
-  saveProgress();
-
-  state.judged = true;
-  elements.correctButton.disabled = true;
-  elements.wrongButton.disabled = true;
-  elements.judgedMessage.hidden = false;
-  elements.judgedMessage.textContent = result === "correct"
-    ? "Recorded as correct."
-    : "Recorded as incorrect.";
-  elements.nextButton.hidden = false;
-  updatePositionRecord();
-  updateCounts();
-  updateTotals();
+  if (!state.current || !state.answered) return;
+  state.pendingResult = result;
+  const correctSelected = result === "correct";
+  elements.correctButton.classList.toggle("is-selected", correctSelected);
+  elements.wrongButton.classList.toggle("is-selected", !correctSelected);
+  elements.correctButton.setAttribute("aria-pressed", correctSelected ? "true" : "false");
+  elements.wrongButton.setAttribute("aria-pressed", correctSelected ? "false" : "true");
 }
 
 function setKind(kind) {

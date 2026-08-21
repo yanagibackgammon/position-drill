@@ -371,26 +371,41 @@ main {
 .win-black-gammon { left: 0; }
 .win-white-gammon { right: 0; }
 
-.judge-area { padding: 14px 16px 8px; }
-.judge-label {
-  margin: 0 0 9px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
+.judge-area {
+  box-sizing: border-box;
+  height: 62px;
+  min-height: 62px;
+  max-height: 62px;
+  padding: 8px 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  overflow: hidden;
+}
+.answer-button {
+  grid-column: 1 / span 2;
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
 }
 .judge-buttons {
+  grid-column: 1 / span 2;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 .judge-button {
+  width: 100%;
+  min-width: 0;
   min-height: 46px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 24px;
   line-height: 1;
   font-weight: 800;
+  transition: filter .12s ease, box-shadow .12s ease, transform .12s ease;
 }
 .correct-button {
   border: 1px solid #4f9567;
@@ -402,14 +417,17 @@ main {
   color: #ffe3e3;
   background: #552a2a;
 }
-.judge-button:disabled { opacity: .38; cursor: default; }
-.judged-message {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: center;
+.judge-button.is-selected {
+  filter: brightness(1.35);
+  box-shadow: inset 0 0 0 2px currentColor;
+  transform: translateY(-1px);
 }
-.next-button { margin-top: 6px; }
+.next-button {
+  grid-column: 3;
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+}
 .source-file {
   min-height: 16px;
   margin-top: 4px;
@@ -961,31 +979,37 @@ main {
     max-height: 250px;
   }
 
-  /* Answer, ○× and Next all occupy the same slot, so nothing shifts vertically. */
+  /* Three fixed columns: ANSWER spans ○+× before reveal; NEXT never moves. */
   .judge-area {
-    position: relative;
-    box-sizing: border-box;
     height: 50px;
     min-height: 50px;
     max-height: 50px;
     padding: 4px 8px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
     overflow: hidden;
   }
-  .judge-area > .answer-button,
-  .judge-area > .judge-buttons,
-  .judge-area > .next-button {
-    position: absolute;
-    inset: 4px 8px;
-    width: auto;
+  .judge-area > .answer-button {
+    grid-column: 1 / span 2;
+    width: 100%;
     height: 42px;
     min-height: 42px;
     margin: 0;
   }
-  .judge-area > .answer-button,
-  .judge-area > .judge-buttons { z-index: 2; }
-  .judge-area > .next-button { z-index: 3; }
-  .judge-area > .judged-message {
-    display: none !important;
+  .judge-area > .judge-buttons {
+    grid-column: 1 / span 2;
+    height: 42px;
+    min-height: 42px;
+    gap: 6px;
+  }
+  .judge-area > .next-button {
+    grid-column: 3;
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    margin: 0;
   }
 
   /* Footer is always reserved inside the viewport. */
@@ -1021,39 +1045,4 @@ main {
   .action-analysis { padding-top: 7px; padding-bottom: 7px; }
   .summary-analysis { padding-top: 7px; padding-bottom: 7px; }
   .record-source-row { margin-top: 2px; }
-}
-
-
-/* Smartphone Task: checkbox + label on first line, count on second line. */
-@media (max-width: 760px) {
-  .challenge-toggle {
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: 22px 12px;
-    align-content: center;
-    justify-content: center;
-    column-gap: 4px;
-    row-gap: 0;
-  }
-  .challenge-toggle input {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: center;
-    justify-self: end;
-  }
-  .challenge-toggle > span:not(.type-count) {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: center;
-    justify-self: start;
-  }
-  .challenge-toggle > .type-count {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: block;
-    margin: 0;
-    align-self: center;
-    justify-self: center;
-    line-height: 1;
-  }
 }
