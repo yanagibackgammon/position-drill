@@ -306,6 +306,8 @@ function summaryAnalysisHTML(position) {
   const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
   const gammonWinRate = isTake && position.quizGammonWinRate != null ? position.quizGammonWinRate : position.gammonWinRate;
   const gammonLoseRate = isTake && position.quizGammonLoseRate != null ? position.quizGammonLoseRate : position.gammonLoseRate;
+  const backgammonWinRate = isTake && position.quizBackgammonWinRate != null ? position.quizBackgammonWinRate : position.backgammonWinRate;
+  const backgammonLoseRate = isTake && position.quizBackgammonLoseRate != null ? position.quizBackgammonLoseRate : position.backgammonLoseRate;
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;
@@ -370,6 +372,11 @@ function summaryAnalysisHTML(position) {
       <div class="win-white answer-only-chart" style="width:${whiteWidth.toFixed(3)}%"></div>
       <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
       <div class="win-white-gammon answer-only-chart" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
+    </div>
+    <div class="summary-bg-row">
+      <div aria-hidden="true"></div>
+      ${statLine("BG", escapeHTML(formatPercent(backgammonWinRate)), "", "answer-only-value")}
+      ${statLine("BG", escapeHTML(formatPercent(backgammonLoseRate)), "", "answer-only-value")}
     </div>`;
 }
 
@@ -480,6 +487,8 @@ function resetAnswerUI() {
   elements.wrongButton.classList.remove("is-selected");
   elements.correctButton.setAttribute("aria-pressed", "false");
   elements.wrongButton.setAttribute("aria-pressed", "false");
+  elements.actionAnalysis.scrollTop = 0;
+  elements.summaryAnalysis.scrollTop = 0;
   setAnswerDataVisible(false);
 }
 
@@ -535,6 +544,7 @@ function showAnswer() {
   if (!state.current) return;
   state.answered = true;
   elements.actionAnalysis.scrollTop = 0;
+  elements.summaryAnalysis.scrollTop = 0;
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
@@ -562,6 +572,20 @@ function setKind(kind) {
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === kind));
   saveSettings();
   renderCurrent();
+}
+
+function installSmartphoneZoomGuard() {
+  const smartphone = window.matchMedia("(max-width: 760px)");
+  const preventGesture = (event) => {
+    if (smartphone.matches) event.preventDefault();
+  };
+
+  ["gesturestart", "gesturechange", "gestureend"].forEach((type) => {
+    document.addEventListener(type, preventGesture, { passive: false });
+  });
+  document.addEventListener("touchmove", (event) => {
+    if (smartphone.matches && event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
 }
 
 function installEvents() {
@@ -617,6 +641,7 @@ async function start() {
   if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
   elements.challengeOnly.checked = Boolean(settings.challengeOnly);
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind));
+  installSmartphoneZoomGuard();
   installEvents();
   scheduleDailyReset();
 
