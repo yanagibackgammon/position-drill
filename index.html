@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0c1013">
+  <title>Backgammon Position Quiz</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <div class="title-group">
+      <h1 id="page-title">Backgammon Position Quiz</h1>
+      <a class="creator" href="https://www.youtube.com/@YANAGIBackgammon" target="_blank" rel="noopener noreferrer">Created by YANAGI Backgammon</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Quiz settings">
+      <div class="type-tabs" role="group" aria-label="出題種別">
+        <button type="button" class="type-tab is-active" data-kind="checker">Checker Play <span class="type-count" data-count="checker">0</span></button>
+        <button type="button" class="type-tab" data-kind="double">Double Action <span class="type-count" data-count="double">0</span></button>
+        <button type="button" class="type-tab" data-kind="take">Take Action <span class="type-count" data-count="take">0</span></button>
+      </div>
+      <label class="challenge-toggle">
+        <input id="challenge-only" type="checkbox">
+        <span>課題のみ</span>
+        <span id="challenge-count" class="challenge-count">0</span>
+      </label>
+    </section>
+
+    <section id="quiz-card" class="quiz-card" aria-live="polite">
+      <div class="quiz-meta">
+        <span id="question-type" class="question-type">Checker Play</span>
+        <span id="position-progress" class="position-progress"></span>
+      </div>
+
+      <div class="board-wrap">
+        <img id="board-image" alt="バックギャモンのクイズ局面">
+      </div>
+
+      <div id="position-record" class="position-record">
+        <span>この局面</span>
+        <span class="record-correct">正解 <strong id="position-correct">0</strong></span>
+        <span class="record-wrong">不正解 <strong id="position-wrong">0</strong></span>
+      </div>
+
+      <button id="answer-button" class="primary-button answer-button" type="button">Answer</button>
+
+      <section id="answer-panel" class="answer-panel" hidden>
+        <div class="answer-heading">
+          <span>Best Action</span>
+          <strong id="best-answer">—</strong>
+        </div>
+
+        <div class="analysis-grid">
+          <div id="action-analysis" class="action-analysis"></div>
+          <div id="summary-analysis" class="summary-analysis"></div>
+        </div>
+
+        <div class="judge-area">
+          <p class="judge-label">あなたの回答</p>
+          <div class="judge-buttons">
+            <button id="correct-button" class="judge-button correct-button" type="button">正解</button>
+            <button id="wrong-button" class="judge-button wrong-button" type="button">不正解</button>
+          </div>
+          <p id="judged-message" class="judged-message" hidden></p>
+        </div>
+
+        <button id="next-button" class="primary-button next-button" type="button" hidden>Next</button>
+        <div id="source-file" class="source-file"></div>
+      </section>
+    </section>
+
+    <section id="empty-state" class="empty-state" hidden>
+      <strong>条件に一致するポジションがありません。</strong>
+      <span>出題種別または「課題のみ」を変更してください。</span>
+    </section>
+
+    <section class="total-record" aria-label="累計成績">
+      <span>累計</span>
+      <span>正解 <strong id="total-correct">0</strong></span>
+      <span>不正解 <strong id="total-wrong">0</strong></span>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
