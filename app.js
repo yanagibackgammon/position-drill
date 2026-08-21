@@ -149,9 +149,9 @@ function awayText(position, away) {
   return `${Math.max(0, Number(away) || 0)}a`;
 }
 
-function cubeStateText(position) {
+function cubeStateText(position, cubeValue = position.cubeValue) {
   if (position.isCrawford) return "Cr";
-  return String(position.cubeValue ?? "—");
+  return String(cubeValue ?? "—");
 }
 
 function pipCounts(position) {
@@ -198,6 +198,17 @@ function pipDisplayValues(pips) {
 
 function actionAnalysisHTML(position) {
   if (position.decisionType === "cube") {
+    if (position.decisionKind === "take" && Array.isArray(position.quizCandidates)) {
+      const choices = position.quizCandidates
+        .filter((candidate) => candidate && candidate.action)
+        .slice(0, 2);
+      return `<div class="action-list">${choices.map((candidate, index) => `
+        <div class="action-option ${index === 0 ? "is-best" : ""}">
+          <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
+          <span class="action-error ${index === 0 ? "best-marker" : ""}">${escapeHTML(index === 0 ? "BEST" : formatSignedEquity(candidate.equityDifference))}</span>
+        </div>`).join("")}</div>`;
+    }
+
     const outcomes = (Array.isArray(position.candidates) ? position.candidates : [])
       .filter((candidate) => candidate && candidate.action)
       .slice(0, 3);
@@ -251,6 +262,7 @@ function summaryAnalysisHTML(position) {
   const isTake = position.decisionKind === "take";
   const playerScore = isTake && position.quizPlayerScore != null ? position.quizPlayerScore : position.playerScore;
   const opponentScore = isTake && position.quizOpponentScore != null ? position.quizOpponentScore : position.opponentScore;
+  const cubeValue = isTake && position.quizCubeValue != null ? position.quizCubeValue : position.cubeValue;
   const winRate = isTake && position.quizWinRate != null ? position.quizWinRate : position.winRate;
   const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
   const gammonWinRate = isTake && position.quizGammonWinRate != null ? position.quizGammonWinRate : position.gammonWinRate;
@@ -271,19 +283,19 @@ function summaryAnalysisHTML(position) {
     <div class="summary-top">
       <div class="summary-meta">
         ${statLine("ML", escapeHTML(position.matchLength))}
-        ${statLine("CB", escapeHTML(cubeStateText(position)))}
+        ${statLine("CB", escapeHTML(cubeStateText(position, cubeValue)))}
       </div>
       <div class="summary-side">
-        ${statLine("BK", `${escapeHTML(position.playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
+        ${statLine("BK", `${escapeHTML(playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
         ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
-        ${statLine("W", escapeHTML(formatPercent(position.winRate)), "", "answer-only-value")}
-        ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)), "", "answer-only-value")}
+        ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
+        ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
       </div>
       <div class="summary-side">
-        ${statLine("WH", `${escapeHTML(position.opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
+        ${statLine("WH", `${escapeHTML(opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
         ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
-        ${statLine("W", escapeHTML(formatPercent(position.loseRate)), "", "answer-only-value")}
-        ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)), "", "answer-only-value")}
+        ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
+        ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
       </div>
     </div>
     <div class="win-scale" aria-hidden="true">
