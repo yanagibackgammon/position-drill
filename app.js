@@ -155,7 +155,9 @@ function cubeStateText(position) {
 }
 
 function pipCounts(position) {
-  const points = Array.isArray(position.position) ? position.position : [];
+  const points = position.decisionKind === "take" && Array.isArray(position.quizPosition)
+    ? position.quizPosition
+    : (Array.isArray(position.position) ? position.position : []);
   let black = 0;
   let white = 0;
   for (let point = 1; point <= 24; point += 1) {
@@ -246,13 +248,20 @@ function actionAnalysisHTML(position) {
 function summaryAnalysisHTML(position) {
   const pips = pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
+  const isTake = position.decisionKind === "take";
+  const playerScore = isTake && position.quizPlayerScore != null ? position.quizPlayerScore : position.playerScore;
+  const opponentScore = isTake && position.quizOpponentScore != null ? position.quizOpponentScore : position.opponentScore;
+  const winRate = isTake && position.quizWinRate != null ? position.quizWinRate : position.winRate;
+  const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
+  const gammonWinRate = isTake && position.quizGammonWinRate != null ? position.quizGammonWinRate : position.gammonWinRate;
+  const gammonLoseRate = isTake && position.quizGammonLoseRate != null ? position.quizGammonLoseRate : position.gammonLoseRate;
   const matchLength = Number(position.matchLength) || 0;
-  const playerAway = Math.max(0, matchLength - Number(position.playerScore || 0));
-  const opponentAway = Math.max(0, matchLength - Number(position.opponentScore || 0));
-  const blackWin = Number(position.winRate);
-  const whiteWin = Number(position.loseRate);
-  const blackGammon = Number(position.gammonWinRate);
-  const whiteGammon = Number(position.gammonLoseRate);
+  const playerAway = Math.max(0, matchLength - Number(playerScore || 0));
+  const opponentAway = Math.max(0, matchLength - Number(opponentScore || 0));
+  const blackWin = Number(winRate);
+  const whiteWin = Number(loseRate);
+  const blackGammon = Number(gammonWinRate);
+  const whiteGammon = Number(gammonLoseRate);
   const blackWidth = Number.isFinite(blackWin) ? Math.max(0, Math.min(100, blackWin * 100)) : 50;
   const whiteWidth = Number.isFinite(whiteWin) ? Math.max(0, Math.min(100, whiteWin * 100)) : 100 - blackWidth;
   const blackOverlay = Number.isFinite(blackGammon) ? Math.max(0, blackGammon * 100) : 0;

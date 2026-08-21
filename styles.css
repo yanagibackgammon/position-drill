@@ -1022,3 +1022,38 @@ main {
   .summary-analysis { padding-top: 7px; padding-bottom: 7px; }
   .record-source-row { margin-top: 2px; }
 }
+
+
+/* Smartphone Task: checkbox + label on first line, count on second line. */
+@media (max-width: 760px) {
+  .challenge-toggle {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: 22px 12px;
+    align-content: center;
+    justify-content: center;
+    column-gap: 4px;
+    row-gap: 0;
+  }
+  .challenge-toggle input {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
+  }
+  .challenge-toggle > span:not(.type-count) {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    justify-self: start;
+  }
+  .challenge-toggle > .type-count {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: block;
+    margin: 0;
+    align-self: center;
+    justify-self: center;
+    line-height: 1;
+  }
+}
