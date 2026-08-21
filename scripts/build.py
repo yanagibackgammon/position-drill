@@ -650,15 +650,15 @@ def render_board_svg(
     Rows are normalized before rendering: positive checkers are the displayed
     black side and negative checkers are the displayed white side.
     """
-    width, height = 690, 546
+    width, height = 698, 546
     board_top, board_bottom = 28, 518
     top_label_y, bottom_label_y = 18, 540
 
     left_tray_x1, left_tray_x2 = 11, 59
     left_board_x1, left_board_x2 = 60, 327
-    bar_x1, bar_x2 = 328, 367
-    right_board_x1, right_board_x2 = 368, 637
-    right_tray_x1, right_tray_x2 = 638, 684
+    bar_x1, bar_x2 = 328, 375
+    right_board_x1, right_board_x2 = 376, 645
+    right_tray_x1, right_tray_x2 = 646, 692
 
     top_tip_y = 251
     bottom_tip_y = 294
@@ -667,6 +667,7 @@ def render_board_svg(
     score_top_y = side_band_top - 10
     score_bottom_y = side_band_bottom + 22
     point_w = (left_board_x2 - left_board_x1) / 6
+    bar_center = (bar_x1 + bar_x2) / 2
     checker_r = 21.1
 
     points = row["position"]
@@ -683,7 +684,7 @@ def render_board_svg(
 
     elements: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="Backgammon position {svg_text(row["id"])}">',
-        '<rect width="690" height="546" fill="#ffffff"/>',
+        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
         '<g stroke="#000000" stroke-linejoin="round">',
         f'<rect x="{left_tray_x1}" y="{board_top}" width="{right_tray_x2-left_tray_x1}" height="{board_bottom-board_top}" fill="#ffffff" stroke-width="4"/>',
         f'<line x1="{left_tray_x2}" y1="{board_top}" x2="{left_tray_x2}" y2="{board_bottom}" stroke-width="4"/>',
@@ -735,8 +736,8 @@ def render_board_svg(
     ])
     if show_pip_counts:
         elements.extend([
-            f'<text x="347.5" y="{top_label_y}" text-anchor="middle">{opponent_pips}</text>',
-            f'<text x="347.5" y="{bottom_label_y}" text-anchor="middle">{on_roll_pips}</text>',
+            f'<text x="{bar_center:.1f}" y="{top_label_y}" text-anchor="middle">{opponent_pips}</text>',
+            f'<text x="{bar_center:.1f}" y="{bottom_label_y}" text-anchor="middle">{on_roll_pips}</text>',
         ])
 
     for col, point in enumerate(range(13, 19)):
@@ -794,7 +795,6 @@ def render_board_svg(
 
     # Bar checkers.  Centre each visible stack halfway between the central
     # cube and the corresponding outer edge, keeping it clear of the cube.
-    bar_center = (bar_x1 + bar_x2) / 2
     board_center_y = (board_top + board_bottom) / 2
     opponent_bar = max(-int(points[0]), 0)
     on_roll_bar = max(int(points[25]), 0)
@@ -841,7 +841,7 @@ def render_board_svg(
     if row["diceValues"]:
         die_size = 36
         die_gap = 10
-        start_x = 463
+        start_x = 471
         die_y = 254
         pip_map = {
             1: [(18, 18)],
@@ -879,9 +879,9 @@ def render_board_svg(
     # player on roll.  In the quiz Take Action view, the responder is shown
     # as black near-side while the doubler (white/far-side) remains on roll.
     if on_roll_marker == "white":
-        elements.append('<circle cx="660" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+        elements.append('<circle cx="668" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
     else:
-        elements.append('<circle cx="660" cy="535" r="8.5" fill="#000000"/>')
+        elements.append('<circle cx="668" cy="535" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
