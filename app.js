@@ -200,29 +200,62 @@ function pipDisplayValues(pips) {
   return values;
 }
 
+function errorToneClass(value, { lossMagnitude = false } = {}) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  if (!lossMagnitude && number >= 0) return "";
+
+  const roundedMagnitude = Math.round((Math.abs(number) + Number.EPSILON) * 1000) / 1000;
+  if (roundedMagnitude >= 0.050) return "error-severe";
+  if (roundedMagnitude >= 0.020) return "error-warning";
+  return "";
+}
+
+function displayedPlayedAction(position) {
+  const played = String(position.playedAction || "").trim();
+  if (position.decisionKind !== "take") return played;
+
+  const lower = played.toLowerCase();
+  if (lower === "take" || lower.endsWith("/take")) return "Take";
+  if (lower === "pass" || lower === "drop" || lower.endsWith("/pass") || lower.endsWith("/drop")) return "Pass";
+  return played;
+}
+
 function actionAnalysisHTML(position) {
+  const playedAction = displayedPlayedAction(position);
+  const isPlayed = (action) => playedAction && String(action || "").trim() === playedAction;
+
   if (position.decisionType === "cube") {
     if (position.decisionKind === "take" && Array.isArray(position.quizCandidates)) {
       const choices = position.quizCandidates
         .filter((candidate) => candidate && candidate.action)
         .slice(0, 2);
-      return `<div class="action-list">${choices.map((candidate, index) => `
-        <div class="action-option ${index === 0 ? "is-best" : ""}">
-          <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
-          <span class="action-error ${index === 0 ? "best-marker" : ""}">${escapeHTML(index === 0 ? "BEST" : formatSignedEquity(candidate.equityDifference))}</span>
-        </div>`).join("")}</div>`;
+      return `<div class="action-list">${choices.map((candidate, index) => {
+        const best = index === 0;
+        const tone = best ? "" : errorToneClass(candidate.equityDifference);
+        return `
+        <div class="action-option ${best ? "is-best" : ""}">
+          <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
+          <span class="action-error ${best ? "best-marker" : tone}">${escapeHTML(best ? "BEST" : formatSignedEquity(candidate.equityDifference))}</span>
+        </div>`;
+      }).join("")}</div>`;
     }
 
     const outcomes = (Array.isArray(position.candidates) ? position.candidates : [])
       .filter((candidate) => candidate && candidate.action)
       .slice(0, 3);
+    const hasPlayedOutcome = outcomes.some((candidate) => isPlayed(candidate.action));
+    const bestAction = position.bestAction || "—";
     const rows = [
-      `<div class="action-option is-best"><span class="action-text">${escapeHTML(position.bestAction || "—")}</span><span class="action-error best-marker">BEST</span></div>`,
-      ...outcomes.map((candidate) => `
+      `<div class="action-option is-best"><span class="action-text ${!hasPlayedOutcome && isPlayed(bestAction) ? "is-played" : ""}">${escapeHTML(bestAction)}</span><span class="action-error best-marker">BEST</span></div>`,
+      ...outcomes.map((candidate) => {
+        const tone = errorToneClass(candidate.equityDifference);
+        return `
         <div class="action-option">
-          <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
-          <span class="action-error">${escapeHTML(formatSignedEquity(candidate.equityDifference))}</span>
-        </div>`),
+          <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
+          <span class="action-error ${tone}">${escapeHTML(formatSignedEquity(candidate.equityDifference))}</span>
+        </div>`;
+      }),
     ];
     return `<div class="action-list">${rows.join("")}</div>`;
   }
@@ -234,15 +267,16 @@ function actionAnalysisHTML(position) {
     })
     .slice()
     .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
-  const candidates = ordered.slice(0, 3);
+
+  // Checker Play shows every analysed move exported by XG, not just the top three.
+  const candidates = ordered.slice();
   if (!candidates.length) candidates.push({ rank: 1, action: position.bestAction, equityLoss: 0 });
 
-  const playedAction = String(position.playedAction || "").trim();
   if (playedAction && !candidates.some((candidate) => String(candidate.action || "").trim() === playedAction)) {
     const playedCandidate = ordered.find((candidate) => String(candidate.action || "").trim() === playedAction);
     const candidateLoss = Number(playedCandidate?.equityLoss);
     candidates.push({
-      rank: playedCandidate?.rank ?? 4,
+      rank: playedCandidate?.rank ?? (candidates.length + 1),
       action: playedAction,
       equityLoss: Number.isFinite(candidateLoss) && candidateLoss >= 0 && candidateLoss < 100
         ? candidateLoss
@@ -251,11 +285,12 @@ function actionAnalysisHTML(position) {
   }
 
   return `<div class="action-list">${candidates.map((candidate, index) => {
-    const isBest = index === 0 || Number(candidate.rank) === 1;
+    const best = index === 0 || Number(candidate.rank) === 1;
+    const tone = best ? "" : errorToneClass(candidate.equityLoss, { lossMagnitude: true });
     return `
-      <div class="action-option ${isBest ? "is-best" : ""}">
-        <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
-        <span class="action-error ${isBest ? "best-marker" : ""}">${escapeHTML(isBest ? "BEST" : formatError(candidate.equityLoss))}</span>
+      <div class="action-option ${best ? "is-best" : ""}">
+        <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
+        <span class="action-error ${best ? "best-marker" : tone}">${escapeHTML(best ? "BEST" : formatError(candidate.equityLoss))}</span>
       </div>`;
   }).join("")}</div>`;
 }
@@ -477,6 +512,7 @@ function selectNext() {
 function showAnswer() {
   if (!state.current) return;
   state.answered = true;
+  elements.actionAnalysis.scrollTop = 0;
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
@@ -486,12 +522,15 @@ function showAnswer() {
 
 function judge(result) {
   if (!state.current || !state.answered) return;
-  state.pendingResult = result;
-  const correctSelected = result === "correct";
+
+  // Clicking the selected mark again cancels the pending result.
+  state.pendingResult = state.pendingResult === result ? null : result;
+  const correctSelected = state.pendingResult === "correct";
+  const wrongSelected = state.pendingResult === "wrong";
   elements.correctButton.classList.toggle("is-selected", correctSelected);
-  elements.wrongButton.classList.toggle("is-selected", !correctSelected);
+  elements.wrongButton.classList.toggle("is-selected", wrongSelected);
   elements.correctButton.setAttribute("aria-pressed", correctSelected ? "true" : "false");
-  elements.wrongButton.setAttribute("aria-pressed", correctSelected ? "false" : "true");
+  elements.wrongButton.setAttribute("aria-pressed", wrongSelected ? "true" : "false");
 }
 
 function setKind(kind) {

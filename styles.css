@@ -272,7 +272,17 @@ main {
   min-width: 0;
   padding: 15px;
 }
-.action-analysis { border-right: 1px solid #2d373c; }
+.action-analysis {
+  min-height: 0;
+  border-right: 1px solid #2d373c;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.action-analysis::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .action-list { display: grid; row-gap: 9px; visibility: hidden; }
 .quiz-card.is-answered .action-list { visibility: visible; }
 .action-option {
@@ -290,14 +300,25 @@ main {
   font-size: 19px;
   font-weight: 700;
 }
-.action-text { min-width: 0; overflow-wrap: anywhere; }
+.action-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+.action-text.is-played {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
 .action-error {
   color: var(--muted);
   text-align: right;
   white-space: nowrap;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 700;
 }
+.action-error.error-warning { color: #ff6b6b; }
+.action-error.error-severe { color: #d58cff; }
 .best-marker {
   color: var(--theme);
   font-weight: 800;
@@ -544,7 +565,8 @@ main {
   .action-analysis {
     border-right: 0;
     border-bottom: 1px solid #2d373c;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .summary-analysis {
