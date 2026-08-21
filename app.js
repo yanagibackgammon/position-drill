@@ -337,10 +337,14 @@ function summaryAnalysisHTML(position) {
   const whiteWin = Number(loseRate);
   const blackGammon = Number(gammonWinRate);
   const whiteGammon = Number(gammonLoseRate);
+  const blackBackgammon = Number(backgammonWinRate);
+  const whiteBackgammon = Number(backgammonLoseRate);
   const blackWidth = Number.isFinite(blackWin) ? Math.max(0, Math.min(100, blackWin * 100)) : 50;
   const whiteWidth = Number.isFinite(whiteWin) ? Math.max(0, Math.min(100, whiteWin * 100)) : 100 - blackWidth;
   const blackOverlay = Number.isFinite(blackGammon) ? Math.max(0, blackGammon * 100) : 0;
   const whiteOverlay = Number.isFinite(whiteGammon) ? Math.max(0, whiteGammon * 100) : 0;
+  const blackBackgammonOverlay = Number.isFinite(blackBackgammon) ? Math.max(0, blackBackgammon * 100) : 0;
+  const whiteBackgammonOverlay = Number.isFinite(whiteBackgammon) ? Math.max(0, whiteBackgammon * 100) : 0;
 
   return `
     <div class="summary-text-scroll" aria-label="Game information">
@@ -377,6 +381,8 @@ function summaryAnalysisHTML(position) {
       <div class="win-white answer-only-chart" style="width:${whiteWidth.toFixed(3)}%"></div>
       <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
       <div class="win-white-gammon answer-only-chart" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
+      <div class="win-black-backgammon answer-only-chart" style="width:${Math.min(blackBackgammonOverlay, blackOverlay, blackWidth).toFixed(3)}%"></div>
+      <div class="win-white-backgammon answer-only-chart" style="width:${Math.min(whiteBackgammonOverlay, whiteOverlay, whiteWidth).toFixed(3)}%"></div>
     </div>`;
 }
 

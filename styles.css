@@ -385,14 +385,25 @@ main {
 .win-black { height: 100%; background: #111; }
 .win-white { height: 100%; background: #eee; }
 .win-black-gammon,
-.win-white-gammon {
+.win-white-gammon,
+.win-black-backgammon,
+.win-white-backgammon {
   position: absolute;
   top: 0;
   height: 100%;
+}
+.win-black-gammon,
+.win-white-gammon {
   background: var(--theme);
 }
-.win-black-gammon { left: 0; }
-.win-white-gammon { right: 0; }
+.win-black-backgammon,
+.win-white-backgammon {
+  background: #d58cff;
+}
+.win-black-gammon,
+.win-black-backgammon { left: 0; }
+.win-white-gammon,
+.win-white-backgammon { right: 0; }
 
 .judge-area {
   box-sizing: border-box;
@@ -713,6 +724,7 @@ main {
   h1 {
     flex: 0 1 auto;
     font-size: clamp(23px, 7.2vw, 30px);
+    transform: translateY(3px);
   }
   .creator {
     position: static;
