@@ -732,7 +732,7 @@ def render_board_svg(
     opponent_score_label = 0 if is_unlimited else row["onRollOpponentScore"]
     on_roll_score_label = 0 if is_unlimited else row["onRollScore"]
     elements.extend([
-        '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="17">',
+        '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="19">',
         f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle">{opponent_score_label}/{score_match_length}</text>',
         f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle">{on_roll_score_label}/{score_match_length}</text>',
     ])
@@ -778,7 +778,7 @@ def render_board_svg(
         if count_label is not None:
             elements.append(
                 f'<text x="{cx:.2f}" y="{cy+6:.2f}" text-anchor="middle" fill="{text_fill}" '
-                f'font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">{count_label}</text>'
+                f'font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700">{count_label}</text>'
             )
 
     # Checkers on points. Positive/on-roll checkers are black; opponent checkers are white.
