@@ -238,18 +238,18 @@ function summaryAnalysisHTML(position) {
 
   return `
     <div class="summary-top">
-      <div class="summary-side">
-        ${statLine("BK", `${escapeHTML(position.playerScore)} (${escapeHTML(awayText(position, playerAway))})`, "title-line")}
-        ${statLine("PIP", escapeHTML(pips.black))}
-        ${statLine("W", escapeHTML(formatPercent(position.winRate)))}
-        ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)))}
-      </div>
-      <div class="summary-middle">
+      <div class="summary-meta">
         ${statLine("ML", escapeHTML(position.matchLength))}
         ${statLine("CB", escapeHTML(cubeStateText(position)))}
       </div>
       <div class="summary-side">
-        ${statLine("WH", `${escapeHTML(position.opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`, "title-line")}
+        ${statLine("BK", `${escapeHTML(position.playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
+        ${statLine("PIP", escapeHTML(pips.black))}
+        ${statLine("W", escapeHTML(formatPercent(position.winRate)))}
+        ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)))}
+      </div>
+      <div class="summary-side">
+        ${statLine("WH", `${escapeHTML(position.opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
         ${statLine("PIP", escapeHTML(pips.white))}
         ${statLine("W", escapeHTML(formatPercent(position.loseRate)))}
         ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)))}
@@ -315,7 +315,7 @@ function populateAnswerData() {
   elements.bestAnswer.textContent = bestQuizAnswer(state.current);
   elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
-  elements.sourceFile.textContent = state.current.sourceFile ? `Source: ${state.current.sourceFile}` : "";
+  elements.sourceFile.textContent = state.current.sourceFile || "";
 }
 
 function resetAnswerUI() {
