@@ -384,6 +384,15 @@ function summaryAnalysisHTML(position) {
       <span class="win-boundary-marker answer-only-chart" style="left:${blackWidth.toFixed(3)}%">▼</span>
     </div>
     <div class="win-bar" aria-hidden="true">
+      <span class="win-grid-line" style="left:10%"></span>
+      <span class="win-grid-line" style="left:20%"></span>
+      <span class="win-grid-line" style="left:30%"></span>
+      <span class="win-grid-line" style="left:40%"></span>
+      <span class="win-grid-line is-mid" style="left:50%"></span>
+      <span class="win-grid-line" style="left:60%"></span>
+      <span class="win-grid-line" style="left:70%"></span>
+      <span class="win-grid-line" style="left:80%"></span>
+      <span class="win-grid-line" style="left:90%"></span>
       <div class="win-black answer-only-chart" style="width:${blackWidth.toFixed(3)}%"></div>
       <div class="win-white answer-only-chart" style="width:${whiteWidth.toFixed(3)}%"></div>
       <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>

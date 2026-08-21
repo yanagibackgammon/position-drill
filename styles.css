@@ -306,22 +306,18 @@ main {
   border: 1px solid #CFCFCF;
   background: #FFFFFF;
 }
-.win-bar::after {
-  content: "";
+.win-grid-line {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
   z-index: 5;
+  width: 1px;
+  background: #CFCFCF;
+  transform: translateX(-50%);
   pointer-events: none;
-  background:
-    linear-gradient(#CFCFCF, #B7924B) 10% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 20% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 30% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 40% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #CFCFCF) 50% 0 / 2px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 60% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 70% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 80% 0 / 1px 100% no-repeat,
-    linear-gradient(#CFCFCF, #B7924B) 90% 0 / 1px 100% no-repeat;
+}
+.win-grid-line.is-mid {
+  width: 2px;
 }
 .answer-only-chart { visibility: hidden; }
 .quiz-card.is-answered .answer-only-chart { visibility: visible; }
@@ -367,6 +363,7 @@ main {
   width: 100%;
   min-height: 46px;
   margin: 0;
+  border: 0;
 }
 .judge-buttons {
   grid-column: 2 / span 2;
