@@ -1106,3 +1106,16 @@ main {
     gap: 4px;
   }
 }
+
+/* Desktop: keep the fixed-height button row tight to its content. */
+@media (min-width: 761px) {
+  .answer-column {
+    align-self: start;
+    height: auto;
+  }
+
+  .answer-panel {
+    flex: 0 0 auto;
+    height: auto;
+  }
+}
