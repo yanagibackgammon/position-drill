@@ -270,7 +270,8 @@ main {
   padding: 15px;
 }
 .action-analysis { border-right: 1px solid #2d373c; }
-.action-list { display: grid; row-gap: 9px; }
+.action-list { display: grid; row-gap: 9px; visibility: hidden; }
+.quiz-card.is-answered .action-list { visibility: visible; }
 .action-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 66px;
@@ -293,6 +294,11 @@ main {
   white-space: nowrap;
   font-size: 13px;
   font-weight: 400;
+}
+.best-marker {
+  color: var(--theme);
+  font-weight: 800;
+  letter-spacing: .05em;
 }
 
 .summary-top {
@@ -349,7 +355,6 @@ main {
 }
 .answer-only-chart { visibility: hidden; }
 .quiz-card.is-answered .answer-only-chart { visibility: visible; }
-.quiz-card:not(.is-answered) .win-bar::after { display: none; }
 .quiz-card:not(.is-answered) .win-bar { background: transparent; }
 .win-black { height: 100%; background: #111; }
 .win-white { height: 100%; background: #eee; }

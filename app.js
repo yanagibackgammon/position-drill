@@ -35,7 +35,6 @@ const elements = {
   answerButton: document.getElementById("answer-button"),
   answerPanel: document.getElementById("answer-panel"),
   answerData: [...document.querySelectorAll("[data-answer-data]")],
-  bestAnswer: document.getElementById("best-answer"),
   actionAnalysis: document.getElementById("action-analysis"),
   summaryAnalysis: document.getElementById("summary-analysis"),
   judgeButtons: document.getElementById("judge-buttons"),
@@ -201,7 +200,7 @@ function actionAnalysisHTML(position) {
       .filter((candidate) => candidate && candidate.action)
       .slice(0, 3);
     const rows = [
-      `<div class="action-option is-best"><span class="action-text">${escapeHTML(position.bestAction || "—")}</span><span class="action-error"></span></div>`,
+      `<div class="action-option is-best"><span class="action-text">${escapeHTML(position.bestAction || "—")}</span><span class="action-error best-marker">BEST</span></div>`,
       ...outcomes.map((candidate) => `
         <div class="action-option">
           <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
@@ -239,7 +238,7 @@ function actionAnalysisHTML(position) {
     return `
       <div class="action-option ${isBest ? "is-best" : ""}">
         <span class="action-text">${escapeHTML(candidate.action || "—")}</span>
-        <span class="action-error">${escapeHTML(isBest ? "" : formatError(candidate.equityLoss))}</span>
+        <span class="action-error ${isBest ? "best-marker" : ""}">${escapeHTML(isBest ? "BEST" : formatError(candidate.equityLoss))}</span>
       </div>`;
   }).join("")}</div>`;
 }
@@ -278,11 +277,11 @@ function summaryAnalysisHTML(position) {
         ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)), "", "answer-only-value")}
       </div>
     </div>
-    <div class="win-scale answer-only-chart" aria-hidden="true">
+    <div class="win-scale" aria-hidden="true">
       <span style="left:30%">30%</span>
       <span style="left:50%">50%</span>
       <span style="left:70%">70%</span>
-      <span class="win-boundary-marker" style="left:${blackWidth.toFixed(3)}%">▼</span>
+      <span class="win-boundary-marker answer-only-chart" style="left:${blackWidth.toFixed(3)}%">▼</span>
     </div>
     <div class="win-bar" aria-hidden="true">
       <div class="win-black answer-only-chart" style="width:${blackWidth.toFixed(3)}%"></div>
@@ -290,13 +289,6 @@ function summaryAnalysisHTML(position) {
       <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
       <div class="win-white-gammon answer-only-chart" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
     </div>`;
-}
-
-function bestQuizAnswer(position) {
-  if (decisionKind(position) === "take") {
-    return position.quizBestAction || "—";
-  }
-  return position.bestAction || "—";
 }
 
 function updatePositionRecord() {
@@ -335,7 +327,6 @@ function setAnswerDataVisible(visible) {
 
 function populateAnswerData() {
   if (!state.current) return;
-  elements.bestAnswer.textContent = bestQuizAnswer(state.current);
   elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
   elements.sourceFile.textContent = state.current.sourceFile || "";
