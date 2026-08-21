@@ -764,3 +764,66 @@ main {
   /* Leave enough vertical room for the larger boundary marker. */
   .win-scale { height: 18px; }
 }
+
+/* Smartphone stable-height layout: prevent load-time vertical shifts. */
+@media (max-width: 760px) {
+  /* Keep the header height unchanged; match the desktop creator typography. */
+  .creator {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.02;
+  }
+  .creator-prefix,
+  .creator-name {
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+  }
+
+  /* Remove spare bottom room so the footer can stay in the first viewport. */
+  main {
+    padding-bottom: 4px;
+  }
+
+  /*
+   * Reserve the board area before the SVG loads.
+   * On normal/tall phones it is exactly the full-browser-width 690:546 board.
+   * On shorter phones only this area contracts, keeping all lower controls fixed.
+   */
+  .board-wrap {
+    flex: 0 0 auto;
+    width: 100%;
+    height: min(calc(100vw * 0.79130435), max(138px, calc(100svh - 432px)));
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .board-wrap img {
+    display: block;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center center;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  /* Keep the answer area geometry identical before and after image loading. */
+  .analysis-section {
+    flex: 0 0 250px;
+    height: 250px;
+    min-height: 250px;
+    max-height: 250px;
+  }
+  .judge-area {
+    min-height: 56px;
+  }
+}
