@@ -1240,3 +1240,20 @@ main {
 }
 
 
+
+
+/* Selected decision tabs: show the same visible gold lower accent as Task. */
+.type-tab.is-active {
+  position: relative;
+}
+.type-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--theme);
+  pointer-events: none;
+  z-index: 2;
+}
