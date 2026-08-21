@@ -346,8 +346,8 @@ function summaryAnalysisHTML(position) {
     <div class="summary-text-scroll" aria-label="Game information">
       <div class="summary-text-grid">
         ${statLine("ML", escapeHTML(matchLength))}
-        ${statLine("BK", escapeHTML(playerScoreText))}
-        ${statLine("WH", escapeHTML(opponentScoreText))}
+        ${statLine("BK", escapeHTML(playerScoreText), "side-black")}
+        ${statLine("WH", escapeHTML(opponentScoreText), "side-white")}
 
         ${statLine("CB", escapeHTML(isDmp ? "1" : cubeStateText(position, cubeValue)))}
         ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}

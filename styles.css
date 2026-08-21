@@ -493,7 +493,7 @@ main {
 /* Desktop two-column quiz layout */
 @media (min-width: 761px) {
   main {
-    width: min(1120px, calc(100% - 32px));
+    width: min(1028px, calc(100% - 32px));
   }
 
   .quiz-layout {
@@ -515,7 +515,7 @@ main {
     flex: 1;
     min-height: 0;
     align-items: center;
-    padding: 14px 18px;
+    padding: 14px;
   }
 
   .board-wrap img {
@@ -1140,7 +1140,7 @@ main {
     width: 100%;
     height: 100%;
     min-height: 0;
-    padding: 14px 18px;
+    padding: 14px;
     overflow: hidden;
   }
 
@@ -1181,7 +1181,7 @@ main {
 
 .summary-text-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr);
   grid-template-rows: repeat(5, 24px);
   column-gap: 12px;
   row-gap: 3.5px;
@@ -1234,3 +1234,28 @@ main {
   }
 }
 
+
+
+/* Player-side labels in the game-information area. */
+.stat-line.side-black .stat-label,
+.stat-line.side-white .stat-label {
+  width: 30px;
+  height: 22px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #8f989d;
+  border-radius: 0;
+  line-height: 1;
+}
+
+.stat-line.side-black .stat-label {
+  color: #fff;
+  background: #000;
+}
+
+.stat-line.side-white .stat-label {
+  color: #000;
+  background: #fff;
+}
