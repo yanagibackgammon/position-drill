@@ -6,6 +6,8 @@ const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+const BOARD_PRELOAD_COUNT = 3;
+const BOARD_PRELOAD_CACHE_LIMIT = 8;
 
 const KIND_LABELS = {
   checker: "Checker Play",
@@ -22,6 +24,7 @@ const state = {
   daily: { day: "", correct: 0, wrong: 0 },
   dailyResetTimer: null,
   dataVersion: "",
+  boardQueue: [],
 };
 
 const elements = {
@@ -122,6 +125,81 @@ function absoluteBoardUrl(position) {
   const url = new URL(path, POSITIONS_ROOT);
   if (state.dataVersion) url.searchParams.set("v", state.dataVersion);
   return url.href;
+}
+
+const boardPreloadCache = new Map();
+
+function trimBoardPreloadCache() {
+  while (boardPreloadCache.size > BOARD_PRELOAD_CACHE_LIMIT) {
+    const oldestKey = boardPreloadCache.keys().next().value;
+    boardPreloadCache.delete(oldestKey);
+  }
+}
+
+function preloadBoard(position) {
+  if (!position) return;
+  const url = absoluteBoardUrl(position);
+
+  if (boardPreloadCache.has(url)) {
+    const cached = boardPreloadCache.get(url);
+    boardPreloadCache.delete(url);
+    boardPreloadCache.set(url, cached);
+    return;
+  }
+
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+  boardPreloadCache.set(url, image);
+  trimBoardPreloadCache();
+
+  if (typeof image.decode === "function") {
+    image.decode().catch(() => {});
+  }
+}
+
+function resetBoardQueue({ clearCache = false } = {}) {
+  state.boardQueue = [];
+  if (clearCache) boardPreloadCache.clear();
+}
+
+function refillBoardQueue() {
+  const pool = activePool();
+  if (!pool.length) {
+    state.boardQueue = [];
+    return;
+  }
+
+  const activeIds = new Set(pool.map((position) => position.id));
+  state.boardQueue = state.boardQueue.filter(
+    (position) => position?.id && position.id !== state.current?.id && activeIds.has(position.id),
+  );
+
+  const queuedIds = new Set(state.boardQueue.map((position) => position.id));
+  if (state.current?.id) queuedIds.add(state.current.id);
+
+  while (state.boardQueue.length < BOARD_PRELOAD_COUNT && queuedIds.size < pool.length) {
+    const choices = pool.filter((position) => !queuedIds.has(position.id));
+    if (!choices.length) break;
+    const position = choices[Math.floor(Math.random() * choices.length)];
+    state.boardQueue.push(position);
+    queuedIds.add(position.id);
+    preloadBoard(position);
+  }
+}
+
+function queuedNextPosition() {
+  const pool = activePool();
+  const activeIds = new Set(pool.map((position) => position.id));
+
+  while (state.boardQueue.length) {
+    const position = state.boardQueue.shift();
+    if (position?.id && position.id !== state.current?.id && activeIds.has(position.id)) {
+      return position;
+    }
+  }
+
+  return randomPosition(pool, state.current?.id || null);
 }
 
 function formatError(value) {
@@ -529,8 +607,10 @@ function renderCurrent() {
   elements.card.hidden = false;
   elements.sourceFile.hidden = false;
   elements.empty.hidden = true;
+  elements.board.fetchPriority = "high";
   elements.board.src = absoluteBoardUrl(state.current);
   elements.board.alt = `${KIND_LABELS[state.currentKind]} quiz position`;
+  refillBoardQueue();
   updatePositionRecord();
   populateAnswerData();
   resetAnswerUI();
@@ -553,8 +633,7 @@ function recordResult(result) {
 }
 
 function selectNext() {
-  const previousId = state.current?.id || null;
-  state.current = randomPosition(activePool(), previousId);
+  state.current = queuedNextPosition();
   renderCurrent();
 }
 
@@ -580,6 +659,7 @@ function setKind(kind) {
   if (!KIND_LABELS[kind]) return;
   state.currentKind = kind;
   state.current = null;
+  resetBoardQueue();
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === kind));
   saveSettings();
   renderCurrent();
@@ -620,6 +700,7 @@ function installEvents() {
   });
   elements.challengeOnly.addEventListener("change", () => {
     state.current = null;
+    resetBoardQueue();
     saveSettings();
     renderCurrent();
   });
@@ -639,6 +720,7 @@ async function syncPositions({ initial = false } = {}) {
 
   const previousId = state.current?.id || null;
   state.positions = (payload.positions || []).filter((position) => decisionKind(position));
+  if (state.dataVersion !== nextVersion) resetBoardQueue({ clearCache: true });
   state.dataVersion = nextVersion;
 
   const theme = payload.meta?.themeColor;
