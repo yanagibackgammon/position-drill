@@ -343,32 +343,27 @@ function summaryAnalysisHTML(position) {
   const whiteOverlay = Number.isFinite(whiteGammon) ? Math.max(0, whiteGammon * 100) : 0;
 
   return `
-    <div class="summary-top">
-      <div class="summary-meta">
+    <div class="summary-text-scroll" aria-label="Game information">
+      <div class="summary-text-grid">
         ${statLine("ML", escapeHTML(matchLength))}
-        ${statLine("CB", escapeHTML(isDmp ? "1" : cubeStateText(position, cubeValue)))}
-      </div>
-      <div class="summary-side">
         ${statLine("BK", escapeHTML(playerScoreText))}
-        ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
-        ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
-      </div>
-      <div class="summary-side">
         ${statLine("WH", escapeHTML(opponentScoreText))}
+
+        ${statLine("CB", escapeHTML(isDmp ? "1" : cubeStateText(position, cubeValue)))}
+        ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
         ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
+
+        <div aria-hidden="true"></div>
+        ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
-      </div>
-      <div class="summary-rate-scroll" aria-label="Gammon and backgammon rates">
-        <div class="summary-rate-row">
-          <div aria-hidden="true"></div>
-          ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
-          ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
-        </div>
-        <div class="summary-rate-row">
-          <div aria-hidden="true"></div>
-          ${statLine("BG", escapeHTML(formatPercent(backgammonWinRate)), "", "answer-only-value")}
-          ${statLine("BG", escapeHTML(formatPercent(backgammonLoseRate)), "", "answer-only-value")}
-        </div>
+
+        <div aria-hidden="true"></div>
+        ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
+        ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
+
+        <div aria-hidden="true"></div>
+        ${statLine("BG", escapeHTML(formatPercent(backgammonWinRate)), "", "answer-only-value")}
+        ${statLine("BG", escapeHTML(formatPercent(backgammonLoseRate)), "", "answer-only-value")}
       </div>
     </div>
     <div class="win-scale" aria-hidden="true">
@@ -480,8 +475,8 @@ function populateAnswerData() {
   elements.sourceFile.textContent = state.current.sourceFile || "";
 }
 
-function resetSummaryRateScroll() {
-  const scroller = elements.summaryAnalysis.querySelector(".summary-rate-scroll");
+function resetSummaryTextScroll() {
+  const scroller = elements.summaryAnalysis.querySelector(".summary-text-scroll");
   if (scroller) scroller.scrollTop = 0;
 }
 
@@ -499,7 +494,7 @@ function resetAnswerUI() {
   elements.wrongButton.setAttribute("aria-pressed", "false");
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
-  resetSummaryRateScroll();
+  resetSummaryTextScroll();
   setAnswerDataVisible(false);
 }
 
@@ -556,7 +551,7 @@ function showAnswer() {
   state.answered = true;
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
-  resetSummaryRateScroll();
+  resetSummaryTextScroll();
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
