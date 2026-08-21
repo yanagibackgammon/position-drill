@@ -169,8 +169,8 @@ function pipCounts(position) {
   return { black, white };
 }
 
-function statLine(label, value, extraClass = "") {
-  return `<div class="stat-line ${extraClass}"><span class="stat-label">${escapeHTML(label)}</span><span class="stat-value">${value}</span></div>`;
+function statLine(label, value, extraClass = "", valueClass = "") {
+  return `<div class="stat-line ${extraClass}"><span class="stat-label">${escapeHTML(label)}</span><span class="stat-value ${valueClass}">${value}</span></div>`;
 }
 
 function pipDisplayValues(pips) {
@@ -267,28 +267,28 @@ function summaryAnalysisHTML(position) {
       </div>
       <div class="summary-side">
         ${statLine("BK", `${escapeHTML(position.playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
-        ${statLine("PIP", escapeHTML(pipDisplay.black))}
-        ${statLine("W", escapeHTML(formatPercent(position.winRate)))}
-        ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)))}
+        ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
+        ${statLine("W", escapeHTML(formatPercent(position.winRate)), "", "answer-only-value")}
+        ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)), "", "answer-only-value")}
       </div>
       <div class="summary-side">
         ${statLine("WH", `${escapeHTML(position.opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
-        ${statLine("PIP", escapeHTML(pipDisplay.white))}
-        ${statLine("W", escapeHTML(formatPercent(position.loseRate)))}
-        ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)))}
+        ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
+        ${statLine("W", escapeHTML(formatPercent(position.loseRate)), "", "answer-only-value")}
+        ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)), "", "answer-only-value")}
       </div>
     </div>
-    <div class="win-scale" aria-hidden="true">
+    <div class="win-scale answer-only-chart" aria-hidden="true">
       <span style="left:30%">30%</span>
       <span style="left:50%">50%</span>
       <span style="left:70%">70%</span>
       <span class="win-boundary-marker" style="left:${blackWidth.toFixed(3)}%">▼</span>
     </div>
     <div class="win-bar" aria-hidden="true">
-      <div class="win-black" style="width:${blackWidth.toFixed(3)}%"></div>
-      <div class="win-white" style="width:${whiteWidth.toFixed(3)}%"></div>
-      <div class="win-black-gammon" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
-      <div class="win-white-gammon" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
+      <div class="win-black answer-only-chart" style="width:${blackWidth.toFixed(3)}%"></div>
+      <div class="win-white answer-only-chart" style="width:${whiteWidth.toFixed(3)}%"></div>
+      <div class="win-black-gammon answer-only-chart" style="width:${Math.min(blackOverlay, blackWidth).toFixed(3)}%"></div>
+      <div class="win-white-gammon answer-only-chart" style="width:${Math.min(whiteOverlay, whiteWidth).toFixed(3)}%"></div>
     </div>`;
 }
 
@@ -343,6 +343,7 @@ function populateAnswerData() {
 
 function resetAnswerUI() {
   state.answered = false;
+  elements.card.classList.remove("is-answered");
   state.judged = false;
   elements.answerPanel.hidden = false;
   elements.answerButton.hidden = false;
@@ -367,10 +368,13 @@ function renderCurrent() {
   if (!state.current) {
     elements.card.hidden = true;
     elements.empty.hidden = false;
+    elements.sourceFile.textContent = "";
+    elements.sourceFile.hidden = true;
     return;
   }
 
   elements.card.hidden = false;
+  elements.sourceFile.hidden = false;
   elements.empty.hidden = true;
   elements.board.src = absoluteBoardUrl(state.current);
   elements.board.alt = `${KIND_LABELS[state.currentKind]} quiz position`;
@@ -388,6 +392,7 @@ function selectNext() {
 function showAnswer() {
   if (!state.current) return;
   state.answered = true;
+  elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
   setAnswerDataVisible(true);

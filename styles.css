@@ -315,6 +315,8 @@ main {
 }
 .stat-label { color: #9da7ac; font-size: 14px; font-weight: 700; }
 .stat-value { color: #fff; font-size: 14px; font-weight: 700; }
+.answer-only-value { visibility: hidden; }
+.quiz-card.is-answered .answer-only-value { visibility: visible; }
 .win-scale {
   position: relative;
   height: 19px;
@@ -345,6 +347,10 @@ main {
   );
   background-size: 10% 100%;
 }
+.answer-only-chart { visibility: hidden; }
+.quiz-card.is-answered .answer-only-chart { visibility: visible; }
+.quiz-card:not(.is-answered) .win-bar::after { display: none; }
+.quiz-card:not(.is-answered) .win-bar { background: transparent; }
 .win-black { height: 100%; background: #111; }
 .win-white { height: 100%; background: #eee; }
 .win-black-gammon,
@@ -397,8 +403,9 @@ main {
 }
 .next-button { margin-top: 6px; }
 .source-file {
-  min-height: 26px;
-  padding: 0 16px 12px;
+  min-height: 16px;
+  margin-top: 4px;
+  padding: 0 8px;
   color: #7f8a90;
   font-size: 10px;
   text-align: center;
@@ -497,15 +504,15 @@ main {
   }
 
   .analysis-section {
-    height: 310px;
-    flex: 0 0 310px;
+    height: 350px;
+    flex: 0 0 350px;
     overflow: hidden;
   }
 
   .analysis-grid {
     height: 100%;
     grid-template-columns: 1fr;
-    grid-template-rows: 155px 155px;
+    grid-template-rows: 165px 185px;
   }
 
   .action-analysis {

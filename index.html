@@ -51,8 +51,8 @@
             </div>
 
             <div class="analysis-section">
-              <div class="analysis-grid answer-data" data-answer-data aria-hidden="true">
-                <div id="action-analysis" class="action-analysis"></div>
+              <div class="analysis-grid">
+                <div id="action-analysis" class="action-analysis answer-data" data-answer-data aria-hidden="true"></div>
                 <div id="summary-analysis" class="summary-analysis"></div>
               </div>
             </div>
@@ -67,7 +67,6 @@
               <button id="next-button" class="primary-button next-button" type="button" hidden>Next</button>
             </div>
 
-            <div id="source-file" class="source-file answer-data" data-answer-data aria-hidden="true"></div>
           </section>
         </div>
       </div>
@@ -90,6 +89,8 @@
         <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
       </div>
     </section>
+
+    <div id="source-file" class="source-file"></div>
   </main>
 
   <script src="app.js"></script>
