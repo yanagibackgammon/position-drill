@@ -704,10 +704,17 @@ def render_board_svg(row: dict[str, Any], *, show_pip_counts: bool = True) -> st
     elements.append('</g>')
 
     # Point labels, scores and pip counts.
+    # XG represents unlimited/money games with the sentinel match length 99999.
+    # On the board, display money-game scores as 0/0 instead of 0/99999.
+    match_length = int(row.get("matchLength") or 0)
+    is_unlimited = match_length >= 99999
+    score_match_length = 0 if is_unlimited else match_length
+    opponent_score_label = 0 if is_unlimited else row["onRollOpponentScore"]
+    on_roll_score_label = 0 if is_unlimited else row["onRollScore"]
     elements.extend([
         '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="18">',
-        f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle">{row["onRollOpponentScore"]}/{row["matchLength"]}</text>',
-        f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle">{row["onRollScore"]}/{row["matchLength"]}</text>',
+        f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle">{opponent_score_label}/{score_match_length}</text>',
+        f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle">{on_roll_score_label}/{score_match_length}</text>',
     ])
     if show_pip_counts:
         elements.extend([
