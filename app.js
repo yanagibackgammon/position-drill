@@ -18,7 +18,6 @@ const state = {
   currentKind: "checker",
   current: null,
   answered: false,
-  pendingResult: null,
   progress: {},
   daily: { day: "", correct: 0, wrong: 0 },
   dailyResetTimer: null,
@@ -489,14 +488,11 @@ function resetSummaryTextScroll() {
 
 function resetAnswerUI() {
   state.answered = false;
-  state.pendingResult = null;
   elements.card.classList.remove("is-answered");
   elements.answerPanel.hidden = false;
   elements.answerButton.hidden = false;
   elements.judgeButtons.hidden = true;
   elements.nextButton.hidden = false;
-  elements.correctButton.classList.remove("is-selected");
-  elements.wrongButton.classList.remove("is-selected");
   elements.correctButton.setAttribute("aria-pressed", "false");
   elements.wrongButton.setAttribute("aria-pressed", "false");
   elements.actionAnalysis.scrollTop = 0;
@@ -531,23 +527,24 @@ function renderCurrent() {
   resetAnswerUI();
 }
 
-function commitPendingResult() {
-  if (!state.current || !state.pendingResult) return;
+function recordResult(result) {
+  if (!state.current || (result !== "correct" && result !== "wrong")) return false;
+
   const record = recordFor(state.current.id);
-  if (state.pendingResult === "correct") record.correct += 1;
+  if (result === "correct") record.correct += 1;
   else record.wrong += 1;
   state.progress[state.current.id] = record;
   saveProgress();
 
   ensureDailyRecord();
-  if (state.pendingResult === "correct") state.daily.correct += 1;
+  if (result === "correct") state.daily.correct += 1;
   else state.daily.wrong += 1;
   saveDaily();
+  return true;
 }
 
 function selectNext() {
   const previousId = state.current?.id || null;
-  commitPendingResult();
   state.current = randomPosition(activePool(), previousId);
   renderCurrent();
 }
@@ -566,15 +563,8 @@ function showAnswer() {
 
 function judge(result) {
   if (!state.current || !state.answered) return;
-
-  // Clicking the selected mark again cancels the pending result.
-  state.pendingResult = state.pendingResult === result ? null : result;
-  const correctSelected = state.pendingResult === "correct";
-  const wrongSelected = state.pendingResult === "wrong";
-  elements.correctButton.classList.toggle("is-selected", correctSelected);
-  elements.wrongButton.classList.toggle("is-selected", wrongSelected);
-  elements.correctButton.setAttribute("aria-pressed", correctSelected ? "true" : "false");
-  elements.wrongButton.setAttribute("aria-pressed", wrongSelected ? "true" : "false");
+  if (!recordResult(result)) return;
+  selectNext();
 }
 
 function setKind(kind) {
