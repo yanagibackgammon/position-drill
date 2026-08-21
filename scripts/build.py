@@ -627,7 +627,12 @@ def svg_text(text: str) -> str:
     return html.escape(str(text), quote=True)
 
 
-def render_board_svg(row: dict[str, Any], *, show_pip_counts: bool = True) -> str:
+def render_board_svg(
+    row: dict[str, Any],
+    *,
+    show_pip_counts: bool = True,
+    on_roll_marker: str = "black",
+) -> str:
     """Render a clean monochrome bgLog/Minstrels-inspired board diagram.
 
     Rows are normalized before rendering: positive checkers are the displayed
@@ -858,8 +863,13 @@ def render_board_svg(row: dict[str, Any], *, show_pip_counts: bool = True) -> st
             f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" fill="#000000" stroke="#000000" stroke-width="1"/>'
         )
 
-    # On-roll marker (black side is always shown at the bottom).
-    elements.append('<circle cx="660" cy="535" r="8.5" fill="#000000"/>')
+    # On-roll marker.  Checker/Double positions show the black near-side
+    # player on roll.  In the quiz Take Action view, the responder is shown
+    # as black near-side while the doubler (white/far-side) remains on roll.
+    if on_roll_marker == "white":
+        elements.append('<circle cx="660" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+    else:
+        elements.append('<circle cx="660" cy="535" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
@@ -957,7 +967,11 @@ def build() -> None:
                         "cubeOwner": row.get("quizCubeOwner", row["cubeOwner"]),
                     }
                 (DIST_DIR / quiz_board_relative).write_text(
-                    render_board_svg(quiz_render_row, show_pip_counts=False),
+                    render_board_svg(
+                        quiz_render_row,
+                        show_pip_counts=False,
+                        on_roll_marker="white" if row.get("decisionKind") == "take" else "black",
+                    ),
                     encoding="utf-8",
                 )
                 rows.append(row)
