@@ -582,11 +582,26 @@ function installSmartphoneZoomGuard() {
     if (smartphone.matches) event.preventDefault();
   };
 
-  ["gesturestart", "gesturechange", "gestureend"].forEach((type) => {
+  ["gesturestart", "gesturechange", "gestureend", "dblclick"].forEach((type) => {
     document.addEventListener(type, preventGesture, { passive: false });
   });
+
   document.addEventListener("touchmove", (event) => {
     if (smartphone.matches && event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+
+  let lastTouchEnd = 0;
+  let lastTouchTarget = null;
+  document.addEventListener("touchend", (event) => {
+    if (!smartphone.matches) return;
+
+    const now = Date.now();
+    const sameTarget = event.target === lastTouchTarget;
+    if (sameTarget && now - lastTouchEnd < 350) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+    lastTouchTarget = event.target;
   }, { passive: false });
 }
 
