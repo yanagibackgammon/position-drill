@@ -34,9 +34,11 @@ const elements = {
   positionWrong: document.getElementById("position-wrong"),
   answerButton: document.getElementById("answer-button"),
   answerPanel: document.getElementById("answer-panel"),
+  answerData: [...document.querySelectorAll("[data-answer-data]")],
   bestAnswer: document.getElementById("best-answer"),
   actionAnalysis: document.getElementById("action-analysis"),
   summaryAnalysis: document.getElementById("summary-analysis"),
+  judgeButtons: document.getElementById("judge-buttons"),
   correctButton: document.getElementById("correct-button"),
   wrongButton: document.getElementById("wrong-button"),
   judgedMessage: document.getElementById("judged-message"),
@@ -301,16 +303,33 @@ function updateCounts() {
   elements.challengeCount.textContent = String(currentKindPositions.filter(isChallenge).length);
 }
 
+function setAnswerDataVisible(visible) {
+  elements.answerData.forEach((element) => {
+    element.classList.toggle("is-concealed", !visible);
+    element.setAttribute("aria-hidden", visible ? "false" : "true");
+  });
+}
+
+function populateAnswerData() {
+  if (!state.current) return;
+  elements.bestAnswer.textContent = bestQuizAnswer(state.current);
+  elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
+  elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+  elements.sourceFile.textContent = state.current.sourceFile ? `Source: ${state.current.sourceFile}` : "";
+}
+
 function resetAnswerUI() {
   state.answered = false;
   state.judged = false;
-  elements.answerPanel.hidden = true;
+  elements.answerPanel.hidden = false;
   elements.answerButton.hidden = false;
+  elements.judgeButtons.hidden = true;
   elements.correctButton.disabled = false;
   elements.wrongButton.disabled = false;
   elements.judgedMessage.hidden = true;
   elements.judgedMessage.textContent = "";
   elements.nextButton.hidden = true;
+  setAnswerDataVisible(false);
 }
 
 function renderCurrent() {
@@ -333,6 +352,7 @@ function renderCurrent() {
   elements.board.src = absoluteBoardUrl(state.current);
   elements.board.alt = `${KIND_LABELS[state.currentKind]} quiz position`;
   updatePositionRecord();
+  populateAnswerData();
   resetAnswerUI();
 }
 
@@ -346,11 +366,8 @@ function showAnswer() {
   if (!state.current) return;
   state.answered = true;
   elements.answerButton.hidden = true;
-  elements.bestAnswer.textContent = bestQuizAnswer(state.current);
-  elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
-  elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
-  elements.sourceFile.textContent = state.current.sourceFile ? `Source: ${state.current.sourceFile}` : "";
-  elements.answerPanel.hidden = false;
+  elements.judgeButtons.hidden = false;
+  setAnswerDataVisible(true);
   elements.answerPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 

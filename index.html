@@ -23,14 +23,14 @@
   <main>
     <section class="controls" aria-label="Quiz settings">
       <div class="type-tabs" role="group" aria-label="Position type">
-        <button type="button" class="type-tab is-active" data-kind="checker">Checker Play <span class="type-count"><span data-count="checker">0</span> positions</span></button>
-        <button type="button" class="type-tab" data-kind="double">Double Action <span class="type-count"><span data-count="double">0</span> positions</span></button>
-        <button type="button" class="type-tab" data-kind="take">Take Action <span class="type-count"><span data-count="take">0</span> positions</span></button>
+        <button type="button" class="type-tab is-active" data-kind="checker">Checker Play <span class="type-count"><span data-count="checker">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="double">Double Action <span class="type-count"><span data-count="double">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="take">Take Action <span class="type-count"><span data-count="take">0</span></span></button>
       </div>
       <label class="challenge-toggle">
         <input id="challenge-only" type="checkbox">
         <span>Task</span>
-        <span class="type-count"><span id="challenge-count">0</span> positions</span>
+        <span class="type-count"><span id="challenge-count">0</span></span>
       </label>
     </section>
 
@@ -49,33 +49,31 @@
         </div>
 
         <div class="answer-column">
-          <button id="answer-button" class="primary-button answer-button" type="button">Answer</button>
-
-          <section id="answer-panel" class="answer-panel" hidden>
+          <section id="answer-panel" class="answer-panel">
             <div class="answer-heading">
               <span>Best Action</span>
-              <strong id="best-answer">—</strong>
+              <strong id="best-answer" class="answer-data" data-answer-data aria-hidden="true">—</strong>
             </div>
 
             <div class="analysis-section">
               <div class="analysis-title">Analysis</div>
-              <div class="analysis-grid">
+              <div class="analysis-grid answer-data" data-answer-data aria-hidden="true">
                 <div id="action-analysis" class="action-analysis"></div>
                 <div id="summary-analysis" class="summary-analysis"></div>
               </div>
             </div>
 
             <div class="judge-area">
-              <p class="judge-label">Your Result</p>
-              <div class="judge-buttons">
-                <button id="correct-button" class="judge-button correct-button" type="button">Correct</button>
-                <button id="wrong-button" class="judge-button wrong-button" type="button">Incorrect</button>
+              <button id="answer-button" class="primary-button answer-button" type="button">Answer</button>
+              <div id="judge-buttons" class="judge-buttons" hidden>
+                <button id="correct-button" class="judge-button correct-button" type="button" aria-label="Correct">○</button>
+                <button id="wrong-button" class="judge-button wrong-button" type="button" aria-label="Incorrect">×</button>
               </div>
               <p id="judged-message" class="judged-message" hidden></p>
+              <button id="next-button" class="primary-button next-button" type="button" hidden>Next</button>
             </div>
 
-            <button id="next-button" class="primary-button next-button" type="button" hidden>Next</button>
-            <div id="source-file" class="source-file"></div>
+            <div id="source-file" class="source-file answer-data" data-answer-data aria-hidden="true"></div>
           </section>
         </div>
       </div>

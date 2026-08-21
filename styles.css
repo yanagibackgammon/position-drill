@@ -12,6 +12,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html {
   background: var(--bg);
   touch-action: pan-x pan-y;
@@ -215,11 +216,19 @@ main {
 }
 .primary-button:hover { filter: brightness(1.08); }
 .primary-button:active { transform: translateY(1px); }
-.answer-button { margin-top: 2px; }
+.answer-button {
+  width: 100%;
+  margin: 0;
+}
 
 .answer-panel {
   border-top: 1px solid #394349;
   background: #151c20;
+}
+.answer-data.is-concealed {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
 }
 .answer-heading {
   padding: 15px 16px;
@@ -323,13 +332,26 @@ main {
   border: 1px solid #657077;
   background: #fff;
 }
+.win-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to right,
+    transparent calc(100% - 1px),
+    rgba(255, 255, 255, .24) calc(100% - 1px)
+  );
+  background-size: 10% 100%;
+}
 .win-black { height: 100%; background: #111; }
 .win-white { height: 100%; background: #eee; }
 .win-black-gammon,
 .win-white-gammon {
   position: absolute;
-  bottom: 0;
-  height: 6px;
+  top: 0;
+  height: 100%;
   background: var(--theme);
 }
 .win-black-gammon { left: 0; }
@@ -352,7 +374,8 @@ main {
   min-height: 46px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 24px;
+  line-height: 1;
   font-weight: 800;
 }
 .correct-button {
@@ -434,6 +457,7 @@ main {
   .answer-heading { padding: 13px 12px; }
   .answer-heading strong { font-size: 21px; }
   .primary-button { width: calc(100% - 16px); margin-left: 8px; margin-right: 8px; }
+  .answer-button { width: 100%; margin: 0; }
   .total-record { margin-bottom: 8px; }
 }
 
@@ -474,11 +498,6 @@ main {
     display: flex;
     flex-direction: column;
     background: #151c20;
-  }
-
-  .answer-button {
-    width: calc(100% - 32px);
-    margin: 16px;
   }
 
   .answer-panel {
