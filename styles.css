@@ -382,6 +382,8 @@ main {
   overflow-wrap: anywhere;
 }
 
+.empty-state[hidden] { display: none; }
+
 .empty-state {
   min-height: 270px;
   padding: 36px 20px;
