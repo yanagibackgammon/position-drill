@@ -38,8 +38,10 @@
       </div>
       <label class="challenge-toggle">
         <input id="challenge-only" type="checkbox">
-        <span>Task</span>
-        <span class="type-count"><span id="challenge-count">0</span></span>
+        <span class="challenge-copy">
+          <span class="challenge-label">Task</span>
+          <span class="type-count challenge-count"><span id="challenge-count">0</span></span>
+        </span>
       </label>
     </section>
 
@@ -82,8 +84,8 @@
 
     <div class="record-source-row">
       <section class="records-row" aria-label="Quiz records">
-        <div id="position-record" class="record-group" aria-label="This Position record">
-          <span class="record-label">This Position</span>
+        <div id="position-record" class="record-group" aria-label="Now record">
+          <span class="record-label">Now</span>
           <strong id="position-correct" class="record-number record-correct" aria-label="Correct">0</strong>
           <strong id="position-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
         </div>
@@ -91,6 +93,11 @@
           <span class="record-label">Total</span>
           <strong id="total-correct" class="record-number record-correct" aria-label="Correct">0</strong>
           <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
+        </div>
+        <div class="record-group" aria-label="Today record">
+          <span class="record-label">Today</span>
+          <strong id="today-correct" class="record-number record-correct" aria-label="Correct">0</strong>
+          <strong id="today-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
         </div>
       </section>
       <div id="source-file" class="source-file"></div>

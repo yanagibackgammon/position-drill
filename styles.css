@@ -1046,3 +1046,41 @@ main {
   .summary-analysis { padding-top: 7px; padding-bottom: 7px; }
   .record-source-row { margin-top: 2px; }
 }
+
+/* R28: Task count stack + larger smartphone checkbox + compact three-part record row. */
+.challenge-copy { display: contents; }
+
+@media (max-width: 760px) {
+  .challenge-toggle {
+    gap: 6px;
+  }
+  .challenge-toggle input {
+    width: 19px;
+    height: 19px;
+  }
+  .challenge-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    line-height: 1;
+  }
+  .challenge-label {
+    display: block;
+    line-height: 1;
+  }
+  .challenge-toggle .challenge-count {
+    display: block;
+    margin: 2px 0 0;
+    line-height: 1;
+  }
+
+  .records-row {
+    gap: 10px;
+  }
+  .record-group {
+    gap: 4px;
+  }
+}

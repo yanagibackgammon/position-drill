@@ -4,6 +4,7 @@ const POSITIONS_ROOT = "https://yanagibackgammon.github.io/positions/";
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
+const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 const KIND_LABELS = {
@@ -19,6 +20,8 @@ const state = {
   answered: false,
   pendingResult: null,
   progress: {},
+  daily: { day: "", correct: 0, wrong: 0 },
+  dailyResetTimer: null,
   dataVersion: "",
 };
 
@@ -44,6 +47,8 @@ const elements = {
   sourceFile: document.getElementById("source-file"),
   totalCorrect: document.getElementById("total-correct"),
   totalWrong: document.getElementById("total-wrong"),
+  todayCorrect: document.getElementById("today-correct"),
+  todayWrong: document.getElementById("today-wrong"),
 };
 
 function escapeHTML(value) {
@@ -311,6 +316,64 @@ function summaryAnalysisHTML(position) {
     </div>`;
 }
 
+function totalRecord() {
+  let correct = 0;
+  let wrong = 0;
+  Object.values(state.progress).forEach((raw) => {
+    correct += Math.max(0, Number(raw?.correct) || 0);
+    wrong += Math.max(0, Number(raw?.wrong) || 0);
+  });
+  return { correct, wrong };
+}
+
+function quizDayKey(date = new Date()) {
+  const shifted = new Date(date.getTime());
+  shifted.setHours(shifted.getHours() - 4);
+  const year = shifted.getFullYear();
+  const month = String(shifted.getMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function saveDaily() {
+  localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(state.daily));
+}
+
+function ensureDailyRecord({ seedFromTotal = false } = {}) {
+  const day = quizDayKey();
+  if (state.daily?.day === day) return false;
+
+  const isFirstSetup = !state.daily?.day;
+  const seed = isFirstSetup && seedFromTotal ? totalRecord() : { correct: 0, wrong: 0 };
+  state.daily = {
+    day,
+    correct: seed.correct,
+    wrong: seed.wrong,
+  };
+  saveDaily();
+  return true;
+}
+
+function updateToday() {
+  ensureDailyRecord();
+  elements.todayCorrect.textContent = String(Math.max(0, Number(state.daily.correct) || 0));
+  elements.todayWrong.textContent = String(Math.max(0, Number(state.daily.wrong) || 0));
+}
+
+function scheduleDailyReset() {
+  if (state.dailyResetTimer) window.clearTimeout(state.dailyResetTimer);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(4, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const delay = Math.max(1000, next.getTime() - now.getTime() + 100);
+  state.dailyResetTimer = window.setTimeout(() => {
+    ensureDailyRecord();
+    updateToday();
+    scheduleDailyReset();
+  }, delay);
+}
+
 function updatePositionRecord() {
   if (!state.current) return;
   const record = recordFor(state.current.id);
@@ -319,14 +382,10 @@ function updatePositionRecord() {
 }
 
 function updateTotals() {
-  let correct = 0;
-  let wrong = 0;
-  Object.values(state.progress).forEach((raw) => {
-    correct += Math.max(0, Number(raw?.correct) || 0);
-    wrong += Math.max(0, Number(raw?.wrong) || 0);
-  });
-  elements.totalCorrect.textContent = String(correct);
-  elements.totalWrong.textContent = String(wrong);
+  const total = totalRecord();
+  elements.totalCorrect.textContent = String(total.correct);
+  elements.totalWrong.textContent = String(total.wrong);
+  updateToday();
 }
 
 function updateCounts() {
@@ -401,6 +460,11 @@ function commitPendingResult() {
   else record.wrong += 1;
   state.progress[state.current.id] = record;
   saveProgress();
+
+  ensureDailyRecord();
+  if (state.pendingResult === "correct") state.daily.correct += 1;
+  else state.daily.wrong += 1;
+  saveDaily();
 }
 
 function selectNext() {
@@ -486,11 +550,14 @@ async function refreshPositionsSilently() {
 
 async function start() {
   state.progress = loadJSON(STORAGE_KEY, {});
+  state.daily = loadJSON(DAILY_STORAGE_KEY, { day: "", correct: 0, wrong: 0 });
+  ensureDailyRecord({ seedFromTotal: true });
   const settings = loadJSON(SETTINGS_KEY, {});
   if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
   elements.challengeOnly.checked = Boolean(settings.challengeOnly);
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind));
   installEvents();
+  scheduleDailyReset();
 
   try {
     await syncPositions({ initial: true });
@@ -503,7 +570,11 @@ async function start() {
 
   window.setInterval(refreshPositionsSilently, SYNC_INTERVAL_MS);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshPositionsSilently();
+    if (!document.hidden) {
+      if (ensureDailyRecord()) updateToday();
+      scheduleDailyReset();
+      refreshPositionsSilently();
+    }
   });
 }
 
