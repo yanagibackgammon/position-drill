@@ -173,6 +173,28 @@ function statLine(label, value, extraClass = "") {
   return `<div class="stat-line ${extraClass}"><span class="stat-label">${escapeHTML(label)}</span><span class="stat-value">${value}</span></div>`;
 }
 
+function pipDisplayValues(pips) {
+  const black = Number(pips?.black);
+  const white = Number(pips?.white);
+  const values = {
+    black: Number.isFinite(black) ? String(black) : "—",
+    white: Number.isFinite(white) ? String(white) : "—",
+  };
+
+  if (!Number.isFinite(black) || !Number.isFinite(white) || black <= 0 || white <= 0 || black === white) {
+    return values;
+  }
+
+  const lower = Math.min(black, white);
+  const higher = Math.max(black, white);
+  const differencePercent = ((higher / lower) - 1) * 100;
+  const suffix = ` (${differencePercent.toFixed(1)}%)`;
+
+  if (black < white) values.black += suffix;
+  if (white < black) values.white += suffix;
+  return values;
+}
+
 function actionAnalysisHTML(position) {
   if (position.decisionType === "cube") {
     const outcomes = (Array.isArray(position.candidates) ? position.candidates : [])
@@ -224,6 +246,7 @@ function actionAnalysisHTML(position) {
 
 function summaryAnalysisHTML(position) {
   const pips = pipCounts(position);
+  const pipDisplay = pipDisplayValues(pips);
   const matchLength = Number(position.matchLength) || 0;
   const playerAway = Math.max(0, matchLength - Number(position.playerScore || 0));
   const opponentAway = Math.max(0, matchLength - Number(position.opponentScore || 0));
@@ -244,13 +267,13 @@ function summaryAnalysisHTML(position) {
       </div>
       <div class="summary-side">
         ${statLine("BK", `${escapeHTML(position.playerScore)} (${escapeHTML(awayText(position, playerAway))})`)}
-        ${statLine("PIP", escapeHTML(pips.black))}
+        ${statLine("PIP", escapeHTML(pipDisplay.black))}
         ${statLine("W", escapeHTML(formatPercent(position.winRate)))}
         ${statLine("GW", escapeHTML(formatPercent(position.gammonWinRate)))}
       </div>
       <div class="summary-side">
         ${statLine("WH", `${escapeHTML(position.opponentScore)} (${escapeHTML(awayText(position, opponentAway))})`)}
-        ${statLine("PIP", escapeHTML(pips.white))}
+        ${statLine("PIP", escapeHTML(pipDisplay.white))}
         ${statLine("W", escapeHTML(formatPercent(position.loseRate)))}
         ${statLine("GW", escapeHTML(formatPercent(position.gammonLoseRate)))}
       </div>
