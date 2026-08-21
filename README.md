@@ -1,48 +1,50 @@
-# Backgammon Position Quiz
+# Position Quiz
 
-`yanagibackgammon/positions` が公開する解析済みポジションデータを利用する、GitHub Pages向けの静的クイズです。
+A static GitHub Pages quiz that uses analyzed backgammon position data published by `yanagibackgammon/positions`.
 
-## データ連携
+## Data source
 
-クイズ本体は以下を毎回直接読み込みます。
+The quiz loads the following resources directly from the `positions` site:
 
 - `https://yanagibackgammon.github.io/positions/data/positions.json`
-- `positions.json` の `quizBoardImage` が指すPIP非表示の盤面SVG
+- The no-PIP board SVG specified by `quizBoardImage` in `positions.json`
 
-そのため `positions` 側へ棋譜を追加して正常にデプロイされれば、`quiz` 側を再ビルドしなくても新しいポジションが出題対象へ加わります。
+When a game file is added or updated in `positions` and its deployment completes successfully, the new or updated position becomes available in `quiz` without rebuilding or redeploying the quiz repository.
 
-## 出題種別
+## Position types
 
 - Checker Play
 - Double Action
 - Take Action
 
-`positions.json` の `decisionKind` (`checker` / `double` / `take`) を使って分類します。
+Positions are classified using `decisionKind` (`checker` / `double` / `take`) in `positions.json`.
 
-## 学習履歴
+## Progress tracking
 
-ブラウザの `localStorage` にポジションID単位で次を保存します。
+The browser stores the following counts for each position ID in `localStorage`:
 
-- 正解回数
-- 不正解回数
+- Correct answers
+- Incorrect answers
 
-「課題」は次のいずれかに該当するポジションです。
+A position is treated as a **Task** when either of the following is true:
 
-- 正解回数が0回
-- 正解回数 < 不正解回数
+- Correct count is 0
+- Correct count is lower than incorrect count
 
-履歴は端末・ブラウザごとに保存されます。
+Progress is stored separately for each device and browser.
 
-## GitHub Pages
+## Deployment
 
-`main` ブランチへのpushで `.github/workflows/deploy.yml` が実行されます。GitHub側の Pages Source は **GitHub Actions** を選択してください。
+Pushing to the `main` branch runs `.github/workflows/deploy.yml`. In the GitHub repository settings, set Pages Source to **GitHub Actions**.
 
-## positions との自動同期
+## Automatic synchronization with positions
 
-quiz は `https://yanagibackgammon.github.io/positions/data/positions.json` を直接参照します。
-positions 側で main ブランチへファイルを追加・更新すると既存の GitHub Actions が全局面を再ビルドして Pages を更新します。quiz 側の再デプロイは不要です。
+The quiz directly references `https://yanagibackgammon.github.io/positions/data/positions.json`.
+When files are added or updated on the `main` branch of `positions`, its existing GitHub Actions workflow rebuilds all positions and updates GitHub Pages. No redeployment of `quiz` is required.
 
-- ページ表示時に必ず最新版を取得
-- ページを開いたままの場合も5分ごとに更新確認
-- 別タブから戻ったときにも更新確認
-- `generatedAt` を盤面SVGのバージョンとして付与し、同じ局面IDの盤面が更新された場合もブラウザキャッシュを回避
+The quiz also:
+
+- Fetches the latest position data whenever the page opens
+- Checks for updates every 5 minutes while the page remains open
+- Checks again when the browser tab becomes active
+- Uses `generatedAt` as a board SVG version parameter so an updated board with the same position ID bypasses stale browser cache

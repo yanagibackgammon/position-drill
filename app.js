@@ -29,8 +29,6 @@ const elements = {
   counts: [...document.querySelectorAll("[data-count]")],
   challengeOnly: document.getElementById("challenge-only"),
   challengeCount: document.getElementById("challenge-count"),
-  questionType: document.getElementById("question-type"),
-  positionProgress: document.getElementById("position-progress"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -317,7 +315,6 @@ function resetAnswerUI() {
 
 function renderCurrent() {
   const pool = activePool();
-  elements.positionProgress.textContent = `${pool.length} positions`;
   updateCounts();
   updateTotals();
 
@@ -333,9 +330,8 @@ function renderCurrent() {
 
   elements.card.hidden = false;
   elements.empty.hidden = true;
-  elements.questionType.textContent = KIND_LABELS[state.currentKind];
   elements.board.src = absoluteBoardUrl(state.current);
-  elements.board.alt = `${KIND_LABELS[state.currentKind]} のクイズ局面`;
+  elements.board.alt = `${KIND_LABELS[state.currentKind]} quiz position`;
   updatePositionRecord();
   resetAnswerUI();
 }
@@ -371,8 +367,8 @@ function judge(result) {
   elements.wrongButton.disabled = true;
   elements.judgedMessage.hidden = false;
   elements.judgedMessage.textContent = result === "correct"
-    ? "正解として記録しました。"
-    : "不正解として記録しました。";
+    ? "Recorded as correct."
+    : "Recorded as incorrect.";
   elements.nextButton.hidden = false;
   updatePositionRecord();
   updateCounts();
@@ -447,7 +443,7 @@ async function start() {
     console.error(error);
     elements.card.hidden = true;
     elements.empty.hidden = false;
-    elements.empty.innerHTML = "<strong>positions のデータを読み込めませんでした。</strong><span>positions 側のGitHub Pages公開とビルド結果を確認してください。</span>";
+    elements.empty.innerHTML = "<strong>Unable to load position data.</strong><span>Check the GitHub Pages deployment and build status for the positions repository.</span>";
   }
 
   window.setInterval(refreshPositionsSilently, SYNC_INTERVAL_MS);
