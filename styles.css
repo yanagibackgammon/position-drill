@@ -20,7 +20,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html {
-  background: var(--bg);
+  background: var(--black);
   touch-action: pan-x pan-y;
   overscroll-behavior-y: none;
   -webkit-text-size-adjust: 100%;
@@ -28,7 +28,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  color: var(--text);
+  color: var(--white);
   background: var(--black);
   font-family: Inter, "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
 }
@@ -638,37 +638,46 @@ main {
 @media (max-width: 760px) {
   .page-header {
     min-height: 53px;
-    padding: 7px 10px;
+    padding: 7px clamp(6px, 2.8vw, 10px);
   }
   .title-group {
     width: 100%;
+    min-width: 0;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 10px;
+    gap: clamp(4px, 2vw, 10px);
   }
   h1 {
     flex: 0 1 auto;
-    font-size: var(--title-mobile);
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(24px, 8.6vw, var(--title-mobile));
     transform: translateY(3px);
   }
   .creator {
     position: static;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
     gap: 1px;
-    color: var(--muted);
-    font-size: var(--font-xs);
+    color: var(--white);
+    font-size: clamp(9px, 3.06vw, var(--font-xs));
     line-height: 1.05;
     text-align: left;
     transform: translateY(3px);
   }
+  .creator-prefix,
+  .creator-name {
+    max-width: 100%;
+    white-space: nowrap;
+  }
   .creator-name {
     color: var(--white);
-    font-size: var(--font-xs);
+    font-size: inherit;
     font-weight: 700;
   }
 
@@ -732,7 +741,7 @@ main {
 @media (max-width: 760px) {
   /* Keep the header height unchanged; match the desktop creator typography. */
   .creator {
-    color: var(--muted);
+    color: var(--white);
     font-size: var(--font-xs);
     font-weight: 600;
     line-height: 1.02;
