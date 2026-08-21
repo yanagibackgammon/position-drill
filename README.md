@@ -1,15 +1,19 @@
-# Position Quiz
+# Position Drill
 
-A static GitHub Pages quiz that uses analyzed backgammon position data published by `yanagibackgammon/positions`.
+A static GitHub Pages app for drilling backgammon checker-play and cube-decision errors from Extreme Gammon (`.xg` / `.xgp`) files.
 
-## Data source
+## Repository structure
 
-The quiz loads the following resources directly from the `positions` site:
+Position Drill is self-contained in this repository. Source game files, the XG parser, generated data, board SVGs, and the web UI are all built and deployed together.
 
-- `https://yanagibackgammon.github.io/positions/data/positions.json`
-- The no-PIP board SVG specified by `quizBoardImage` in `positions.json`
+- `imports/` — source XG/XGP files
+- `scripts/build.py` — builds position data and board SVGs
+- `vendor/xgread/` — bundled XG reader
+- `config.json` — build thresholds and display metadata
+- `index.html`, `app.js`, `styles.css` — web UI
+- `.github/workflows/deploy.yml` — GitHub Pages build/deploy workflow
 
-When a game file is added or updated in `positions` and its deployment completes successfully, the new or updated position becomes available in `quiz` without rebuilding or redeploying the quiz repository.
+The generated `dist/` directory is a build artifact and is not the source of truth.
 
 ## Position types
 
@@ -17,34 +21,34 @@ When a game file is added or updated in `positions` and its deployment completes
 - Double Action
 - Take Action
 
-Positions are classified using `decisionKind` (`checker` / `double` / `take`) in `positions.json`.
+The player shown on the bottom side in the source XG file is treated as the drill owner.
 
-## Progress tracking
+## Task mode and progress
 
-The browser stores the following counts for each position ID in `localStorage`:
-
-- Correct answers
-- Incorrect answers
-
-A position is treated as a **Task** when either of the following is true:
+Progress is stored in browser `localStorage` for each position ID. A position is included in **Task** mode when either condition is true:
 
 - Correct count is 0
 - Correct count is lower than incorrect count
 
-Progress is stored separately for each device and browser.
+Progress is local to each browser/device. Existing storage keys are intentionally kept stable so updates do not erase progress.
 
-## Deployment
+## Build and deployment
 
-Pushing to the `main` branch runs `.github/workflows/deploy.yml`. In the GitHub repository settings, set Pages Source to **GitHub Actions**.
+Pushing to `main` runs `.github/workflows/deploy.yml`:
 
-## Automatic synchronization with positions
+1. Check out the repository
+2. Run `python scripts/build.py`
+3. Upload `dist/` as the GitHub Pages artifact
+4. Deploy to GitHub Pages
 
-The quiz directly references `https://yanagibackgammon.github.io/positions/data/positions.json`.
-When files are added or updated on the `main` branch of `positions`, its existing GitHub Actions workflow rebuilds all positions and updates GitHub Pages. No redeployment of `quiz` is required.
+The app fetches `data/positions.json` from its own Pages deployment, checks for updates every five minutes while open, and checks again when the tab becomes active.
 
-The quiz also:
+## Local checks
 
-- Fetches the latest position data whenever the page opens
-- Checks for updates every 5 minutes while the page remains open
-- Checks again when the browser tab becomes active
-- Uses `generatedAt` as a board SVG version parameter so an updated board with the same position ID bypasses stale browser cache
+Before deploying code changes, the main syntax/build checks are:
+
+```bash
+node --check app.js
+python -m py_compile scripts/build.py
+python scripts/build.py
+```

@@ -1,5 +1,5 @@
 {
-  "databaseTitle": "Backgammon Positions",
+  "databaseTitle": "Position Drill",
   "errorThreshold": 0.02,
   "blunderThreshold": 0.08,
   "includeCheckerErrors": true,

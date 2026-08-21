@@ -31,7 +31,7 @@ CONFIG_PATH = ROOT / "config.json"
 
 def load_config() -> dict[str, Any]:
     defaults: dict[str, Any] = {
-        "databaseTitle": "Backgammon Error Positions",
+        "databaseTitle": "Position Drill",
         "errorThreshold": 0.02,
         "blunderThreshold": 0.08,
         "includeCheckerErrors": True,
@@ -699,7 +699,7 @@ def render_board_svg(
         return origin + col * point_w
 
     # Top points: 13-18 on the left, 19-24 on the right.
-    for half, origin_right in ((False, False), (True, True)):
+    for origin_right in (False, True):
         for col in range(6):
             x = point_x(col, origin_right)
             fill = "#cfcfcf" if col % 2 == 1 else "#ffffff"
@@ -709,7 +709,7 @@ def render_board_svg(
             )
 
     # Bottom points: 12-7 on the left, 6-1 on the right.
-    for half, origin_right in ((False, False), (True, True)):
+    for origin_right in (False, True):
         for col in range(6):
             x = point_x(col, origin_right)
             fill = "#cfcfcf" if col % 2 == 0 else "#ffffff"

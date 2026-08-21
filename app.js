@@ -37,7 +37,6 @@ const elements = {
   positionWrong: document.getElementById("position-wrong"),
   answerButton: document.getElementById("answer-button"),
   answerPanel: document.getElementById("answer-panel"),
-  answerData: [...document.querySelectorAll("[data-answer-data]")],
   actionAnalysis: document.getElementById("action-analysis"),
   summaryAnalysis: document.getElementById("summary-analysis"),
   judgeButtons: document.getElementById("judge-buttons"),
@@ -476,13 +475,6 @@ function updateCounts() {
   elements.challengeCount.textContent = String(currentKindPositions.filter(isChallenge).length);
 }
 
-function setAnswerDataVisible(visible) {
-  elements.answerData.forEach((element) => {
-    element.classList.toggle("is-concealed", !visible);
-    element.setAttribute("aria-hidden", visible ? "false" : "true");
-  });
-}
-
 function populateAnswerData() {
   if (!state.current) return;
   elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
@@ -510,7 +502,6 @@ function resetAnswerUI() {
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
   resetSummaryTextScroll();
-  setAnswerDataVisible(false);
 }
 
 function renderCurrent() {
@@ -570,7 +561,6 @@ function showAnswer() {
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
-  setAnswerDataVisible(true);
   elements.answerPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
