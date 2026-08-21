@@ -5,10 +5,10 @@
   --panel: #000000;
   --panel-2: #000000;
   --line: #303A40;
-  --text: #F3EFE6;
-  --muted: #AEB7BC;
+  --text: #FFFFFF;
+  --muted: #CFCFCF;
   --good: #7ec797;
-  --bad: #e38a8a;
+  --bad: #E38A8A;
 }
 
 * { box-sizing: border-box; }
@@ -170,7 +170,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 28px;
-  color: #899399;
+  color: #CFCFCF;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -180,7 +180,7 @@ main {
   gap: 9px;
   white-space: nowrap;
 }
-.record-label { color: #899399; }
+.record-label { color: #CFCFCF; }
 .record-number {
   font-size: 15px;
   font-weight: 800;
@@ -269,7 +269,7 @@ main {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.action-error.error-warning { color: #ff6b6b; }
+.action-error.error-warning { color: #E38A8A; }
 .action-error.error-severe { color: #d58cff; }
 .best-marker {
   color: var(--theme);
@@ -293,7 +293,7 @@ main {
   position: relative;
   height: 19px;
   margin-top: 10px;
-  color: #899399;
+  color: #CFCFCF;
   font-size: 11px;
 }
 .win-scale > span { position: absolute; transform: translateX(-50%); bottom: 1px; }
@@ -317,7 +317,7 @@ main {
     linear-gradient(#657077, #657077) 20% 0 / 1px 100% no-repeat,
     linear-gradient(#657077, #657077) 30% 0 / 1px 100% no-repeat,
     linear-gradient(#657077, #657077) 40% 0 / 1px 100% no-repeat,
-    linear-gradient(#AEB7BC, #AEB7BC) 50% 0 / 2px 100% no-repeat,
+    linear-gradient(#CFCFCF, #CFCFCF) 50% 0 / 2px 100% no-repeat,
     linear-gradient(#657077, #657077) 60% 0 / 1px 100% no-repeat,
     linear-gradient(#657077, #657077) 70% 0 / 1px 100% no-repeat,
     linear-gradient(#657077, #657077) 80% 0 / 1px 100% no-repeat,
@@ -408,7 +408,7 @@ main {
   min-height: 16px;
   margin-top: 4px;
   padding: 0 8px;
-  color: #899399;
+  color: #CFCFCF;
   font-size: 11px;
   text-align: center;
   overflow-wrap: anywhere;
