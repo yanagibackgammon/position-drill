@@ -71,8 +71,8 @@ h1 {
 }
 .creator:hover { color: var(--theme); }
 .creator-prefix,
-.creator-name { display: inline; }
-.creator-prefix::after { content: " "; }
+.creator-name { display: block; }
+.creator-prefix::after { content: none; }
 
 main {
   width: min(920px, calc(100% - 24px));
@@ -390,14 +390,14 @@ main {
   transition: filter .12s ease, box-shadow .12s ease, transform .12s ease;
 }
 .correct-button {
-  border: 1px solid #4f9567;
-  color: #ddf5e5;
-  background: #244d32;
+  border: 1px solid var(--good);
+  color: #0c1013;
+  background: var(--good);
 }
 .wrong-button {
-  border: 1px solid #a75a5a;
-  color: #ffe3e3;
-  background: #552a2a;
+  border: 1px solid var(--bad);
+  color: #0c1013;
+  background: var(--bad);
 }
 .next-button {
   grid-column: 1;
