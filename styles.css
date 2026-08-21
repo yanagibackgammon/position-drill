@@ -1257,3 +1257,23 @@ main {
   pointer-events: none;
   z-index: 2;
 }
+
+
+/* Smartphone: align Checker / Double / Take label + count vertically with Task. */
+@media (max-width: 760px) {
+  .type-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    line-height: 1;
+  }
+  .type-tab .type-label-short {
+    line-height: 1;
+  }
+  .type-tab .type-count {
+    margin: 2px 0 0;
+    line-height: 1;
+  }
+}
