@@ -654,11 +654,11 @@ def render_board_svg(
     board_top, board_bottom = 28, 518
     top_label_y, bottom_label_y = 18, 540
 
-    left_tray_x1, left_tray_x2 = 11, 59
-    left_board_x1, left_board_x2 = 60, 327
-    bar_x1, bar_x2 = 328, 375
-    right_board_x1, right_board_x2 = 376, 645
-    right_tray_x1, right_tray_x2 = 646, 692
+    left_tray_x1, left_tray_x2 = 8.5, 56.5
+    left_board_x1, left_board_x2 = 57.5, 324.5
+    bar_x1, bar_x2 = 325.5, 372.5
+    right_board_x1, right_board_x2 = 373.5, 642.5
+    right_tray_x1, right_tray_x2 = 643.5, 689.5
 
     top_tip_y = 251
     bottom_tip_y = 294
@@ -843,7 +843,7 @@ def render_board_svg(
     if row["diceValues"]:
         die_size = 36
         die_gap = 10
-        start_x = 471
+        start_x = 468.5
         die_y = 254
         pip_map = {
             1: [(18, 18)],
@@ -881,9 +881,9 @@ def render_board_svg(
     # player on roll.  In the quiz Take Action view, the responder is shown
     # as black near-side while the doubler (white/far-side) remains on roll.
     if on_roll_marker == "white":
-        elements.append('<circle cx="668" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+        elements.append('<circle cx="665.5" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
     else:
-        elements.append('<circle cx="668" cy="535" r="8.5" fill="#000000"/>')
+        elements.append('<circle cx="665.5" cy="535" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
