@@ -650,15 +650,15 @@ def render_board_svg(
     Rows are normalized before rendering: positive checkers are the displayed
     black side and negative checkers are the displayed white side.
     """
-    width, height = 698, 546
+    width, height = 702, 546
     board_top, board_bottom = 28, 518
     top_label_y, bottom_label_y = 18, 540
 
-    left_tray_x1, left_tray_x2 = 8.5, 56.5
-    left_board_x1, left_board_x2 = 57.5, 324.5
-    bar_x1, bar_x2 = 325.5, 372.5
-    right_board_x1, right_board_x2 = 373.5, 642.5
-    right_tray_x1, right_tray_x2 = 643.5, 689.5
+    left_tray_x1, left_tray_x2 = 10.5, 58.5
+    left_board_x1, left_board_x2 = 59.5, 326.5
+    bar_x1, bar_x2 = 327.5, 374.5
+    right_board_x1, right_board_x2 = 375.5, 644.5
+    right_tray_x1, right_tray_x2 = 645.5, 691.5
 
     top_tip_y = 251
     bottom_tip_y = 294
@@ -688,7 +688,7 @@ def render_board_svg(
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="Backgammon position {svg_text(row["id"])}">',
         f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
         '<g stroke="#000000" stroke-linejoin="round">',
-        f'<rect x="9" y="{board_top}" width="680" height="{board_bottom-board_top}" fill="#ffffff" stroke-width="4"/>',
+        f'<rect x="11" y="{board_top}" width="680" height="{board_bottom-board_top}" fill="#ffffff" stroke-width="4"/>',
         f'<line x1="{left_tray_x2}" y1="{board_top}" x2="{left_tray_x2}" y2="{board_bottom}" stroke-width="4"/>',
         f'<line x1="{left_board_x2}" y1="{board_top}" x2="{left_board_x2}" y2="{board_bottom}" stroke-width="4"/>',
         f'<line x1="{bar_x2}" y1="{board_top}" x2="{bar_x2}" y2="{board_bottom}" stroke-width="4"/>',
@@ -843,7 +843,7 @@ def render_board_svg(
     if row["diceValues"]:
         die_size = 36
         die_gap = 10
-        start_x = 468.5
+        start_x = 470.5
         die_y = 254
         pip_map = {
             1: [(18, 18)],
@@ -881,9 +881,9 @@ def render_board_svg(
     # player on roll.  In the quiz Take Action view, the responder is shown
     # as black near-side while the doubler (white/far-side) remains on roll.
     if on_roll_marker == "white":
-        elements.append('<circle cx="665.5" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+        elements.append('<circle cx="667.5" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
     else:
-        elements.append('<circle cx="665.5" cy="535" r="8.5" fill="#000000"/>')
+        elements.append('<circle cx="667.5" cy="535" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
