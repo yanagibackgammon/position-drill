@@ -86,7 +86,7 @@ main {
 .controls {
   margin-bottom: 12px;
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
   gap: 10px;
   align-items: stretch;
 }
@@ -529,9 +529,9 @@ main {
 .record-source-row { min-width: 0; }
 
 @media (max-width: 760px) {
-  /* Two menu frames. Cell widths are 1:1:1 | 1:1 on smartphone. */
+  /* Two menu frames. Cell widths are 3:3:3 | 2:2 on smartphone. */
   .controls {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
     gap: 6px;
     align-items: stretch;
   }
@@ -667,9 +667,9 @@ main {
     font-weight: 700;
   }
 
-  /* All five menu cells are equal width on smartphone. */
+  /* Decision cells are 3 units each; filter cells are 2 units each on smartphone. */
   .controls {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
     gap: 6px;
   }
   .type-tabs {
@@ -820,14 +820,14 @@ main {
     overflow: hidden;
   }
 
-  /* Two menu frames: 1:1:1 | 1:1 cell widths on smartphone. */
+  /* Two menu frames: 3:3:3 | 2:2 cell widths on smartphone. */
   .controls {
     flex: 0 0 44px;
     width: calc(100% - 16px);
     height: 44px;
     min-height: 44px;
     margin: 0 8px 6px;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
     gap: 6px;
   }
   .type-tabs,
