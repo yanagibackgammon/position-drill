@@ -30,78 +30,66 @@ def _point_name(point: int) -> str:
     return str(point + 1)
 
 
-def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
-    """Render *moves* played from *position* as standard notation.
+def _apply_moves(
+    moves: tuple[MoveDetail, ...],
+    position: Position,
+) -> tuple[tuple[int, ...], list[tuple[int, int, bool]]]:
+    """Apply XG's stored move segments in their recorded order.
 
-    ``position`` is the board *before* the move (on-roll player's POV), used to
-    detect hits and to chain hops of the same checker. Returns ``"Cannot Move"``
-    for a dance (empty move set).
+    Returns the resulting board plus ``(from, to, hit)`` metadata for each
+    stored segment.  XG already stores the segmentation it wants to display;
+    do not merge adjacent segments here.
+    """
+    board = list(position.points)
+    rendered: list[tuple[int, int, bool]] = []
+
+    for move in moves:
+        from_0 = move.from_point
+        to_0 = move.die
+
+        src = from_0 + 1
+        if 1 <= src <= 25:
+            board[src] -= 1
+
+        hit = False
+        if to_0 >= 0:
+            dst = to_0 + 1
+            if 1 <= dst <= 24:
+                hit = board[dst] == -1
+                if hit:
+                    board[dst] = 1
+                    board[0] -= 1
+                else:
+                    board[dst] += 1
+
+        rendered.append((from_0, to_0, hit))
+
+    return tuple(board), rendered
+
+
+def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
+    """Render *moves* using XG's stored segmentation and ordering conventions.
+
+    XG stores the checker-move segments themselves.  We preserve those segments,
+    determine hits in the recorded play order, then display them in descending
+    point order (Bar first, then higher points to lower points).  Identical
+    segments are compacted later by the consumer as ``(2)``, ``(3)``, etc.
+
+    Returns ``"Cannot Move"`` for a dance.
     """
     if not moves:
         return "Cannot Move"
 
-    # Working copy of the board (index 0=opp bar, 1-24=points, 25=player bar).
-    board = list(position.points)
+    _, rendered = _apply_moves(moves, position)
 
-    def board_at(point_0: int) -> int:
-        """Board value at a 0-based point index (0 outside the 1-24 range)."""
-        if point_0 < 0 or point_0 >= 24:
-            return 0
-        return board[point_0 + 1]
+    # XG display order: source point descending; for the same source, the higher
+    # destination first.  Python's numeric point 24 represents Bar.
+    rendered.sort(key=lambda item: (-item[0], -item[1]))
 
-    def apply_move(from_0: int, to_0: int) -> bool:
-        """Move one checker; return True if it hit an opponent blot."""
-        src = from_0 + 1  # player bar (from_0=24) -> board[25]; regular -> from_0+1
-        if 1 <= src <= 25:
-            board[src] -= 1
-        if to_0 < 0:
-            return False  # bearing off — no destination slot to update
-        dst = to_0 + 1
-        if not (1 <= dst <= 24):
-            return False
-        hit = board[dst] == -1
-        if hit:
-            board[dst] = 1
-            board[0] -= 1  # send the opponent checker to their bar
-        else:
-            board[dst] += 1
-        return hit
-
-    # (from_point, destination) pairs, high point first.
-    move_list = sorted(((md.from_point, md.die) for md in moves), key=lambda x: -x[0])
-    n = len(move_list)
-    parts: list[tuple[int, str]] = []
-    i = 0
-
-    while i < n:
-        chain_from = move_list[i][0]
-        cur_to = move_list[i][1]
-
-        # Extend the chain: follow the same checker through further hops. Moves may
-        # be stored out of order (XG records physical play order), so scan ahead for
-        # the continuation and swap it into place. Stop at an intermediate hit.
-        while cur_to >= 0 and board_at(cur_to) != -1:
-            j = next((k for k in range(i + 1, n) if move_list[k][0] == cur_to), None)
-            if j is None:
-                break
-            move_list[i + 1], move_list[j] = move_list[j], move_list[i + 1]
-            apply_move(move_list[i][0], cur_to)
-            i += 1
-            cur_to = move_list[i][1]
-
-        # Apply the final (or only) segment; detect a hit at the destination.
-        hit = cur_to >= 0 and board_at(cur_to) == -1
-        apply_move(move_list[i][0], cur_to)
-
-        parts.append(
-            (chain_from, f"{_point_name(chain_from)}/{_point_name(cur_to)}{'*' if hit else ''}")
-        )
-        i += 1
-
-    # Canonical ordering: by from-point descending, so equivalent move sets
-    # (same checkers, different storage order) render identically.
-    parts.sort(key=lambda x: (-x[0], x[1]))
-    return " ".join(segment for _, segment in parts)
+    return " ".join(
+        f"{_point_name(from_0)}/{_point_name(to_0)}{'*' if hit else ''}"
+        for from_0, to_0, hit in rendered
+    )
 
 
 def played_candidate_index(
@@ -120,8 +108,10 @@ def played_candidate_index(
     """
     if not candidates:
         return None
-    target = format_moves(played, position)
+
+    target_position, _ = _apply_moves(played, position)
     for i, candidate in enumerate(candidates):
-        if format_moves(candidate.moves, position) == target:
+        candidate_position, _ = _apply_moves(candidate.moves, position)
+        if candidate_position == target_position:
             return i
     return None
