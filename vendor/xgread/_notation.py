@@ -67,13 +67,62 @@ def _apply_moves(
     return tuple(board), rendered
 
 
-def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
-    """Render *moves* using XG's stored segmentation and ordering conventions.
+def _single_checker_chain(
+    rendered: list[tuple[int, int, bool]],
+) -> list[tuple[int, int, bool]] | None:
+    """Return the ordered path when every stored hop belongs to one checker.
 
-    XG stores the checker-move segments themselves.  We preserve those segments,
-    determine hits in the recorded play order, then display them in descending
-    point order (Bar first, then higher points to lower points).  Identical
-    segments are compacted later by the consumer as ``(2)``, ``(3)``, etc.
+    XG collapses a move such as ``12/10 10/6`` to ``12/6``.  We only do this
+    when the *entire* move is one continuous checker path.  This is important
+    for doubles: if several checkers move, segments such as ``6/4 4/2`` must
+    remain separate so that XG-style multiplicities can be shown correctly.
+
+    A hit ends one display segment because the hit point itself must remain
+    visible (e.g. ``13/12* 12/7`` rather than hiding the intermediate hit).
+    """
+    if len(rendered) < 2:
+        return None
+
+    # XG stores physical play order.  A one-checker move is therefore a single
+    # continuous path: each destination is the next segment's source.
+    if any(
+        rendered[index][1] < 0 or rendered[index][1] != rendered[index + 1][0]
+        for index in range(len(rendered) - 1)
+    ):
+        return None
+
+    return rendered
+
+
+def _format_single_checker_chain(
+    chain: list[tuple[int, int, bool]],
+) -> str:
+    """Collapse a one-checker path, preserving intermediate hit points."""
+    parts: list[str] = []
+    segment_from = chain[0][0]
+
+    for index, (_, to_0, hit) in enumerate(chain):
+        is_last = index == len(chain) - 1
+        if hit or is_last:
+            parts.append(
+                f"{_point_name(segment_from)}/{_point_name(to_0)}{'*' if hit else ''}"
+            )
+            if not is_last:
+                segment_from = to_0
+
+    return " ".join(parts)
+
+
+def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
+    """Render *moves* using XG-style checker notation.
+
+    Rules used here:
+    * a move made by one checker only is collapsed (``12/10 10/6`` -> ``12/6``);
+    * an intermediate hit remains visible;
+    * when multiple checkers move, stored segments stay separate;
+    * multi-checker segments are displayed by source point descending;
+    * identical segments are compacted later by the consumer as ``(2)``,
+      ``(3)``, etc.
 
     Returns ``"Cannot Move"`` for a dance.
     """
@@ -82,8 +131,12 @@ def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
 
     _, rendered = _apply_moves(moves, position)
 
-    # XG display order: source point descending; for the same source, the higher
-    # destination first.  Python's numeric point 24 represents Bar.
+    single_chain = _single_checker_chain(rendered)
+    if single_chain is not None:
+        return _format_single_checker_chain(single_chain)
+
+    # XG display order for multi-checker moves: source point descending; for the
+    # same source, the higher destination first.  Point 24 represents Bar.
     rendered.sort(key=lambda item: (-item[0], -item[1]))
 
     return " ".join(
