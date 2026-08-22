@@ -733,11 +733,24 @@ function updateCounts() {
   elements.challengeCount.textContent = String(currentKindPositions.filter(isChallenge).length);
 }
 
+function sourceFileLabel(position) {
+  const source = position?.sourceFile || "";
+  if (!source) return "";
+
+  const matchLength = Number(position.matchLength) || 0;
+  const gameNumber = Number(position.gameNumber) || 0;
+  const isPointMatch = matchLength > 0 && matchLength < 99999;
+
+  return isPointMatch && gameNumber > 0
+    ? `${source} Game${gameNumber}`
+    : source;
+}
+
 function populateAnswerData() {
   if (!state.current) return;
   elements.actionAnalysis.innerHTML = actionAnalysisHTML(state.current);
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
-  elements.sourceFile.textContent = state.current.sourceFile || "";
+  elements.sourceFile.textContent = sourceFileLabel(state.current);
 }
 
 function resetSummaryTextScroll() {
