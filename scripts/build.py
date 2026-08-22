@@ -254,6 +254,8 @@ def compact_move_notation(notation: str) -> str:
       8/4 8/4 8/4     -> 8/4(3)
       7/4 7/4*        -> 7/4*(2)
       8/5(2) 7/4 7/4* -> 8/5(2) 7/4*(2)
+      Bar/23 Bar/23*   -> Bar/23*(2)
+      4/Off 4/Off      -> 4/Off(2)
     """
     tokens = str(notation).split()
     if len(tokens) < 2:

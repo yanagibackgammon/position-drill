@@ -22,11 +22,11 @@ if TYPE_CHECKING:
 
 
 def _point_name(point: int) -> str:
-    """Human name for a 0-based point: ``off`` / ``bar`` / ``1``..``24``."""
+    """Human name for a 0-based point: ``Off`` / ``Bar`` / ``1``..``24``."""
     if point < 0:
-        return "off"
+        return "Off"
     if point == 24:  # player's bar in 0-based coordinates
-        return "bar"
+        return "Bar"
     return str(point + 1)
 
 
@@ -34,11 +34,11 @@ def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
     """Render *moves* played from *position* as standard notation.
 
     ``position`` is the board *before* the move (on-roll player's POV), used to
-    detect hits and to chain hops of the same checker. Returns ``"(no moves)"``
+    detect hits and to chain hops of the same checker. Returns ``"Cannot Move"``
     for a dance (empty move set).
     """
     if not moves:
-        return "(no moves)"
+        return "Cannot Move"
 
     # Working copy of the board (index 0=opp bar, 1-24=points, 25=player bar).
     board = list(position.points)
