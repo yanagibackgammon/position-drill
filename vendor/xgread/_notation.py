@@ -67,62 +67,93 @@ def _apply_moves(
     return tuple(board), rendered
 
 
-def _single_checker_chain(
+def _collapse_unambiguous_hops(
     rendered: list[tuple[int, int, bool]],
-) -> list[tuple[int, int, bool]] | None:
-    """Return the ordered path when every stored hop belongs to one checker.
+) -> list[tuple[int, int, bool]]:
+    """Collapse consecutive hops that unambiguously belong to one checker.
 
-    XG collapses a move such as ``12/10 10/6`` to ``12/6``.  We only do this
-    when the *entire* move is one continuous checker path.  This is important
-    for doubles: if several checkers move, segments such as ``6/4 4/2`` must
-    remain separate so that XG-style multiplicities can be shown correctly.
+    XG-style notation joins through an intermediate point only when exactly one
+    stored hop enters that point and exactly one stored hop leaves it.  This
+    collapses ``12/10 10/6`` to ``12/6`` and, inside a larger doubles move,
+    ``21/15 15/9`` to ``21/9``.
 
-    A hit ends one display segment because the hit point itself must remain
-    visible (e.g. ``13/12* 12/7`` rather than hiding the intermediate hit).
+    Ambiguous traffic is not joined.  For example, ``6/4(2) 4/2(2)`` stays as
+    two grouped moves because two checkers enter and two leave point 4.
+
+    A hit also ends the displayed segment so the hit point remains explicit.
     """
     if len(rendered) < 2:
-        return None
+        return rendered[:]
 
-    # XG stores physical play order.  A one-checker move is therefore a single
-    # continuous path: each destination is the next segment's source.
-    if any(
-        rendered[index][1] < 0 or rendered[index][1] != rendered[index + 1][0]
-        for index in range(len(rendered) - 1)
-    ):
-        return None
+    incoming: dict[int, list[int]] = {}
+    outgoing: dict[int, list[int]] = {}
 
-    return rendered
+    for index, (from_0, to_0, _) in enumerate(rendered):
+        outgoing.setdefault(from_0, []).append(index)
+        if to_0 >= 0:
+            incoming.setdefault(to_0, []).append(index)
 
+    predecessor: dict[int, int] = {}
+    successor: dict[int, int] = {}
 
-def _format_single_checker_chain(
-    chain: list[tuple[int, int, bool]],
-) -> str:
-    """Collapse a one-checker path, preserving intermediate hit points."""
-    parts: list[str] = []
-    segment_from = chain[0][0]
+    for point_0, incoming_edges in incoming.items():
+        outgoing_edges = outgoing.get(point_0, [])
+        if len(incoming_edges) != 1 or len(outgoing_edges) != 1:
+            continue
 
-    for index, (_, to_0, hit) in enumerate(chain):
-        is_last = index == len(chain) - 1
-        if hit or is_last:
-            parts.append(
-                f"{_point_name(segment_from)}/{_point_name(to_0)}{'*' if hit else ''}"
-            )
-            if not is_last:
-                segment_from = to_0
+        before = incoming_edges[0]
+        after = outgoing_edges[0]
 
-    return " ".join(parts)
+        # Preserve an intermediate hit marker instead of hiding it inside a
+        # longer source/destination pair.
+        if rendered[before][2]:
+            continue
+
+        successor[before] = after
+        predecessor[after] = before
+
+    collapsed: list[tuple[int, int, bool]] = []
+    visited: set[int] = set()
+
+    # Start with edges that are not continuations of another collapsible edge.
+    starts = [index for index in range(len(rendered)) if index not in predecessor]
+
+    for start in starts:
+        if start in visited:
+            continue
+
+        from_0 = rendered[start][0]
+        current = start
+        final_to = rendered[current][1]
+        final_hit = rendered[current][2]
+        visited.add(current)
+
+        while current in successor:
+            next_edge = successor[current]
+            if next_edge in visited:
+                break
+            current = next_edge
+            final_to = rendered[current][1]
+            final_hit = rendered[current][2]
+            visited.add(current)
+
+        collapsed.append((from_0, final_to, final_hit))
+
+    # Defensive fallback for any cycle/malformed edge set.
+    for index, edge in enumerate(rendered):
+        if index not in visited:
+            collapsed.append(edge)
+
+    return collapsed
 
 
 def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
     """Render *moves* using XG-style checker notation.
 
-    Rules used here:
-    * a move made by one checker only is collapsed (``12/10 10/6`` -> ``12/6``);
-    * an intermediate hit remains visible;
-    * when multiple checkers move, stored segments stay separate;
-    * multi-checker segments are displayed by source point descending;
-    * identical segments are compacted later by the consumer as ``(2)``,
-      ``(3)``, etc.
+    Consecutive hops made by one checker are collapsed whenever the intermediate
+    point has one incoming and one outgoing hop.  The final display is ordered
+    by source point descending.  Identical displayed segments are compacted by
+    the consumer as ``(2)``, ``(3)``, etc.
 
     Returns ``"Cannot Move"`` for a dance.
     """
@@ -130,18 +161,15 @@ def format_moves(moves: tuple[MoveDetail, ...], position: Position) -> str:
         return "Cannot Move"
 
     _, rendered = _apply_moves(moves, position)
+    display_segments = _collapse_unambiguous_hops(rendered)
 
-    single_chain = _single_checker_chain(rendered)
-    if single_chain is not None:
-        return _format_single_checker_chain(single_chain)
-
-    # XG display order for multi-checker moves: source point descending; for the
-    # same source, the higher destination first.  Point 24 represents Bar.
-    rendered.sort(key=lambda item: (-item[0], -item[1]))
+    # XG display order: source point descending; for the same source, higher
+    # destination first.  Point 24 represents Bar.
+    display_segments.sort(key=lambda item: (-item[0], -item[1]))
 
     return " ".join(
         f"{_point_name(from_0)}/{_point_name(to_0)}{'*' if hit else ''}"
-        for from_0, to_0, hit in rendered
+        for from_0, to_0, hit in display_segments
     )
 
 
