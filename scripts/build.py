@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import re
 import math
 import shutil
 import sys
@@ -247,23 +248,46 @@ def cube_owner_for_view(cube_value: int, black_sign: int) -> str:
 
 
 def compact_move_notation(notation: str) -> str:
-    """Collapse repeated identical checker moves, e.g. 8/4 8/4 8/4 -> 8/4(3)."""
+    """Collapse repeated checker moves, keeping a hit marker if any copy hits.
+
+    Examples:
+      8/4 8/4 8/4     -> 8/4(3)
+      7/4 7/4*        -> 7/4*(2)
+      8/5(2) 7/4 7/4* -> 8/5(2) 7/4*(2)
+    """
     tokens = str(notation).split()
     if len(tokens) < 2:
         return str(notation)
 
-    counts: dict[str, int] = {}
+    grouped: dict[str, dict[str, int | bool]] = {}
     order: list[str] = []
-    for token in tokens:
-        if token not in counts:
-            counts[token] = 0
-            order.append(token)
-        counts[token] += 1
 
-    return " ".join(
-        f"{token}({counts[token]})" if counts[token] > 1 else token
-        for token in order
-    )
+    for token in tokens:
+        match = re.fullmatch(r"(.+?)(\*)?(?:\((\d+)\))?", token)
+        if not match:
+            base = token
+            is_hit = False
+            count = 1
+        else:
+            base = match.group(1)
+            is_hit = bool(match.group(2))
+            count = int(match.group(3) or 1)
+
+        if base not in grouped:
+            grouped[base] = {"count": 0, "hit": False}
+            order.append(base)
+
+        grouped[base]["count"] = int(grouped[base]["count"]) + count
+        grouped[base]["hit"] = bool(grouped[base]["hit"]) or is_hit
+
+    compacted: list[str] = []
+    for base in order:
+        count = int(grouped[base]["count"])
+        hit = "*" if grouped[base]["hit"] else ""
+        suffix = f"({count})" if count > 1 else ""
+        compacted.append(f"{base}{hit}{suffix}")
+
+    return " ".join(compacted)
 
 
 def candidate_payload(move: Move) -> list[dict[str, Any]]:
