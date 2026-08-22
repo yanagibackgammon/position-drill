@@ -8,6 +8,8 @@ const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const BOARD_PRELOAD_COUNT = 3;
 const BOARD_PRELOAD_CACHE_LIMIT = 8;
+const LOCAL_DB_NAME = "position-drill-local-v1";
+const LOCAL_DB_STORE = "records";
 
 const KIND_LABELS = {
   checker: "Checker Play",
@@ -70,27 +72,188 @@ function loadJSON(key, fallback) {
   }
 }
 
+function saveLocalJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`localStorage write failed: ${key}`, error);
+  }
+}
+
+function openLocalDB() {
+  return new Promise((resolve) => {
+    if (!("indexedDB" in window)) {
+      resolve(null);
+      return;
+    }
+
+    const request = indexedDB.open(LOCAL_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(LOCAL_DB_STORE)) {
+        db.createObjectStore(LOCAL_DB_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => resolve(null);
+  });
+}
+
+async function readLocalDB(key) {
+  const db = await openLocalDB();
+  if (!db) return null;
+
+  return new Promise((resolve) => {
+    const transaction = db.transaction(LOCAL_DB_STORE, "readonly");
+    const request = transaction.objectStore(LOCAL_DB_STORE).get(key);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => resolve(null);
+    transaction.oncomplete = () => db.close();
+    transaction.onerror = () => db.close();
+  });
+}
+
+async function writeLocalDB(key, value) {
+  const db = await openLocalDB();
+  if (!db) return;
+
+  await new Promise((resolve) => {
+    const transaction = db.transaction(LOCAL_DB_STORE, "readwrite");
+    transaction.objectStore(LOCAL_DB_STORE).put(value, key);
+    transaction.oncomplete = resolve;
+    transaction.onerror = resolve;
+    transaction.onabort = resolve;
+  });
+
+  db.close();
+}
+
+function mirrorLocalDB(key, value) {
+  writeLocalDB(key, value).catch(() => {});
+}
+
+function mergeProgress(primary, backup) {
+  const merged = { ...(backup || {}), ...(primary || {}) };
+  const keys = new Set([
+    ...Object.keys(primary || {}),
+    ...Object.keys(backup || {}),
+  ]);
+
+  keys.forEach((key) => {
+    const a = primary?.[key] || {};
+    const b = backup?.[key] || {};
+    merged[key] = {
+      correct: Math.max(0, Number(a.correct) || 0, Number(b.correct) || 0),
+      wrong: Math.max(0, Number(a.wrong) || 0, Number(b.wrong) || 0),
+    };
+  });
+
+  return merged;
+}
+
+async function loadProgress() {
+  const local = loadJSON(STORAGE_KEY, {});
+  const backup = await readLocalDB(STORAGE_KEY);
+  const merged = mergeProgress(local, backup && typeof backup === "object" ? backup : {});
+  saveLocalJSON(STORAGE_KEY, merged);
+  mirrorLocalDB(STORAGE_KEY, merged);
+  return merged;
+}
+
 function saveProgress() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+  saveLocalJSON(STORAGE_KEY, state.progress);
+  mirrorLocalDB(STORAGE_KEY, state.progress);
 }
 
 function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+  const settings = {
     kind: state.currentKind,
     challengeOnly: elements.challengeOnly.checked,
-  }));
+  };
+  saveLocalJSON(SETTINGS_KEY, settings);
+  mirrorLocalDB(SETTINGS_KEY, settings);
 }
 
-function recordFor(id) {
-  const raw = state.progress[id] || {};
+function progressKey(position) {
+  if (!position) return "";
+
+  const kind = decisionKind(position) || position.decisionKind || position.decisionType || "unknown";
+  if (position.xgid) {
+    return `xgid:${kind}:${position.xgid}`;
+  }
+
+  const source = position.sourceFile || "";
+  const game = position.gameNumber ?? "";
+  const move = position.moveNumber ?? "";
+  if (source || game !== "" || move !== "") {
+    return `event:${kind}:${source}:${game}:${move}`;
+  }
+
+  return position.id || "";
+}
+
+function normalizedRecord(raw) {
   return {
-    correct: Math.max(0, Number(raw.correct) || 0),
-    wrong: Math.max(0, Number(raw.wrong) || 0),
+    correct: Math.max(0, Number(raw?.correct) || 0),
+    wrong: Math.max(0, Number(raw?.wrong) || 0),
   };
 }
 
+function recordFor(position) {
+  if (!position) return normalizedRecord(null);
+
+  const key = progressKey(position);
+  const stable = state.progress[key];
+  const legacy = position.id ? state.progress[position.id] : null;
+
+  if (!stable) return normalizedRecord(legacy);
+  if (!legacy || key === position.id) return normalizedRecord(stable);
+
+  return {
+    correct: Math.max(
+      Math.max(0, Number(stable.correct) || 0),
+      Math.max(0, Number(legacy.correct) || 0),
+    ),
+    wrong: Math.max(
+      Math.max(0, Number(stable.wrong) || 0),
+      Math.max(0, Number(legacy.wrong) || 0),
+    ),
+  };
+}
+
+function migrateProgressKeys() {
+  let changed = false;
+
+  state.positions.forEach((position) => {
+    const key = progressKey(position);
+    if (!key || !position.id || key === position.id) return;
+
+    const legacy = state.progress[position.id];
+    if (!legacy) return;
+
+    const current = state.progress[key];
+    const merged = {
+      correct: Math.max(
+        Math.max(0, Number(current?.correct) || 0),
+        Math.max(0, Number(legacy.correct) || 0),
+      ),
+      wrong: Math.max(
+        Math.max(0, Number(current?.wrong) || 0),
+        Math.max(0, Number(legacy.wrong) || 0),
+      ),
+    };
+
+    state.progress[key] = merged;
+    delete state.progress[position.id];
+    changed = true;
+  });
+
+  if (changed) saveProgress();
+  return changed;
+}
+
 function isChallenge(position) {
-  const record = recordFor(position.id);
+  const record = recordFor(position);
   return record.correct === 0 || record.correct < record.wrong;
 }
 
@@ -483,10 +646,18 @@ function summaryAnalysisHTML(position) {
 function totalRecord() {
   let correct = 0;
   let wrong = 0;
-  Object.values(state.progress).forEach((raw) => {
-    correct += Math.max(0, Number(raw?.correct) || 0);
-    wrong += Math.max(0, Number(raw?.wrong) || 0);
+  const counted = new Set();
+
+  state.positions.forEach((position) => {
+    const key = progressKey(position);
+    if (!key || counted.has(key)) return;
+    counted.add(key);
+
+    const record = recordFor(position);
+    correct += record.correct;
+    wrong += record.wrong;
   });
+
   return { correct, wrong };
 }
 
@@ -500,7 +671,8 @@ function quizDayKey(date = new Date()) {
 }
 
 function saveDaily() {
-  localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(state.daily));
+  saveLocalJSON(DAILY_STORAGE_KEY, state.daily);
+  mirrorLocalDB(DAILY_STORAGE_KEY, state.daily);
 }
 
 function ensureDailyRecord({ seedFromTotal = false } = {}) {
@@ -540,7 +712,7 @@ function scheduleDailyReset() {
 
 function updatePositionRecord() {
   if (!state.current) return;
-  const record = recordFor(state.current.id);
+  const record = recordFor(state.current);
   elements.positionCorrect.textContent = String(record.correct);
   elements.positionWrong.textContent = String(record.wrong);
 }
@@ -619,10 +791,13 @@ function renderCurrent() {
 function recordResult(result) {
   if (!state.current || (result !== "correct" && result !== "wrong")) return false;
 
-  const record = recordFor(state.current.id);
+  const record = recordFor(state.current);
   if (result === "correct") record.correct += 1;
   else record.wrong += 1;
-  state.progress[state.current.id] = record;
+  state.progress[progressKey(state.current)] = record;
+  if (state.current.id && state.current.id !== progressKey(state.current)) {
+    delete state.progress[state.current.id];
+  }
   saveProgress();
 
   ensureDailyRecord();
@@ -720,6 +895,7 @@ async function syncPositions({ initial = false } = {}) {
 
   const previousId = state.current?.id || null;
   state.positions = (payload.positions || []).filter((position) => decisionKind(position));
+  migrateProgressKeys();
   if (state.dataVersion !== nextVersion) resetBoardQueue({ clearCache: true });
   state.dataVersion = nextVersion;
 
@@ -742,10 +918,22 @@ async function refreshPositionsSilently() {
 }
 
 async function start() {
-  state.progress = loadJSON(STORAGE_KEY, {});
-  state.daily = loadJSON(DAILY_STORAGE_KEY, { day: "", correct: 0, wrong: 0 });
+  state.progress = await loadProgress();
+
+  const localDaily = loadJSON(DAILY_STORAGE_KEY, null);
+  const backupDaily = await readLocalDB(DAILY_STORAGE_KEY);
+  state.daily = localDaily || (
+    backupDaily && typeof backupDaily === "object"
+      ? backupDaily
+      : { day: "", correct: 0, wrong: 0 }
+  );
+  saveDaily();
   ensureDailyRecord({ seedFromTotal: true });
-  const settings = loadJSON(SETTINGS_KEY, {});
+  const localSettings = loadJSON(SETTINGS_KEY, null);
+  const backupSettings = await readLocalDB(SETTINGS_KEY);
+  const settings = localSettings || (
+    backupSettings && typeof backupSettings === "object" ? backupSettings : {}
+  );
   if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
   elements.challengeOnly.checked = Boolean(settings.challengeOnly);
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind));
@@ -763,7 +951,18 @@ async function start() {
   }
 
   window.setInterval(refreshPositionsSilently, SYNC_INTERVAL_MS);
+  window.addEventListener("pagehide", () => {
+    saveProgress();
+    saveDaily();
+  });
+
   document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      saveProgress();
+      saveDaily();
+      return;
+    }
+
     if (!document.hidden) {
       if (ensureDailyRecord()) updateToday();
       scheduleDailyReset();
