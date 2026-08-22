@@ -10,6 +10,7 @@ import re
 import math
 import shutil
 import sys
+import subprocess
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +29,46 @@ DIST_DIR = ROOT / "dist"
 BOARD_DIR = DIST_DIR / "assets" / "boards"
 DATA_DIR = DIST_DIR / "data"
 CONFIG_PATH = ROOT / "config.json"
+
+
+def source_added_at(source: Path) -> str | None:
+    """Return the first Git commit time that added *source*.
+
+    GitHub Actions checks out full history so this remains stable when an XG
+    file is edited later.  If Git metadata is unavailable, return ``None`` and
+    simply exclude that source from the New filter.
+    """
+    try:
+        relative = source.relative_to(ROOT).as_posix()
+    except ValueError:
+        return None
+
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(ROOT),
+                "log",
+                "--follow",
+                "--diff-filter=A",
+                "--format=%cI",
+                "--",
+                relative,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    timestamps = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return timestamps[-1] if timestamps else None
 
 
 def load_config() -> dict[str, Any]:
@@ -949,6 +990,7 @@ def build() -> None:
     match_summaries: list[dict[str, Any]] = []
 
     for source in imported_files:
+        added_at = source_added_at(source)
         match = xgread.read(source)
         games_by_number = {game.header.game_number: game for game in match.games}
         crawford_game_numbers = {
@@ -981,6 +1023,7 @@ def build() -> None:
                     and decision.game_number > crawford_game_number
                 )
                 row["sourceFile"] = source.name
+                row["sourceAddedAt"] = added_at
                 if cfg["anonymizeOpponents"]:
                     row["opponent"] = "Opponent"
                     if row["onRollOpponent"] != row["player"]:
@@ -1019,6 +1062,7 @@ def build() -> None:
         match_summaries.append(
             {
                 "sourceFile": source.name,
+                "sourceAddedAt": added_at,
                 "matchId": match.identity_hash,
                 "player1": match.header.player1,
                 "player2": match.header.player2,

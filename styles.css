@@ -86,7 +86,7 @@ main {
 .controls {
   margin-bottom: 12px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 10px;
   align-items: stretch;
 }
@@ -121,27 +121,30 @@ main {
   font-weight: 600;
   white-space: nowrap;
 }
-.challenge-toggle {
-  min-width: 116px;
-  padding: 0 13px;
+.filter-tabs {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  color: var(--white);
+  overflow: hidden;
   background: var(--black);
+}
+.filter-tab {
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 10px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: var(--white);
+  background: transparent;
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: 700;
   white-space: nowrap;
 }
-.challenge-toggle input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--theme);
-}
+.filter-tab:last-child { border-right: 0; }
+.filter-tab:hover { background: var(--black); }
 
 .quiz-card {
   border: 1px solid var(--line);
@@ -424,7 +427,6 @@ main {
   }
   .type-tab { padding: 7px 5px; font-size: var(--font-sm); }
   .type-count { display: block; margin: 1px 0 0; font-size: var(--font-xs); }
-  .challenge-toggle { min-height: 39px; }
   .quiz-card { border-radius: 0; border-left: 0; border-right: 0; }
   .board-wrap { padding: 7px 0; }
   .board-wrap img { width: 100%; border-left: 0; border-right: 0; border-radius: 0; }
@@ -527,31 +529,15 @@ main {
 .record-source-row { min-width: 0; }
 
 @media (max-width: 760px) {
-  /* Keep the three decision types and Task on one compact row. */
+  /* Two menu frames. Cell widths are 2:2:2 | 1:1 on smartphone. */
   .controls {
-    grid-template-columns: minmax(0, 3fr) minmax(62px, .78fr);
-    gap: 0;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 6px;
     align-items: stretch;
   }
-  .type-tabs {
-    border-radius: 10px 0 0 10px;
-  }
-  .challenge-toggle {
-    min-width: 0;
-    min-height: 44px;
-    padding: 5px 4px;
-    margin-left: -1px;
-    border-radius: 0 10px 10px 0;
-    flex-direction: column;
-    gap: 1px;
-    font-size: var(--font-sm);
-  }
-  .challenge-toggle input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
+  .type-tabs,
+  .filter-tabs {
+    border-radius: 10px;
   }
   .type-label-full { display: none; }
   .type-label-short { display: inline; }
@@ -681,17 +667,17 @@ main {
     font-weight: 700;
   }
 
-  /* Four equal-width menu cells: Checker / Double / Take / Task. */
+  /* Decision cells are twice as wide as filter cells on smartphone. */
   .controls {
     grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-    gap: 0;
+    gap: 6px;
   }
   .type-tabs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
   .type-tab,
-  .challenge-toggle {
+  .filter-tab {
     min-width: 0;
     width: 100%;
   }
@@ -834,7 +820,7 @@ main {
     overflow: hidden;
   }
 
-  /* Four equal cells. Task remains a real, visible checkbox. */
+  /* Two menu frames: 2:2:2 | 1:1 cell widths on smartphone. */
   .controls {
     flex: 0 0 44px;
     width: calc(100% - 16px);
@@ -842,32 +828,16 @@ main {
     min-height: 44px;
     margin: 0 8px 6px;
     grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-    gap: 0;
+    gap: 6px;
   }
-  .type-tabs {
+  .type-tabs,
+  .filter-tabs {
     height: 44px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .type-tab,
-  .challenge-toggle {
+  .filter-tab {
     height: 44px;
     min-height: 44px;
-  }
-  .challenge-toggle {
-    padding: 4px 2px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-  }
-  .challenge-toggle input {
-    position: static;
-    width: 13px;
-    height: 13px;
-    margin: 0;
-    opacity: 1;
-    pointer-events: auto;
-    flex: 0 0 auto;
   }
 
   /* The quiz card gets all remaining height except the fixed footer row. */
@@ -1004,36 +974,8 @@ main {
   .record-source-row { margin-top: 2px; }
 }
 
-/* R28: Task count stack + larger smartphone checkbox + compact three-part record row. */
-.challenge-copy { display: contents; }
-
+/* Compact three-part record row. */
 @media (max-width: 760px) {
-  .challenge-toggle {
-    gap: 6px;
-  }
-  .challenge-toggle input {
-    width: 19px;
-    height: 19px;
-  }
-  .challenge-copy {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    line-height: 1;
-  }
-  .challenge-label {
-    display: block;
-    line-height: 1;
-  }
-  .challenge-toggle .challenge-count {
-    display: block;
-    margin: 2px 0 0;
-    line-height: 1;
-  }
-
   .records-row {
     gap: 10px;
   }
@@ -1210,7 +1152,7 @@ main {
 
 /* Shared active-menu appearance on desktop and smartphone. */
 .type-tab.is-active,
-.challenge-toggle:has(input:checked) {
+.filter-tab.is-active {
   color: var(--white);
   background: var(--active);
 }
@@ -1219,14 +1161,15 @@ main {
 /* Menu label color: non-selected labels are white; counts keep their existing styling. */
 .type-label-full,
 .type-label-short,
-.challenge-label {
+.filter-label {
   color: var(--white);
 }
 
 
-/* Smartphone: align Checker / Double / Take label + count vertically with Task. */
+/* Smartphone: stack every menu label above its count. */
 @media (max-width: 760px) {
-  .type-tab {
+  .type-tab,
+  .filter-tab {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1234,10 +1177,12 @@ main {
     gap: 1px;
     line-height: 1;
   }
-  .type-tab .type-label-short {
+  .type-tab .type-label-short,
+  .filter-tab .filter-label {
     line-height: 1;
   }
-  .type-tab .type-count {
+  .type-tab .type-count,
+  .filter-tab .type-count {
     margin: 2px 0 0;
     line-height: 1;
   }

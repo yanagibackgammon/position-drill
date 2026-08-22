@@ -10,6 +10,7 @@ const BOARD_PRELOAD_COUNT = 3;
 const BOARD_PRELOAD_CACHE_LIMIT = 8;
 const LOCAL_DB_NAME = "position-drill-local-v1";
 const LOCAL_DB_STORE = "records";
+const NEW_POSITION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 const KIND_LABELS = {
   checker: "Checker Play",
@@ -27,6 +28,7 @@ const state = {
   dailyResetTimer: null,
   dataVersion: "",
   boardQueue: [],
+  filters: { task: false, new: false },
 };
 
 const elements = {
@@ -34,8 +36,9 @@ const elements = {
   empty: document.getElementById("empty-state"),
   tabs: [...document.querySelectorAll("[data-kind]")],
   counts: [...document.querySelectorAll("[data-count]")],
-  challengeOnly: document.getElementById("challenge-only"),
-  challengeCount: document.getElementById("challenge-count"),
+  filterButtons: [...document.querySelectorAll("[data-filter]")],
+  taskCount: document.getElementById("task-count"),
+  newCount: document.getElementById("new-count"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -168,7 +171,8 @@ function saveProgress() {
 function saveSettings() {
   const settings = {
     kind: state.currentKind,
-    challengeOnly: elements.challengeOnly.checked,
+    taskOnly: state.filters.task,
+    newOnly: state.filters.new,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
   mirrorLocalDB(SETTINGS_KEY, settings);
@@ -257,6 +261,13 @@ function isChallenge(position) {
   return record.correct === 0 || record.correct < record.wrong;
 }
 
+function isNewPosition(position, now = Date.now()) {
+  const uploadedAt = Date.parse(position?.sourceAddedAt || "");
+  if (!Number.isFinite(uploadedAt)) return false;
+  const age = now - uploadedAt;
+  return age >= 0 && age <= NEW_POSITION_WINDOW_MS;
+}
+
 function decisionKind(position) {
   if (position.decisionKind) return position.decisionKind;
   if (position.decisionType === "checker") return "checker";
@@ -269,9 +280,8 @@ function positionsForKind(kind) {
 
 function activePool() {
   let pool = positionsForKind(state.currentKind);
-  if (elements.challengeOnly.checked) {
-    pool = pool.filter(isChallenge);
-  }
+  if (state.filters.task) pool = pool.filter(isChallenge);
+  if (state.filters.new) pool = pool.filter(isNewPosition);
   return pool;
 }
 
@@ -729,8 +739,10 @@ function updateCounts() {
     const kind = element.dataset.count;
     element.textContent = String(positionsForKind(kind).length);
   });
+
   const currentKindPositions = positionsForKind(state.currentKind);
-  elements.challengeCount.textContent = String(currentKindPositions.filter(isChallenge).length);
+  elements.taskCount.textContent = String(currentKindPositions.filter(isChallenge).length);
+  elements.newCount.textContent = String(currentKindPositions.filter(isNewPosition).length);
 }
 
 function sourceFileLabel(position) {
@@ -853,6 +865,24 @@ function setKind(kind) {
   renderCurrent();
 }
 
+function syncFilterButtons() {
+  elements.filterButtons.forEach((button) => {
+    const active = Boolean(state.filters[button.dataset.filter]);
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function toggleFilter(filter) {
+  if (!(filter in state.filters)) return;
+  state.filters[filter] = !state.filters[filter];
+  state.current = null;
+  resetBoardQueue();
+  syncFilterButtons();
+  saveSettings();
+  renderCurrent();
+}
+
 function installSmartphoneZoomGuard() {
   const smartphone = window.matchMedia("(max-width: 760px)");
   const preventGesture = (event) => {
@@ -886,11 +916,8 @@ function installEvents() {
   elements.tabs.forEach((tab) => {
     tab.addEventListener("click", () => setKind(tab.dataset.kind));
   });
-  elements.challengeOnly.addEventListener("change", () => {
-    state.current = null;
-    resetBoardQueue();
-    saveSettings();
-    renderCurrent();
+  elements.filterButtons.forEach((button) => {
+    button.addEventListener("click", () => toggleFilter(button.dataset.filter));
   });
   elements.answerButton.addEventListener("click", showAnswer);
   elements.correctButton.addEventListener("click", () => judge("correct"));
@@ -948,8 +975,10 @@ async function start() {
     backupSettings && typeof backupSettings === "object" ? backupSettings : {}
   );
   if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
-  elements.challengeOnly.checked = Boolean(settings.challengeOnly);
+  state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly);
+  state.filters.new = Boolean(settings.newOnly);
   elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind));
+  syncFilterButtons();
   installSmartphoneZoomGuard();
   installEvents();
   scheduleDailyReset();

@@ -32,17 +32,14 @@
   <main>
     <section class="controls" aria-label="Drill settings">
       <div class="type-tabs" role="group" aria-label="Position type">
-        <button type="button" class="type-tab is-active" data-kind="checker"><span class="type-label-full">Checker Play</span><span class="type-label-short">Checker</span> <span class="type-count"><span data-count="checker">0</span></span></button>
-        <button type="button" class="type-tab" data-kind="double"><span class="type-label-full">Double Action</span><span class="type-label-short">Double</span> <span class="type-count"><span data-count="double">0</span></span></button>
-        <button type="button" class="type-tab" data-kind="take"><span class="type-label-full">Take Action</span><span class="type-label-short">Take</span> <span class="type-count"><span data-count="take">0</span></span></button>
+        <button type="button" class="type-tab is-active" data-kind="checker"><span class="type-label-full">Checker Play</span><span class="type-label-short">Checker</span><span class="type-count"><span data-count="checker">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="double"><span class="type-label-full">Double Action</span><span class="type-label-short">Double</span><span class="type-count"><span data-count="double">0</span></span></button>
+        <button type="button" class="type-tab" data-kind="take"><span class="type-label-full">Take Action</span><span class="type-label-short">Take</span><span class="type-count"><span data-count="take">0</span></span></button>
       </div>
-      <label class="challenge-toggle">
-        <input id="challenge-only" type="checkbox">
-        <span class="challenge-copy">
-          <span class="challenge-label">Task</span>
-          <span class="type-count challenge-count"><span id="challenge-count">0</span></span>
-        </span>
-      </label>
+      <div class="filter-tabs" role="group" aria-label="Position filters">
+        <button type="button" class="filter-tab" data-filter="task" aria-pressed="false"><span class="filter-label">Task</span><span class="type-count"><span id="task-count">0</span></span></button>
+        <button type="button" class="filter-tab" data-filter="new" aria-pressed="false"><span class="filter-label">New</span><span class="type-count"><span id="new-count">0</span></span></button>
+      </div>
     </section>
 
     <section id="quiz-card" class="quiz-card" aria-live="polite">
