@@ -32,43 +32,65 @@ CONFIG_PATH = ROOT / "config.json"
 
 
 def source_added_at(source: Path) -> str | None:
-    """Return the first Git commit time that added *source*.
+    """Return the oldest Git commit time available for *source*.
 
-    GitHub Actions checks out full history so this remains stable when an XG
-    file is edited later.  If Git metadata is unavailable, return ``None`` and
-    simply exclude that source from the New filter.
+    ``git log --follow --diff-filter=A`` can return no rows for files whose
+    history crosses renames/copies or repository integrations.  For the New
+    filter we instead follow the complete path history and use its oldest
+    commit.  Editing the file later does not change this date.
+
+    If the full-history query unexpectedly returns nothing, fall back to the
+    latest commit touching the current path so a tracked XG file is never
+    silently excluded from New just because its add-history is unavailable.
     """
     try:
         relative = source.relative_to(ROOT).as_posix()
     except ValueError:
         return None
 
-    try:
-        result = subprocess.run(
-            [
-                "git",
-                "-C",
-                str(ROOT),
-                "log",
-                "--follow",
-                "--diff-filter=A",
-                "--format=%cI",
-                "--",
-                relative,
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
+    commands = (
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "log",
+            "--follow",
+            "--format=%cI",
+            "--",
+            relative,
+        ],
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "log",
+            "-1",
+            "--format=%cI",
+            "--",
+            relative,
+        ],
+    )
 
-    if result.returncode != 0:
-        return None
+    for command in commands:
+        try:
+            result = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
 
-    timestamps = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    return timestamps[-1] if timestamps else None
+        if result.returncode != 0:
+            continue
+
+        timestamps = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if timestamps:
+            return timestamps[-1] if "--follow" in command else timestamps[0]
+
+    return None
 
 
 def load_config() -> dict[str, Any]:
@@ -1089,7 +1111,12 @@ def build() -> None:
     (DATA_DIR / "positions.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    dated_sources = [summary for summary in match_summaries if summary.get("sourceAddedAt")]
+    undated_sources = [summary["sourceFile"] for summary in match_summaries if not summary.get("sourceAddedAt")]
     print(f"Built {len(rows)} positions from {len(imported_files)} match file(s).")
+    print(f"Git-added dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
+    if undated_sources:
+        print("WARNING: Git-added date unavailable for: " + ", ".join(undated_sources[:10]))
 
 
 if __name__ == "__main__":
