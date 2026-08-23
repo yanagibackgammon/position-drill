@@ -284,6 +284,48 @@ def cube_value_number(cube_value: int) -> int:
     return 1 if cube_value == 0 else 2 ** abs(cube_value)
 
 
+def invalid_match_cube_reason(match: Any, decision: Any, cube: CubeAction) -> str | None:
+    """Return why this cube decision is not legal in match play.
+
+    The important match-play rule is the dead-cube rule: a player may not
+    redouble when the cube's *current* value is already sufficient for that
+    player to win the match.  Therefore a 7-point match can legally contain a
+    4 -> 8 redouble, but never an 8 -> 16 redouble.
+
+    Money / Unlimited play is intentionally exempt from match-score checks.
+    """
+    match_length = int(match.header.match_length)
+    if match_length <= 0 or match_length >= 99999:
+        return None
+
+    game = next(
+        (item for item in match.games if item.header.game_number == decision.game_number),
+        None,
+    )
+    if game is not None and game.header.crawford_apply:
+        return "doubling cube is unavailable in the Crawford game"
+
+    actor_score, _ = score_for_sign(decision, cube.player)
+    actor_away = match_length - int(actor_score)
+    current_cube = cube_value_number(cube.cube_value)
+
+    if actor_away <= 0:
+        return "match has already been won"
+    if current_cube >= actor_away:
+        return (
+            f"dead cube: current cube {current_cube} is already sufficient "
+            f"for the doubler at {actor_away}-away"
+        )
+
+    # A redouble is only available to the current cube owner.
+    if cube.cube_value != 0:
+        owner_sign = 1 if cube.cube_value > 0 else -1
+        if owner_sign != int(cube.player):
+            return "redouble attempted by the player who does not own the cube"
+
+    return None
+
+
 def position_for_view(points: tuple[int, ...] | list[int], black_sign: int) -> list[int]:
     """Return a board normalized so the selected player is black/on-roll.
 
@@ -548,6 +590,15 @@ def make_double_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, 
     if cube.error_double == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
         return None
 
+    invalid_reason = invalid_match_cube_reason(match, decision, cube)
+    if invalid_reason is not None:
+        print(
+            "WARNING: Skipping invalid Double Action "
+            f"{match.identity_hash} Game{decision.game_number} Move{decision.move_number}: "
+            f"{invalid_reason}"
+        )
+        return None
+
     labels = cube_action_labels(cube)
     actual = (
         non_double_action(cube)
@@ -639,6 +690,15 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
 
     loss = abs(float(cube.error_take))
     if cube.error_take == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
+        return None
+
+    invalid_reason = invalid_match_cube_reason(match, decision, cube)
+    if invalid_reason is not None:
+        print(
+            "WARNING: Skipping invalid Take Action "
+            f"{match.identity_hash} Game{decision.game_number} Move{decision.move_number}: "
+            f"{invalid_reason}"
+        )
         return None
 
     labels = cube_action_labels(cube)
@@ -1092,6 +1152,32 @@ def build() -> None:
                 "positions": len(rows) - before,
             }
         )
+
+    # Final Take Action safety checks.  These assertions make a future parser or
+    # data-format regression fail at build time instead of publishing an
+    # impossible cube position.
+    for row in rows:
+        if row.get("decisionKind") != "take":
+            continue
+
+        current_cube = int(row.get("cubeValue") or 1)
+        offered_cube = int(row.get("quizCubeValue") or 0)
+        if offered_cube != current_cube * 2:
+            raise RuntimeError(
+                f"Invalid Take Action cube transition in {row['sourceFile']} "
+                f"Game{row['gameNumber']}: {current_cube} -> {offered_cube}"
+            )
+
+        match_length = int(row.get("matchLength") or 0)
+        if 0 < match_length < 99999:
+            doubler_score = int(row.get("playerScore") or 0)
+            doubler_away = match_length - doubler_score
+            if current_cube >= doubler_away:
+                raise RuntimeError(
+                    f"Dead-cube Take Action leaked into output: {row['sourceFile']} "
+                    f"Game{row['gameNumber']} ({current_cube} -> {offered_cube}, "
+                    f"doubler {doubler_away}-away)"
+                )
 
     rows.sort(key=lambda row: (-float(row["errorLoss"]), row["sourceFile"], row["gameNumber"], row["moveNumber"]))
     payload = {
