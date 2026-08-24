@@ -31,66 +31,52 @@ DATA_DIR = DIST_DIR / "data"
 CONFIG_PATH = ROOT / "config.json"
 
 
-def source_added_at(source: Path) -> str | None:
-    """Return the oldest Git commit time available for *source*.
+def source_uploaded_at(source: Path) -> str:
+    """Return the latest Git commit time touching *source*.
 
-    ``git log --follow --diff-filter=A`` can return no rows for files whose
-    history crosses renames/copies or repository integrations.  For the New
-    filter we instead follow the complete path history and use its oldest
-    commit.  Editing the file later does not change this date.
+    New is based on when the XG file was most recently uploaded/updated in this
+    repository.  A simple ``git log -1`` is reliable for binary XG files and
+    avoids rename/history reconstruction failures.
 
-    If the full-history query unexpectedly returns nothing, fall back to the
-    latest commit touching the current path so a tracked XG file is never
-    silently excluded from New just because its add-history is unavailable.
+    If Git metadata is unexpectedly unavailable, use build time rather than
+    silently excluding the file from New.
     """
     try:
         relative = source.relative_to(ROOT).as_posix()
     except ValueError:
-        return None
+        return datetime.now(UTC).isoformat()
 
-    commands = (
-        [
-            "git",
-            "-C",
-            str(ROOT),
-            "log",
-            "--follow",
-            "--format=%cI",
-            "--",
-            relative,
-        ],
-        [
-            "git",
-            "-C",
-            str(ROOT),
-            "log",
-            "-1",
-            "--format=%cI",
-            "--",
-            relative,
-        ],
-    )
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(ROOT),
+                "log",
+                "-1",
+                "--format=%cI",
+                "--",
+                relative,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        result = None
 
-    for command in commands:
-        try:
-            result = subprocess.run(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-        except (OSError, subprocess.SubprocessError):
-            continue
-
-        if result.returncode != 0:
-            continue
-
+    if result is not None and result.returncode == 0:
         timestamps = [line.strip() for line in result.stdout.splitlines() if line.strip()]
         if timestamps:
-            return timestamps[-1] if "--follow" in command else timestamps[0]
+            return timestamps[0]
 
-    return None
+    fallback = datetime.now(UTC).isoformat()
+    print(
+        f"WARNING: Git upload time unavailable for {source.name}; "
+        f"using build time {fallback}"
+    )
+    return fallback
 
 
 def load_config() -> dict[str, Any]:
@@ -1072,7 +1058,7 @@ def build() -> None:
     match_summaries: list[dict[str, Any]] = []
 
     for source in imported_files:
-        added_at = source_added_at(source)
+        uploaded_at = source_uploaded_at(source)
         match = xgread.read(source)
         games_by_number = {game.header.game_number: game for game in match.games}
         crawford_game_numbers = {
@@ -1105,7 +1091,7 @@ def build() -> None:
                     and decision.game_number > crawford_game_number
                 )
                 row["sourceFile"] = source.name
-                row["sourceAddedAt"] = added_at
+                row["sourceUploadedAt"] = uploaded_at
                 if cfg["anonymizeOpponents"]:
                     row["opponent"] = "Opponent"
                     if row["onRollOpponent"] != row["player"]:
@@ -1144,7 +1130,7 @@ def build() -> None:
         match_summaries.append(
             {
                 "sourceFile": source.name,
-                "sourceAddedAt": added_at,
+                "sourceUploadedAt": uploaded_at,
                 "matchId": match.identity_hash,
                 "player1": match.header.player1,
                 "player2": match.header.player2,
@@ -1197,12 +1183,9 @@ def build() -> None:
     (DATA_DIR / "positions.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    dated_sources = [summary for summary in match_summaries if summary.get("sourceAddedAt")]
-    undated_sources = [summary["sourceFile"] for summary in match_summaries if not summary.get("sourceAddedAt")]
+    dated_sources = [summary for summary in match_summaries if summary.get("sourceUploadedAt")]
     print(f"Built {len(rows)} positions from {len(imported_files)} match file(s).")
-    print(f"Git-added dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
-    if undated_sources:
-        print("WARNING: Git-added date unavailable for: " + ", ".join(undated_sources[:10]))
+    print(f"Git upload/update dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
 
 
 if __name__ == "__main__":

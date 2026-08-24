@@ -262,10 +262,12 @@ function isChallenge(position) {
 }
 
 function isNewPosition(position, now = Date.now()) {
-  const uploadedAt = Date.parse(position?.sourceAddedAt || "");
+  const rawDate = position?.sourceUploadedAt || position?.sourceAddedAt || "";
+  const uploadedAt = Date.parse(rawDate);
   if (!Number.isFinite(uploadedAt)) return false;
+
   const age = now - uploadedAt;
-  return age >= 0 && age <= NEW_POSITION_WINDOW_MS;
+  return age >= -(5 * 60 * 1000) && age <= NEW_POSITION_WINDOW_MS;
 }
 
 function decisionKind(position) {
