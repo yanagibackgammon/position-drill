@@ -65,11 +65,12 @@ The workflow:
 
 1. Checks out the full Git history (`fetch-depth: 0`)
 2. Checks JavaScript/Python syntax
-3. Runs `python scripts/build.py`
-4. Deduplicates identical parsed matches
-5. Validates generated position IDs, decision kinds, image references, error values, New flags, and Take Action cube legality
-6. Uploads `dist/` as the GitHub Pages artifact
-7. Deploys GitHub Pages
+3. Runs Python/JavaScript regression tests for cube legality, Take/Double orientation, Task/New filtering, DMP/Unlimited conventions, and move notation
+4. Runs `python scripts/build.py`
+5. Deduplicates identical parsed matches
+6. Validates generated position IDs, decision kinds, image references, error values, New flags, and Take Action cube legality
+7. Uploads `dist/` as the GitHub Pages artifact
+8. Deploys GitHub Pages
 
 The app checks `data/positions.json` for updates every five minutes while open and again when the tab becomes active.
 
@@ -78,6 +79,8 @@ The app checks `data/positions.json` for updates every five minutes while open a
 ```bash
 node --check app.js
 python -m py_compile scripts/build.py
+python -m unittest discover -s tests -p "test_*.py"
+node tests/test_app_logic.js
 python scripts/build.py
 ```
 

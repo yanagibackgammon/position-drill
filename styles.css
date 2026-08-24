@@ -8,7 +8,6 @@
   --good: #7EC797;
   --bad: #E38A8A;
   --severe: #C58CFF;
-
   --font-xs: 11px;
   --font-sm: 15px;
   --font-md: 19px;
@@ -18,13 +17,11 @@
 }
 
 * { box-sizing: border-box; }
+
 [hidden] { display: none !important; }
-html {
-  background: var(--black);
-  touch-action: pan-x pan-y;
-  overscroll-behavior-y: none;
-  -webkit-text-size-adjust: 100%;
-}
+
+html { background: var(--black); touch-action: pan-x pan-y; overscroll-behavior-y: none; -webkit-text-size-adjust: 100%; }
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -32,7 +29,13 @@ body {
   background: var(--black);
   font-family: Inter, "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
 }
-button, input { font: inherit; touch-action: manipulation; }
+
+button,
+input {
+  font: inherit;
+  touch-action: manipulation;
+}
+
 button { -webkit-tap-highlight-color: transparent; }
 
 .page-header {
@@ -48,6 +51,7 @@ button { -webkit-tap-highlight-color: transparent; }
   border-bottom: 1px solid var(--theme);
   backdrop-filter: blur(10px);
 }
+
 .title-group {
   position: relative;
   min-width: 0;
@@ -56,6 +60,7 @@ button { -webkit-tap-highlight-color: transparent; }
   justify-content: center;
   white-space: nowrap;
 }
+
 h1 {
   margin: 0;
   color: var(--theme);
@@ -64,6 +69,7 @@ h1 {
   line-height: 1;
   letter-spacing: -.03em;
 }
+
 .creator {
   position: absolute;
   left: calc(100% + 12px);
@@ -73,15 +79,15 @@ h1 {
   font-weight: 600;
   text-decoration: none;
 }
+
 .creator-prefix,
-.creator-name { display: block; }
+.creator-name {
+  display: block;
+}
+
 .creator-prefix::after { content: none; }
 
-main {
-  width: min(920px, calc(100% - 24px));
-  margin: 0 auto;
-  padding: 16px 0 48px;
-}
+main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48px; }
 
 .controls {
   margin-bottom: 12px;
@@ -90,6 +96,7 @@ main {
   gap: 10px;
   align-items: stretch;
 }
+
 .type-tabs {
   min-width: 0;
   display: grid;
@@ -99,6 +106,7 @@ main {
   overflow: hidden;
   background: var(--black);
 }
+
 .type-tab {
   min-width: 0;
   min-height: 44px;
@@ -112,8 +120,11 @@ main {
   font-weight: 700;
   white-space: nowrap;
 }
+
 .type-tab:last-child { border-right: 0; }
+
 .type-tab:hover { background: var(--black); }
+
 .type-count {
   margin-left: 5px;
   color: var(--gray);
@@ -121,6 +132,7 @@ main {
   font-weight: 600;
   white-space: nowrap;
 }
+
 .filter-tabs {
   min-width: 0;
   display: grid;
@@ -130,6 +142,7 @@ main {
   overflow: hidden;
   background: var(--black);
 }
+
 .filter-tab {
   min-width: 0;
   min-height: 44px;
@@ -143,7 +156,9 @@ main {
   font-weight: 700;
   white-space: nowrap;
 }
+
 .filter-tab:last-child { border-right: 0; }
+
 .filter-tab:hover { background: var(--black); }
 
 .quiz-card {
@@ -153,12 +168,9 @@ main {
   background: var(--black);
   box-shadow: 0 22px 60px var(--black);
 }
-.board-wrap {
-  padding: 14px;
-  display: flex;
-  justify-content: center;
-  background: var(--black);
-}
+
+.board-wrap { padding: 14px; display: flex; justify-content: center; background: var(--black); }
+
 .board-wrap img {
   display: block;
   width: min(100%, 780px);
@@ -167,6 +179,7 @@ main {
   border-radius: 8px;
   background: var(--white);
 }
+
 .records-row {
   margin-top: 12px;
   display: flex;
@@ -177,18 +190,15 @@ main {
   font-size: var(--font-xs);
   font-variant-numeric: tabular-nums;
 }
-.record-group {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  white-space: nowrap;
-}
+
+.record-group { display: flex; align-items: baseline; gap: 9px; white-space: nowrap; }
+
 .record-label { color: var(--gray); }
-.record-number {
-  font-size: var(--font-sm);
-  font-weight: 800;
-}
+
+.record-number { font-size: var(--font-sm); font-weight: 800; }
+
 .record-correct { color: var(--good); }
+
 .record-wrong { color: var(--bad); }
 
 .primary-button {
@@ -204,27 +214,21 @@ main {
   font-weight: 800;
   letter-spacing: .02em;
 }
-.primary-button:hover { filter: brightness(1.08); }
-.primary-button:active { transform: translateY(1px); }
-.answer-button {
-  width: 100%;
-  margin: 0;
-}
 
-.answer-panel {
-  border-top: 1px solid var(--line);
-  background: var(--black);
-}
-.analysis-grid {
-  display: grid;
-  grid-template-columns: minmax(260px, .85fr) minmax(390px, 1.35fr);
-  border-bottom: 1px solid var(--line);
-}
+.primary-button:hover { filter: brightness(1.08); }
+
+.primary-button:active { transform: translateY(1px); }
+
+.answer-panel { border-top: 1px solid var(--line); background: var(--black); }
+
+.analysis-grid { display: grid; grid-template-columns: minmax(260px, .85fr) minmax(390px, 1.35fr); border-bottom: 1px solid var(--line); }
+
 .action-analysis,
 .summary-analysis {
   min-width: 0;
   padding: 15px;
 }
+
 .action-analysis {
   min-height: 0;
   border-right: 1px solid var(--line);
@@ -235,9 +239,13 @@ main {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .action-analysis::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
 .action-list { display: grid; row-gap: 9px; visibility: hidden; }
+
 .quiz-card.is-answered .action-list { visibility: visible; }
+
 .action-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 66px;
@@ -248,21 +256,13 @@ main {
   font-size: var(--font-sm);
   line-height: 1.3;
 }
-.action-option.is-best {
-  color: var(--white);
-  font-size: var(--font-md);
-  font-weight: 700;
-}
-.action-text {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-weight: 700;
-}
-.action-text.is-played {
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 3px;
-}
+
+.action-option.is-best { color: var(--white); font-size: var(--font-md); font-weight: 700; }
+
+.action-text { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+
+.action-text.is-played { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+
 .action-error {
   color: var(--white);
   text-align: right;
@@ -272,13 +272,12 @@ main {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
 .action-error.error-warning { color: var(--bad); }
+
 .action-error.error-severe { color: var(--severe); }
-.best-marker {
-  color: var(--theme);
-  font-weight: 800;
-  letter-spacing: .05em;
-}
+
+.best-marker { color: var(--theme); font-weight: 800; letter-spacing: .05em; }
 
 .stat-line {
   display: grid;
@@ -288,10 +287,15 @@ main {
   min-height: 24px;
   font-size: var(--font-sm);
 }
+
 .stat-label { color: var(--theme); font-size: var(--font-sm); font-weight: 700; }
+
 .stat-value { color: var(--white); font-size: var(--font-sm); font-weight: 700; }
+
 .answer-only-value { visibility: hidden; }
+
 .quiz-card.is-answered .answer-only-value { visibility: visible; }
+
 .win-scale {
   position: relative;
   height: 19px;
@@ -299,8 +303,11 @@ main {
   color: var(--gray);
   font-size: var(--font-xs);
 }
+
 .win-scale > span { position: absolute; transform: translateX(-50%); bottom: 1px; }
+
 .win-boundary-marker { color: var(--theme) !important; font-size: var(--font-sm) !important; line-height: 1; }
+
 .win-bar {
   position: relative;
   height: 19px;
@@ -309,6 +316,7 @@ main {
   border: 1px solid var(--gray);
   background: var(--white);
 }
+
 .win-grid-line {
   position: absolute;
   top: 0;
@@ -319,14 +327,19 @@ main {
   transform: translateX(-50%);
   pointer-events: none;
 }
-.win-grid-line.is-mid {
-  width: 2px;
-}
+
+.win-grid-line.is-mid { width: 2px; }
+
 .answer-only-chart { visibility: hidden; }
+
 .quiz-card.is-answered .answer-only-chart { visibility: visible; }
+
 .quiz-card:not(.is-answered) .win-bar { background: transparent; }
+
 .win-black { height: 100%; background: var(--black); }
+
 .win-white { height: 100%; background: var(--white); }
+
 .win-black-gammon,
 .win-white-gammon,
 .win-black-backgammon,
@@ -335,18 +348,26 @@ main {
   top: 0;
   height: 100%;
 }
+
 .win-black-gammon,
 .win-white-gammon {
   background: var(--theme);
 }
+
 .win-black-backgammon,
 .win-white-backgammon {
   background: var(--severe);
 }
+
 .win-black-gammon,
-.win-black-backgammon { left: 0; }
+.win-black-backgammon {
+  left: 0;
+}
+
 .win-white-gammon,
-.win-white-backgammon { right: 0; }
+.win-white-backgammon {
+  right: 0;
+}
 
 .judge-area {
   box-sizing: border-box;
@@ -360,6 +381,7 @@ main {
   align-items: stretch;
   overflow: hidden;
 }
+
 .answer-button {
   grid-column: 2 / span 2;
   grid-row: 1;
@@ -368,6 +390,7 @@ main {
   margin: 0;
   border: 0;
 }
+
 .judge-buttons {
   grid-column: 2 / span 2;
   grid-row: 1;
@@ -376,6 +399,7 @@ main {
   gap: 10px;
   min-width: 0;
 }
+
 .judge-button {
   width: 100%;
   min-width: 0;
@@ -387,16 +411,11 @@ main {
   font-weight: 900;
   transition: filter .12s ease, box-shadow .12s ease, transform .12s ease;
 }
-.correct-button {
-  border: 1px solid var(--good);
-  color: var(--black);
-  background: var(--good);
-}
-.wrong-button {
-  border: 1px solid var(--bad);
-  color: var(--black);
-  background: var(--bad);
-}
+
+.correct-button { border: 1px solid var(--good); color: var(--black); background: var(--good); }
+
+.wrong-button { border: 1px solid var(--bad); color: var(--black); background: var(--bad); }
+
 .next-button {
   grid-column: 1;
   grid-row: 1;
@@ -405,6 +424,7 @@ main {
   margin: 0;
   border: 0;
 }
+
 .source-file {
   min-height: 16px;
   margin-top: 4px;
@@ -418,40 +438,21 @@ main {
 .empty-state[hidden] { display: none; }
 
 @media (max-width: 760px) {
-  .page-header { min-height: 53px; }
-  .creator { display: none; }
-  main { width: 100%; padding: 8px 0 28px; }
-  .controls {
-    margin: 0 8px 8px;
-    grid-template-columns: 1fr;
-  }
-  .type-tab { padding: 7px 5px; font-size: var(--font-sm); }
-  .type-count { display: block; margin: 1px 0 0; font-size: var(--font-xs); }
   .quiz-card { border-radius: 0; border-left: 0; border-right: 0; }
-  .board-wrap { padding: 7px 0; }
-  .board-wrap img { width: 100%; border-left: 0; border-right: 0; border-radius: 0; }
-  .analysis-grid { grid-template-columns: 1fr; }
+
   .action-analysis { border-right: 0; border-bottom: 1px solid var(--line); }
-  .summary-analysis { padding: 13px 10px 15px; }
+
   .stat-line { grid-template-columns: 34px 1fr; gap: 4px; font-size: var(--font-sm); }
+
   .primary-button { width: calc(100% - 16px); margin-left: 8px; margin-right: 8px; }
+
   .answer-button { width: 100%; margin: 0; }
-  .records-row { margin: 10px 8px 8px; gap: 20px; }
-  .record-group { gap: 7px; }
 }
 
-/* Desktop two-column quiz layout */
 @media (min-width: 761px) {
-  main {
-    width: min(1028px, calc(100% - 32px));
-  }
+  main { width: min(1028px, calc(100% - 32px)); }
 
-  .quiz-layout {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-    min-height: 100%;
-  }
+  .quiz-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .position-column {
     min-width: 0;
@@ -461,149 +462,83 @@ main {
     background: var(--black);
   }
 
-  .board-wrap {
-    flex: 1;
-    min-height: 0;
-    align-items: center;
-    padding: 14px;
-  }
+  .board-wrap { flex: 1; align-items: center; }
 
-  .board-wrap img {
-    width: auto;
-    max-width: min(100%, 520px);
-    max-height: 412px;
-    object-fit: contain;
-  }
+  .answer-column { min-width: 0; display: flex; flex-direction: column; background: var(--black); }
 
-  .answer-column {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    background: var(--black);
-  }
+  .answer-panel { border-top: 0; }
 
-  .answer-panel {
-    flex: 1;
-    border-top: 0;
-  }
+  .analysis-section { height: 350px; flex: 0 0 350px; overflow: hidden; }
 
-  .analysis-section {
-    height: 350px;
-    flex: 0 0 350px;
-    overflow: hidden;
-  }
+  .analysis-grid { height: 100%; grid-template-columns: 1fr; grid-template-rows: 165px 185px; }
 
-  .analysis-grid {
-    height: 100%;
-    grid-template-columns: 1fr;
-    grid-template-rows: 165px 185px;
-  }
+  .action-analysis { border-right: 0; border-bottom: 1px solid var(--line); overflow-x: hidden; overflow-y: auto; }
 
-  .action-analysis {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-
-  .summary-analysis {
-    overflow: hidden;
-  }
-
+  .summary-analysis { overflow: hidden; }
 }
 
-.analysis-section {
-  border-bottom: 1px solid var(--line);
-}
-.analysis-section .analysis-grid {
-  border-bottom: 0;
-}
+.analysis-section { border-bottom: 1px solid var(--line); }
+
+.analysis-section .analysis-grid { border-bottom: 0; }
 
 @media (max-width: 760px) {
-  .quiz-layout { display: block; }
   .answer-column { background: var(--black); }
 }
 
-/* Responsive labels: desktop keeps the full decision names. */
 .type-label-short { display: none; }
+
 .record-source-row { min-width: 0; }
 
 @media (max-width: 760px) {
-  /* Two menu frames. Cell widths are 3:3:3 | 2:2 on smartphone. */
-  .controls {
-    grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
-    gap: 6px;
-    align-items: stretch;
-  }
+  .controls { align-items: stretch; }
+
   .type-tabs,
   .filter-tabs {
     border-radius: 10px;
   }
+
   .type-label-full { display: none; }
+
   .type-label-short { display: inline; }
-  .type-tab {
-    min-height: 44px;
-    padding: 5px 3px;
-    font-size: var(--font-sm);
-  }
-  .type-count {
-    display: block;
-    margin: 1px 0 0;
-    font-size: var(--font-xs);
-    line-height: 1;
-  }
 
-  /* Reduce the board while preserving the same aspect ratio as desktop. */
-  .board-wrap {
-    height: min(30svh, 245px);
-    min-height: 150px;
-    padding: 4px 0;
-    align-items: center;
-  }
-  .board-wrap img {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-left: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-    border-radius: 6px;
-  }
+  .type-tab { min-height: 44px; padding: 5px 3px; font-size: var(--font-sm); }
 
-  /* Tighten the answer area so the footer remains visible in one viewport. */
+  .type-count { display: block; margin: 1px 0 0; font-size: var(--font-xs); line-height: 1; }
+
   .action-analysis { padding: 9px 10px; }
-  .summary-analysis { padding: 9px 10px 10px; }
-  .action-list { row-gap: 5px; }
-  .action-option { font-size: var(--font-sm); line-height: 1.2; }
-  .action-option.is-best { font-size: var(--font-md); }
-  .stat-line { min-height: 20px; }
-  .win-scale { height: 15px; margin-top: 5px; }
-  .win-bar { height: 16px; }
-  .judge-area { padding: 8px 8px 6px; }
-  .judge-button,
-  .primary-button { min-height: 42px; }
 
-  /* Compact footer row: Now / Total / Today / source file. */
+  .summary-analysis { padding: 9px 10px 10px; }
+
+  .action-list { row-gap: 5px; }
+
+  .action-option { font-size: var(--font-sm); line-height: 1.2; }
+
+  .action-option.is-best { font-size: var(--font-md); }
+
+  .stat-line { min-height: 20px; }
+
+  .win-scale { margin-top: 5px; }
+
+  .win-bar { height: 16px; }
+
+  .judge-button,
+  .primary-button {
+    min-height: 42px;
+  }
+
   .record-source-row {
-    margin: 7px 8px 0;
     display: flex;
     align-items: baseline;
     justify-content: flex-start;
     gap: 12px;
     min-width: 0;
-    overflow: hidden;
     white-space: nowrap;
   }
-  .records-row {
-    flex: 0 0 auto;
-    margin: 0;
-    justify-content: flex-start;
-    gap: 14px;
-    font-size: var(--font-xs);
-  }
-  .record-group { gap: 5px; }
+
+  .records-row { flex: 0 0 auto; margin: 0; justify-content: flex-start; font-size: var(--font-xs); }
+
   .record-number { font-size: var(--font-sm); }
+
   .source-file {
     flex: 1 1 auto;
     min-width: 0;
@@ -619,13 +554,9 @@ main {
   }
 }
 
-
-/* Final smartphone layout overrides */
 @media (max-width: 760px) {
-  .page-header {
-    min-height: 53px;
-    padding: 7px clamp(6px, 2.8vw, 10px);
-  }
+  .page-header { padding: 7px clamp(6px, 2.8vw, 10px); }
+
   .title-group {
     width: 100%;
     min-width: 0;
@@ -634,6 +565,7 @@ main {
     justify-content: space-between;
     gap: clamp(4px, 2vw, 10px);
   }
+
   h1 {
     flex: 0 1 auto;
     min-width: 0;
@@ -641,6 +573,7 @@ main {
     font-size: clamp(24px, 8.6vw, var(--title-mobile));
     transform: translateY(3px);
   }
+
   .creator {
     position: static;
     flex: 0 1 auto;
@@ -650,88 +583,42 @@ main {
     align-items: flex-start;
     justify-content: center;
     gap: 1px;
-    color: var(--white);
-    font-size: clamp(9px, 3.06vw, var(--font-xs));
-    line-height: 1.05;
     text-align: left;
     transform: translateY(3px);
   }
+
   .creator-prefix,
   .creator-name {
     max-width: 100%;
     white-space: nowrap;
   }
-  .creator-name {
-    color: var(--white);
-    font-size: inherit;
-    font-weight: 700;
-  }
 
-  /* Decision cells are 3 units each; filter cells are 2 units each on smartphone. */
-  .controls {
-    grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
-    gap: 6px;
-  }
-  .type-tabs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-  }
+  .creator-name { color: var(--white); font-size: inherit; font-weight: 700; }
+
+  .type-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+
   .type-tab,
   .filter-tab {
     min-width: 0;
     width: 100%;
   }
 
-  /* Position fills the browser width while retaining its desktop aspect ratio. */
-  .board-wrap {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    padding: 0;
-  }
-  .board-wrap img {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-width: none;
-    max-height: none;
-    object-fit: contain;
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
-  }
+  .analysis-section { overflow: hidden; }
 
-  /* Keep the analysis frame at the taller four-result height on every question. */
-  .analysis-section {
-    height: 250px;
-    min-height: 250px;
-    max-height: 250px;
-    overflow: hidden;
-  }
-  .analysis-grid {
-    height: 100%;
-    grid-template-columns: 1fr;
-    grid-template-rows: 104px 146px;
-  }
+  .analysis-grid { height: 100%; grid-template-columns: 1fr; grid-template-rows: 104px 146px; }
+
   .action-analysis,
   .summary-analysis {
     min-height: 0;
     overflow: hidden;
   }
 
-  /* Leave enough vertical room for the larger boundary marker. */
   .win-scale { height: 18px; }
 }
 
-/* Smartphone stable-height layout: prevent load-time vertical shifts. */
 @media (max-width: 760px) {
-  /* Keep the header height unchanged; match the desktop creator typography. */
-  .creator {
-    color: var(--white);
-    font-size: var(--font-xs);
-    font-weight: 600;
-    line-height: 1.02;
-  }
+  .creator { color: var(--white); font-size: var(--font-xs); font-weight: 600; line-height: 1.02; }
+
   .creator-prefix,
   .creator-name {
     color: inherit;
@@ -740,53 +627,15 @@ main {
     line-height: inherit;
   }
 
-  /* Remove spare bottom room so the footer can stay in the first viewport. */
-  main {
-    padding-bottom: 4px;
-  }
+  main { padding-bottom: 4px; }
 
-  /*
-   * Reserve the board area before the SVG loads.
-   * On normal/tall phones it is exactly the full-browser-width 690:546 board.
-   * On shorter phones only this area contracts, keeping all lower controls fixed.
-   */
-  .board-wrap {
-    flex: 0 0 auto;
-    width: 100%;
-    height: min(calc(100vw * 0.79130435), max(138px, calc(100svh - 432px)));
-    min-height: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  .board-wrap img {
-    display: block;
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    object-position: center center;
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
-  }
+  .board-wrap { flex: 0 0 auto; }
 
-  /* Keep the answer area geometry identical before and after image loading. */
-  .analysis-section {
-    flex: 0 0 250px;
-    height: 250px;
-    min-height: 250px;
-    max-height: 250px;
-  }
-  .judge-area {
-    min-height: 56px;
-  }
+  .board-wrap img { border-left: 0; border-right: 0; border-radius: 0; }
+
+  .analysis-section { flex: 0 0 250px; }
 }
 
-/* Smartphone viewport lock: keep the footer in the first screen at every quiz state. */
 @media (max-width: 760px) {
   html,
   body {
@@ -795,10 +644,8 @@ main {
     min-height: 0;
     overflow: hidden;
   }
-  body {
-    height: 100svh;
-    min-height: 100svh;
-  }
+
+  body { height: 100svh; min-height: 100svh; }
 
   .page-header {
     box-sizing: border-box;
@@ -820,7 +667,6 @@ main {
     overflow: hidden;
   }
 
-  /* Two menu frames: 3:3:3 | 2:2 cell widths on smartphone. */
   .controls {
     flex: 0 0 44px;
     width: calc(100% - 16px);
@@ -830,38 +676,30 @@ main {
     grid-template-columns: minmax(0, 9fr) minmax(0, 4fr);
     gap: 6px;
   }
+
   .type-tabs,
   .filter-tabs {
     height: 44px;
   }
+
   .type-tab,
   .filter-tab {
     height: 44px;
     min-height: 44px;
   }
 
-  /* The quiz card gets all remaining height except the fixed footer row. */
-  .quiz-card {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .quiz-layout {
-    height: 100%;
-    min-height: 0;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) 300px;
-  }
+  .quiz-card { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+
+  .quiz-layout { height: 100%; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) 300px; }
+
   .position-column,
   .answer-column,
   .answer-panel {
     min-height: 0;
   }
 
-  /* Only the board area contracts on shorter phones; image ratio never changes. */
-  .position-column {
-    overflow: hidden;
-  }
+  .position-column { overflow: hidden; }
+
   .board-wrap {
     width: 100%;
     height: 100%;
@@ -872,6 +710,7 @@ main {
     justify-content: center;
     overflow: hidden;
   }
+
   .board-wrap img {
     display: block;
     width: auto;
@@ -884,12 +723,8 @@ main {
     flex: 0 1 auto;
   }
 
-  /* Fixed-height answer block: 4-result analysis + one stable button row. */
-  .answer-column {
-    height: 300px;
-    max-height: 300px;
-    overflow: hidden;
-  }
+  .answer-column { height: 300px; max-height: 300px; overflow: hidden; }
+
   .answer-panel {
     height: 300px;
     max-height: 300px;
@@ -897,13 +732,9 @@ main {
     grid-template-rows: 250px 50px;
     overflow: hidden;
   }
-  .analysis-section {
-    height: 250px;
-    min-height: 250px;
-    max-height: 250px;
-  }
 
-  /* Three fixed columns: ANSWER spans ○+× before reveal; NEXT never moves. */
+  .analysis-section { height: 250px; min-height: 250px; max-height: 250px; }
+
   .judge-area {
     height: 50px;
     min-height: 50px;
@@ -915,6 +746,7 @@ main {
     align-items: stretch;
     overflow: hidden;
   }
+
   .judge-area > .answer-button {
     grid-column: 2 / span 2;
     grid-row: 1;
@@ -923,6 +755,7 @@ main {
     min-height: 42px;
     margin: 0;
   }
+
   .judge-area > .judge-buttons {
     grid-column: 2 / span 2;
     grid-row: 1;
@@ -930,6 +763,7 @@ main {
     min-height: 42px;
     gap: 6px;
   }
+
   .judge-area > .next-button {
     grid-column: 1;
     grid-row: 1;
@@ -939,7 +773,6 @@ main {
     margin: 0;
   }
 
-  /* Footer is always reserved inside the viewport. */
   .record-source-row {
     flex: 0 0 19px;
     height: 19px;
@@ -950,54 +783,44 @@ main {
   }
 }
 
-/* Very short phones: preserve controls/analysis/footer and give every spare pixel to the board. */
 @media (max-width: 760px) and (max-height: 640px) {
   main { padding-top: 3px; }
+
   .controls { margin-bottom: 3px; }
+
   .quiz-layout { grid-template-rows: minmax(0, 1fr) 292px; }
+
   .answer-column,
   .answer-panel {
     height: 292px;
     max-height: 292px;
   }
+
   .answer-panel { grid-template-rows: 242px 50px; }
-  .analysis-section {
-    height: 242px;
-    min-height: 242px;
-    max-height: 242px;
-  }
-  .analysis-grid {
-    grid-template-rows: 100px 142px;
-  }
+
+  .analysis-section { height: 242px; min-height: 242px; max-height: 242px; }
+
+  .analysis-grid { grid-template-rows: 100px 142px; }
+
   .action-analysis { padding-top: 7px; padding-bottom: 7px; }
+
   .summary-analysis { padding-top: 7px; padding-bottom: 7px; }
+
   .record-source-row { margin-top: 2px; }
 }
 
-/* Compact three-part record row. */
 @media (max-width: 760px) {
-  .records-row {
-    gap: 10px;
-  }
-  .record-group {
-    gap: 4px;
-  }
+  .records-row { gap: 10px; }
+
+  .record-group { gap: 4px; }
 }
 
-/* Desktop: keep the fixed-height button row tight to its content. */
 @media (min-width: 761px) {
-  .answer-column {
-    align-self: start;
-    height: auto;
-  }
+  .answer-column { height: auto; }
 
-  .answer-panel {
-    flex: 0 0 auto;
-    height: auto;
-  }
+  .answer-panel { flex: 0 0 auto; }
 }
 
-/* Desktop: lock the compact card height and fit the board inside it. */
 @media (min-width: 761px) {
   .quiz-layout {
     height: 412px;
@@ -1015,15 +838,9 @@ main {
     overflow: hidden;
   }
 
-  .answer-column {
-    align-self: stretch;
-  }
+  .answer-column { align-self: stretch; }
 
-  .answer-panel {
-    height: 412px;
-    max-height: 412px;
-    overflow: hidden;
-  }
+  .answer-panel { height: 412px; max-height: 412px; overflow: hidden; }
 
   .board-wrap {
     box-sizing: border-box;
@@ -1044,12 +861,7 @@ main {
   }
 }
 
-/* Game-information scroller: all text moves together; the graph stays fixed. */
-.summary-analysis {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+.summary-analysis { display: flex; flex-direction: column; overflow: hidden; }
 
 .summary-text-scroll {
   flex: 1 1 auto;
@@ -1063,11 +875,7 @@ main {
   touch-action: pan-y;
 }
 
-.summary-text-scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
+.summary-text-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 .summary-text-grid {
   display: grid;
@@ -1080,10 +888,7 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.summary-text-grid > .stat-line {
-  height: 24px;
-  min-height: 24px;
-}
+.summary-text-grid > .stat-line { height: 24px; min-height: 24px; }
 
 .win-scale,
 .win-bar {
@@ -1106,26 +911,13 @@ main {
     touch-action: pan-y;
   }
 
-  .action-analysis::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
+  .action-analysis::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
-  .summary-text-grid {
-    grid-template-rows: repeat(5, 20px);
-    column-gap: 4px;
-    row-gap: 2.5px;
-  }
+  .summary-text-grid { grid-template-rows: repeat(5, 20px); column-gap: 4px; row-gap: 2.5px; }
 
-  .summary-text-grid > .stat-line {
-    height: 20px;
-    min-height: 20px;
-  }
+  .summary-text-grid > .stat-line { height: 20px; min-height: 20px; }
 }
 
-
-/* Player-side labels in the game-information area. */
 .stat-line.side-black .stat-label,
 .stat-line.side-white .stat-label {
   width: 30px;
@@ -1139,34 +931,22 @@ main {
   line-height: 1;
 }
 
-.stat-line.side-black .stat-label {
-  color: var(--white);
-  background: var(--black);
-}
+.stat-line.side-black .stat-label { color: var(--white); background: var(--black); }
 
-.stat-line.side-white .stat-label {
-  color: var(--black);
-  background: var(--white);
-}
+.stat-line.side-white .stat-label { color: var(--black); background: var(--white); }
 
-
-/* Shared active-menu appearance on desktop and smartphone. */
 .type-tab.is-active,
 .filter-tab.is-active {
   color: var(--white);
   background: var(--active);
 }
 
-
-/* Menu label color: non-selected labels are white; counts keep their existing styling. */
 .type-label-full,
 .type-label-short,
 .filter-label {
   color: var(--white);
 }
 
-
-/* Smartphone: stack every menu label above its count. */
 @media (max-width: 760px) {
   .type-tab,
   .filter-tab {
@@ -1177,10 +957,12 @@ main {
     gap: 1px;
     line-height: 1;
   }
+
   .type-tab .type-label-short,
   .filter-tab .filter-label {
     line-height: 1;
   }
+
   .type-tab .type-count,
   .filter-tab .type-count {
     margin: 2px 0 0;

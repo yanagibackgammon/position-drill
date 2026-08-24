@@ -800,6 +800,38 @@ def svg_text(text: str) -> str:
     return html.escape(str(text), quote=True)
 
 
+def quiz_render_state(row: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Return the board row/turn marker used by the drill diagram.
+
+    Cube-decision diagrams always show the state immediately BEFORE the offer.
+    The drill owner remains black/bottom:
+    - Double Action: owner/doubler is black and on roll.
+    - Take Action: owner/receiver is black; doubler/on-roll is white/top.
+    """
+    if row.get("decisionKind") != "take" or not row.get("quizPosition"):
+        return row, "black"
+
+    quiz_row = {
+        **row,
+        "position": row["quizPosition"],
+        "player": row.get("quizPlayer", row["player"]),
+        "opponent": row.get("quizOpponent", row["opponent"]),
+        "playerScore": row.get("quizPlayerScore", row["playerScore"]),
+        "opponentScore": row.get("quizOpponentScore", row["opponentScore"]),
+        "onRollScore": row.get("quizOnRollScore", row["onRollScore"]),
+        "onRollOpponentScore": row.get(
+            "quizOnRollOpponentScore",
+            row["onRollOpponentScore"],
+        ),
+        # Keep the PRE-OFFER cube value. quizCubeValue is the offered value.
+        "cubeValue": row["cubeValue"],
+        # Before a redouble, the live cube belongs to the doubler, who is
+        # white/top in Take Action. A centered cube stays centered.
+        "cubeOwner": "center" if row["cubeOwner"] == "center" else "opponent",
+    }
+    return quiz_row, "white"
+
+
 def render_board_svg(
     row: dict[str, Any],
     *,
@@ -1222,30 +1254,7 @@ def build() -> None:
                 row["quizBoardImage"] = quiz_board_relative
                 (DIST_DIR / board_relative).write_text(render_board_svg(row), encoding="utf-8")
                 (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
-                # Cube quizzes always show the state immediately BEFORE the offer.
-                # The drill owner stays black/bottom:
-                # - Double Action: the drill owner is the doubler (black/on roll).
-                # - Take Action: the drill owner is the receiver/taker (black),
-                #   while the doubler/on-roll player is white/top.
-                quiz_render_row = row
-                quiz_marker = "black"
-                if row.get("decisionKind") == "take" and row.get("quizPosition"):
-                    quiz_render_row = {
-                        **row,
-                        "position": row["quizPosition"],
-                        "player": row.get("quizPlayer", row["player"]),
-                        "opponent": row.get("quizOpponent", row["opponent"]),
-                        "playerScore": row.get("quizPlayerScore", row["playerScore"]),
-                        "opponentScore": row.get("quizOpponentScore", row["opponentScore"]),
-                        "onRollScore": row.get("quizOnRollScore", row["onRollScore"]),
-                        "onRollOpponentScore": row.get("quizOnRollOpponentScore", row["onRollOpponentScore"]),
-                        # PRE-OFFER cube value, not quizCubeValue (the offered value).
-                        "cubeValue": row["cubeValue"],
-                        # Before a redouble the cube belongs to the doubler,
-                        # who is white/top in the Take Action view.
-                        "cubeOwner": "center" if row["cubeOwner"] == "center" else "opponent",
-                    }
-                    quiz_marker = "white"
+                quiz_render_row, quiz_marker = quiz_render_state(row)
 
                 (DIST_DIR / quiz_board_relative).write_text(
                     render_board_svg(
