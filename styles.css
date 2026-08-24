@@ -437,7 +437,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .empty-state[hidden] { display: none; }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .quiz-card { border-radius: 0; border-left: 0; border-right: 0; }
 
   .action-analysis { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -449,7 +449,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .answer-button { width: 100%; margin: 0; }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 791px) {
   main { width: min(1028px, calc(100% - 32px)); }
 
   .quiz-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -481,7 +481,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .analysis-section .analysis-grid { border-bottom: 0; }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .answer-column { background: var(--black); }
 }
 
@@ -489,7 +489,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .record-source-row { min-width: 0; }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .controls { align-items: stretch; }
 
   .type-tabs,
@@ -554,7 +554,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .page-header { padding: 7px clamp(6px, 2.8vw, 10px); }
 
   .title-group {
@@ -616,7 +616,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .win-scale { height: 18px; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .creator { color: var(--white); font-size: var(--font-xs); font-weight: 600; line-height: 1.02; }
 
   .creator-prefix,
@@ -636,7 +636,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .analysis-section { flex: 0 0 250px; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   html,
   body {
     width: 100%;
@@ -783,7 +783,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   }
 }
 
-@media (max-width: 760px) and (max-height: 640px) {
+@media (max-width: 790px) and (max-height: 640px) {
   main { padding-top: 3px; }
 
   .controls { margin-bottom: 3px; }
@@ -809,19 +809,19 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .record-source-row { margin-top: 2px; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .records-row { gap: 10px; }
 
   .record-group { gap: 4px; }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 791px) {
   .answer-column { height: auto; }
 
   .answer-panel { flex: 0 0 auto; }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 791px) {
   .quiz-layout {
     height: 412px;
     min-height: 412px;
@@ -895,7 +895,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   flex: 0 0 auto;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   html,
   body {
     touch-action: pan-y;
@@ -947,7 +947,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   color: var(--white);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 790px) {
   .type-tab,
   .filter-tab {
     display: flex;
