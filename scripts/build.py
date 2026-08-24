@@ -1092,6 +1092,13 @@ def build() -> None:
                 )
                 row["sourceFile"] = source.name
                 row["sourceUploadedAt"] = uploaded_at
+                # Backward-compatible alias: older cached app.js versions
+                # used sourceAddedAt. Keep both fields identical so a mixed
+                # Pages/CDN deployment cannot make every New count become 0.
+                row["sourceAddedAt"] = uploaded_at
+                row["sourceUploadedAtMs"] = int(
+                    datetime.fromisoformat(uploaded_at.replace("Z", "+00:00")).timestamp() * 1000
+                )
                 if cfg["anonymizeOpponents"]:
                     row["opponent"] = "Opponent"
                     if row["onRollOpponent"] != row["player"]:
@@ -1131,6 +1138,10 @@ def build() -> None:
             {
                 "sourceFile": source.name,
                 "sourceUploadedAt": uploaded_at,
+                "sourceAddedAt": uploaded_at,
+                "sourceUploadedAtMs": int(
+                    datetime.fromisoformat(uploaded_at.replace("Z", "+00:00")).timestamp() * 1000
+                ),
                 "matchId": match.identity_hash,
                 "player1": match.header.player1,
                 "player2": match.header.player2,

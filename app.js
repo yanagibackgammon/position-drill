@@ -262,8 +262,11 @@ function isChallenge(position) {
 }
 
 function isNewPosition(position, now = Date.now()) {
-  const rawDate = position?.sourceUploadedAt || position?.sourceAddedAt || "";
-  const uploadedAt = Date.parse(rawDate);
+  const numericUploadedAt = Number(position?.sourceUploadedAtMs);
+  const uploadedAt = Number.isFinite(numericUploadedAt) && numericUploadedAt > 0
+    ? numericUploadedAt
+    : Date.parse(position?.sourceUploadedAt || position?.sourceAddedAt || "");
+
   if (!Number.isFinite(uploadedAt)) return false;
 
   const age = now - uploadedAt;
