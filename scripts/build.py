@@ -1049,6 +1049,73 @@ def render_board_svg(
     return "".join(elements)
 
 
+VALID_DECISION_KINDS = frozenset({"checker", "double", "take"})
+
+
+def validate_output_rows(rows: list[dict[str, Any]]) -> None:
+    """Validate generated rows before anything is published."""
+    seen_ids: set[str] = set()
+
+    for row in rows:
+        row_id = str(row.get("id") or "")
+        if not row_id:
+            raise RuntimeError("Generated position is missing an id")
+        if row_id in seen_ids:
+            raise RuntimeError(f"Duplicate generated position id: {row_id}")
+        seen_ids.add(row_id)
+
+        kind = row.get("decisionKind")
+        if kind not in VALID_DECISION_KINDS:
+            raise RuntimeError(f"Invalid decision kind for {row_id}: {kind!r}")
+
+        source_file = str(row.get("sourceFile") or "")
+        if not source_file:
+            raise RuntimeError(f"Generated position is missing sourceFile: {row_id}")
+
+        if not isinstance(row.get("isNew"), bool):
+            raise RuntimeError(f"Generated position is missing boolean isNew: {row_id}")
+
+        try:
+            error_loss = float(row["errorLoss"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RuntimeError(f"Invalid errorLoss for {row_id}") from exc
+        if not math.isfinite(error_loss) or error_loss < 0:
+            raise RuntimeError(
+                f"Non-finite/negative errorLoss for {row_id}: {error_loss}"
+            )
+
+        for image_key in ("boardImage", "quizBoardImage"):
+            relative = str(row.get(image_key) or "")
+            if not relative:
+                raise RuntimeError(f"{row_id} is missing {image_key}")
+            if not (DIST_DIR / relative).is_file():
+                raise RuntimeError(
+                    f"{row_id} references missing {image_key}: {relative}"
+                )
+
+        if kind != "take":
+            continue
+
+        current_cube = int(row.get("cubeValue") or 1)
+        offered_cube = int(row.get("quizCubeValue") or 0)
+        if offered_cube != current_cube * 2:
+            raise RuntimeError(
+                f"Invalid Take Action cube transition in {source_file} "
+                f"Game{row['gameNumber']}: {current_cube} -> {offered_cube}"
+            )
+
+        match_length = int(row.get("matchLength") or 0)
+        if 0 < match_length < 99999:
+            doubler_score = int(row.get("playerScore") or 0)
+            doubler_away = match_length - doubler_score
+            if current_cube >= doubler_away:
+                raise RuntimeError(
+                    f"Dead-cube Take Action leaked into output: {source_file} "
+                    f"Game{row['gameNumber']} ({current_cube} -> {offered_cube}, "
+                    f"doubler {doubler_away}-away)"
+                )
+
+
 def build() -> None:
     cfg = load_config()
     if DIST_DIR.exists():
@@ -1082,11 +1149,28 @@ def build() -> None:
     )
     rows: list[dict[str, Any]] = []
     match_summaries: list[dict[str, Any]] = []
+    seen_matches: dict[str, str] = {}
+    duplicate_match_files: list[tuple[str, str]] = []
 
     for source in imported_files:
+        match = xgread.read(source)
+
+        # The same XG match can exist under multiple filenames (for example a
+        # generic match_*.xg export plus a later descriptive filename).  Keep
+        # only the first file in deterministic filename order so the drill does
+        # not contain duplicate positions or duplicate IDs.
+        previous_source = seen_matches.get(match.identity_hash)
+        if previous_source is not None:
+            duplicate_match_files.append((source.name, previous_source))
+            print(
+                "WARNING: Skipping duplicate match file "
+                f"{source.name}; same parsed match as {previous_source}"
+            )
+            continue
+        seen_matches[match.identity_hash] = source.name
+
         uploaded_at = source_uploaded_at(source)
         is_new_source = source_is_new(uploaded_at)
-        match = xgread.read(source)
         games_by_number = {game.header.game_number: game for game in match.games}
         crawford_game_numbers = {
             game.header.game_number
@@ -1190,49 +1274,30 @@ def build() -> None:
             }
         )
 
-    # Final Take Action safety checks.  These assertions make a future parser or
-    # data-format regression fail at build time instead of publishing an
-    # impossible cube position.
-    for row in rows:
-        if row.get("decisionKind") != "take":
-            continue
-
-        current_cube = int(row.get("cubeValue") or 1)
-        offered_cube = int(row.get("quizCubeValue") or 0)
-        if offered_cube != current_cube * 2:
-            raise RuntimeError(
-                f"Invalid Take Action cube transition in {row['sourceFile']} "
-                f"Game{row['gameNumber']}: {current_cube} -> {offered_cube}"
-            )
-
-        match_length = int(row.get("matchLength") or 0)
-        if 0 < match_length < 99999:
-            doubler_score = int(row.get("playerScore") or 0)
-            doubler_away = match_length - doubler_score
-            if current_cube >= doubler_away:
-                raise RuntimeError(
-                    f"Dead-cube Take Action leaked into output: {row['sourceFile']} "
-                    f"Game{row['gameNumber']} ({current_cube} -> {offered_cube}, "
-                    f"doubler {doubler_away}-away)"
-                )
+    # Validate the complete generated dataset before publishing it.
+    validate_output_rows(rows)
 
     rows.sort(key=lambda row: (-float(row["errorLoss"]), row["sourceFile"], row["gameNumber"], row["moveNumber"]))
     payload = {
         "meta": {
             "title": cfg["databaseTitle"],
+            "schemaVersion": 1,
             "generatedAt": datetime.now(UTC).isoformat(),
+            "newPositionWindowDays": NEW_POSITION_WINDOW.days,
             "errorThreshold": cfg["errorThreshold"],
             "blunderThreshold": cfg["blunderThreshold"],
             "targetPlayerMode": "xg-bottom",
             "themeColor": cfg["themeColor"],
-            "sourceFileCount": len(imported_files),
+            "sourceFileCount": len(match_summaries),
+            "importedFileCount": len(imported_files),
+            "duplicateMatchFileCount": len(duplicate_match_files),
             "positionCount": len(rows),
             "matches": match_summaries,
         },
         "positions": rows,
     }
     (DATA_DIR / "positions.json").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
     )
     dated_sources = [summary for summary in match_summaries if summary.get("sourceUploadedAt")]
     new_sources = [summary for summary in match_summaries if summary.get("isNew")]
@@ -1241,7 +1306,10 @@ def build() -> None:
         kind: sum(1 for row in new_rows if row.get("decisionKind") == kind)
         for kind in ("checker", "double", "take")
     }
-    print(f"Built {len(rows)} positions from {len(imported_files)} match file(s).")
+    print(
+        f"Built {len(rows)} positions from {len(match_summaries)} unique match file(s) "
+        f"({len(imported_files)} imported, {len(duplicate_match_files)} duplicate skipped)."
+    )
     print(f"Git upload/update dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
     print(
         "New at build time: "
