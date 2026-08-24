@@ -1,0 +1,17 @@
+# Build output
+dist/
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
+
+# Test/tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
