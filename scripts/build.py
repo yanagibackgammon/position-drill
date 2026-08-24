@@ -731,9 +731,9 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         cube.no_double_analysis,
     )
 
-    # The displayed quiz uses the doubler/on-roll state immediately before the
-    # offer, matching Double Action.  Response-perspective fields are retained
-    # only for Take/Pass analysis and backward compatibility.
+    # The displayed Take quiz is the state immediately before the offer, but
+    # keeps the drill owner (the receiver/taker) as black/bottom.  The doubler
+    # is therefore white/top and is the on-roll side.
     doubler_sign = cube.player
     doubler = player_name(match, doubler_sign)
     doubler_score, taker_score = score_for_sign(decision, doubler_sign)
@@ -772,7 +772,7 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         # Main positions view: historical doubler perspective.
         "cubeOwner": "center" if cube.cube_value == 0 else "onRoll",
         "position": position_for_view(cube.position.points, doubler_sign),
-        # Response-perspective data retained for Take/Pass analysis only.
+        # Receiver/taker perspective used by the Take Action diagram and game info.
         "quizPosition": position_for_view(cube.position.points, taker_sign),
         "quizPlayer": taker,
         "quizOpponent": doubler,
@@ -780,9 +780,8 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         "quizOpponentScore": doubler_score,
         "quizOnRollScore": taker_score,
         "quizOnRollOpponentScore": doubler_score,
-        # Offered-cube response values are retained for Take/Pass analysis.
-        # They are not used by the position diagram or game-information panel,
-        # which now consistently show the pre-offer state.
+        # Offered-cube response values are retained for Take/Pass analysis only.
+        # The diagram/game info use cubeValue above, i.e. the pre-offer cube.
         "quizCubeValue": cube_value_number(cube.cube_value) * 2,
         "quizCubeOwner": "opponent",
         "quizWinRate": quiz_rates["winRate"],
@@ -1139,15 +1138,36 @@ def build() -> None:
                 row["quizBoardImage"] = quiz_board_relative
                 (DIST_DIR / board_relative).write_text(render_board_svg(row), encoding="utf-8")
                 (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
-                # All cube quizzes use the board state immediately before the
-                # offer.  For Take Action this is the doubler/on-roll view with
-                # the current (pre-offer) cube, exactly like Double Action.
+                # Cube quizzes always show the state immediately BEFORE the offer.
+                # The drill owner stays black/bottom:
+                # - Double Action: the drill owner is the doubler (black/on roll).
+                # - Take Action: the drill owner is the receiver/taker (black),
+                #   while the doubler/on-roll player is white/top.
                 quiz_render_row = row
+                quiz_marker = "black"
+                if row.get("decisionKind") == "take" and row.get("quizPosition"):
+                    quiz_render_row = {
+                        **row,
+                        "position": row["quizPosition"],
+                        "player": row.get("quizPlayer", row["player"]),
+                        "opponent": row.get("quizOpponent", row["opponent"]),
+                        "playerScore": row.get("quizPlayerScore", row["playerScore"]),
+                        "opponentScore": row.get("quizOpponentScore", row["opponentScore"]),
+                        "onRollScore": row.get("quizOnRollScore", row["onRollScore"]),
+                        "onRollOpponentScore": row.get("quizOnRollOpponentScore", row["onRollOpponentScore"]),
+                        # PRE-OFFER cube value, not quizCubeValue (the offered value).
+                        "cubeValue": row["cubeValue"],
+                        # Before a redouble the cube belongs to the doubler,
+                        # who is white/top in the Take Action view.
+                        "cubeOwner": "center" if row["cubeOwner"] == "center" else "opponent",
+                    }
+                    quiz_marker = "white"
+
                 (DIST_DIR / quiz_board_relative).write_text(
                     render_board_svg(
                         quiz_render_row,
                         show_pip_counts=False,
-                        on_roll_marker="black",
+                        on_roll_marker=quiz_marker,
                     ),
                     encoding="utf-8",
                 )
