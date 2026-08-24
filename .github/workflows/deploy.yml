@@ -36,6 +36,11 @@ jobs:
           node --check app.js
           python -m py_compile scripts/build.py
 
+      - name: Run regression tests
+        run: |
+          python -m unittest discover -s tests -p "test_*.py"
+          node tests/test_app_logic.js
+
       - name: Build Position Drill data and boards
         run: python scripts/build.py
 
