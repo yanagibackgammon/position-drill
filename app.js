@@ -37,8 +37,6 @@ const elements = {
   tabs: [...document.querySelectorAll("[data-kind]")],
   counts: [...document.querySelectorAll("[data-count]")],
   filterButtons: [...document.querySelectorAll("[data-filter]")],
-  taskCount: document.getElementById("task-count"),
-  newCount: document.getElementById("new-count"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -288,11 +286,15 @@ function positionsForKind(kind) {
   return state.positions.filter((position) => decisionKind(position) === kind);
 }
 
-function activePool() {
-  let pool = positionsForKind(state.currentKind);
+function filteredPositionsForKind(kind) {
+  let pool = positionsForKind(kind);
   if (state.filters.task) pool = pool.filter(isChallenge);
   if (state.filters.new) pool = pool.filter(isNewPosition);
   return pool;
+}
+
+function activePool() {
+  return filteredPositionsForKind(state.currentKind);
 }
 
 function randomPosition(pool, avoidId = null) {
@@ -747,12 +749,8 @@ function updateTotals() {
 function updateCounts() {
   elements.counts.forEach((element) => {
     const kind = element.dataset.count;
-    element.textContent = String(positionsForKind(kind).length);
+    element.textContent = String(filteredPositionsForKind(kind).length);
   });
-
-  const currentKindPositions = positionsForKind(state.currentKind);
-  elements.taskCount.textContent = String(currentKindPositions.filter(isChallenge).length);
-  elements.newCount.textContent = String(currentKindPositions.filter(isNewPosition).length);
 }
 
 function sourceFileLabel(position) {
