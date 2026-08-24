@@ -282,7 +282,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 .stat-line {
   display: grid;
   grid-template-columns: 42px 1fr;
-  gap: 7px;
+  gap: 5px;
   align-items: center;
   min-height: 24px;
   font-size: var(--font-sm);
