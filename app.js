@@ -10,7 +10,7 @@ const BOARD_PRELOAD_COUNT = 3;
 const BOARD_PRELOAD_CACHE_LIMIT = 8;
 const LOCAL_DB_NAME = "position-drill-local-v1";
 const LOCAL_DB_STORE = "records";
-const NEW_POSITION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const NEW_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const KIND_LABELS = {
   checker: "Checker Play",

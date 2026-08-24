@@ -79,7 +79,7 @@ def source_uploaded_at(source: Path) -> str:
     return fallback
 
 
-NEW_POSITION_WINDOW = timedelta(days=30)
+NEW_POSITION_WINDOW = timedelta(days=7)
 
 
 def source_is_new(uploaded_at: str, now: datetime | None = None) -> bool:
