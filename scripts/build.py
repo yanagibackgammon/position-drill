@@ -12,7 +12,7 @@ import shutil
 import sys
 import subprocess
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +77,36 @@ def source_uploaded_at(source: Path) -> str:
         f"using build time {fallback}"
     )
     return fallback
+
+
+NEW_POSITION_WINDOW = timedelta(days=30)
+
+
+def source_is_new(uploaded_at: str, now: datetime | None = None) -> bool:
+    """Return whether an XG source belongs to New at build time.
+
+    This is intentionally evaluated in Python during the Pages build so the
+    browser does not have to parse Git timestamps or depend on the device clock.
+    A small five-minute future tolerance covers clock skew.
+    """
+    try:
+        uploaded = datetime.fromisoformat(uploaded_at.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+
+    if uploaded.tzinfo is None:
+        uploaded = uploaded.replace(tzinfo=UTC)
+    else:
+        uploaded = uploaded.astimezone(UTC)
+
+    current = now or datetime.now(UTC)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    else:
+        current = current.astimezone(UTC)
+
+    age = current - uploaded
+    return timedelta(minutes=-5) <= age <= NEW_POSITION_WINDOW
 
 
 def load_config() -> dict[str, Any]:
@@ -1059,6 +1089,7 @@ def build() -> None:
 
     for source in imported_files:
         uploaded_at = source_uploaded_at(source)
+        is_new_source = source_is_new(uploaded_at)
         match = xgread.read(source)
         games_by_number = {game.header.game_number: game for game in match.games}
         crawford_game_numbers = {
@@ -1099,6 +1130,7 @@ def build() -> None:
                 row["sourceUploadedAtMs"] = int(
                     datetime.fromisoformat(uploaded_at.replace("Z", "+00:00")).timestamp() * 1000
                 )
+                row["isNew"] = is_new_source
                 if cfg["anonymizeOpponents"]:
                     row["opponent"] = "Opponent"
                     if row["onRollOpponent"] != row["player"]:
@@ -1142,6 +1174,7 @@ def build() -> None:
                 "sourceUploadedAtMs": int(
                     datetime.fromisoformat(uploaded_at.replace("Z", "+00:00")).timestamp() * 1000
                 ),
+                "isNew": is_new_source,
                 "matchId": match.identity_hash,
                 "player1": match.header.player1,
                 "player2": match.header.player2,
@@ -1195,8 +1228,20 @@ def build() -> None:
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     dated_sources = [summary for summary in match_summaries if summary.get("sourceUploadedAt")]
+    new_sources = [summary for summary in match_summaries if summary.get("isNew")]
+    new_rows = [row for row in rows if row.get("isNew")]
+    new_by_kind = {
+        kind: sum(1 for row in new_rows if row.get("decisionKind") == kind)
+        for kind in ("checker", "double", "take")
+    }
     print(f"Built {len(rows)} positions from {len(imported_files)} match file(s).")
     print(f"Git upload/update dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
+    print(
+        "New at build time: "
+        f"{len(new_sources)} XG file(s), {len(new_rows)} position(s) "
+        f"(Checker {new_by_kind['checker']}, "
+        f"Double {new_by_kind['double']}, Take {new_by_kind['take']})."
+    )
 
 
 if __name__ == "__main__":

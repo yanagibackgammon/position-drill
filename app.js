@@ -262,6 +262,11 @@ function isChallenge(position) {
 }
 
 function isNewPosition(position, now = Date.now()) {
+  if (typeof position?.isNew === "boolean") {
+    return position.isNew;
+  }
+
+  // Backward compatibility for data generated before build-time New flags.
   const numericUploadedAt = Number(position?.sourceUploadedAtMs);
   const uploadedAt = Number.isFinite(numericUploadedAt) && numericUploadedAt > 0
     ? numericUploadedAt
