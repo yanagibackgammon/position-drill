@@ -731,10 +731,9 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         cube.no_double_analysis,
     )
 
-    # The main positions database keeps its historical doubler-perspective
-    # representation.  The quiz, however, treats Take Action as a separate
-    # decision and therefore shows the responder (the cube receiver) as black.
-    # Keep both perspectives in the same row so the positions page is unchanged.
+    # The displayed quiz uses the doubler/on-roll state immediately before the
+    # offer, matching Double Action.  Response-perspective fields are retained
+    # only for Take/Pass analysis and backward compatibility.
     doubler_sign = cube.player
     doubler = player_name(match, doubler_sign)
     doubler_score, taker_score = score_for_sign(decision, doubler_sign)
@@ -773,8 +772,7 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         # Main positions view: historical doubler perspective.
         "cubeOwner": "center" if cube.cube_value == 0 else "onRoll",
         "position": position_for_view(cube.position.points, doubler_sign),
-        # Quiz Take Action view: responder/taker is black and remains on the
-        # near side of the rendered board, matching the XG take perspective.
+        # Response-perspective data retained for Take/Pass analysis only.
         "quizPosition": position_for_view(cube.position.points, taker_sign),
         "quizPlayer": taker,
         "quizOpponent": doubler,
@@ -782,10 +780,9 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         "quizOpponentScore": doubler_score,
         "quizOnRollScore": taker_score,
         "quizOnRollOpponentScore": doubler_score,
-        # A Take Action is the state *after* the opponent has offered the cube.
-        # XG's CubeAction.cube_value is the pre-offer cube (1 for an initial
-        # double, 2 for a redouble from 2, ...), so the response position shows
-        # the offered value and places the cube on the opponent/doubler side.
+        # Offered-cube response values are retained for Take/Pass analysis.
+        # They are not used by the position diagram or game-information panel,
+        # which now consistently show the pre-offer state.
         "quizCubeValue": cube_value_number(cube.cube_value) * 2,
         "quizCubeOwner": "opponent",
         "quizWinRate": quiz_rates["winRate"],
@@ -1142,25 +1139,15 @@ def build() -> None:
                 row["quizBoardImage"] = quiz_board_relative
                 (DIST_DIR / board_relative).write_text(render_board_svg(row), encoding="utf-8")
                 (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
+                # All cube quizzes use the board state immediately before the
+                # offer.  For Take Action this is the doubler/on-roll view with
+                # the current (pre-offer) cube, exactly like Double Action.
                 quiz_render_row = row
-                if row.get("decisionKind") == "take" and row.get("quizPosition"):
-                    quiz_render_row = {
-                        **row,
-                        "position": row["quizPosition"],
-                        "player": row.get("quizPlayer", row["player"]),
-                        "opponent": row.get("quizOpponent", row["opponent"]),
-                        "playerScore": row.get("quizPlayerScore", row["playerScore"]),
-                        "opponentScore": row.get("quizOpponentScore", row["opponentScore"]),
-                        "onRollScore": row.get("quizOnRollScore", row["onRollScore"]),
-                        "onRollOpponentScore": row.get("quizOnRollOpponentScore", row["onRollOpponentScore"]),
-                        "cubeValue": row.get("quizCubeValue", row["cubeValue"]),
-                        "cubeOwner": row.get("quizCubeOwner", row["cubeOwner"]),
-                    }
                 (DIST_DIR / quiz_board_relative).write_text(
                     render_board_svg(
                         quiz_render_row,
                         show_pip_counts=False,
-                        on_roll_marker="white" if row.get("decisionKind") == "take" else "black",
+                        on_roll_marker="black",
                     ),
                     encoding="utf-8",
                 )

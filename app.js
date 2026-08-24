@@ -420,9 +420,10 @@ function cubeStateText(position, cubeValue = position.cubeValue) {
 }
 
 function pipCounts(position) {
-  const points = position.decisionKind === "take" && Array.isArray(position.quizPosition)
-    ? position.quizPosition
-    : (Array.isArray(position.position) ? position.position : []);
+  // Cube decisions are displayed from the state immediately before the offer.
+  // For Take Action this intentionally uses the doubler/on-roll perspective,
+  // the same convention as Double Action.
+  const points = Array.isArray(position.position) ? position.position : [];
   let black = 0;
   let white = 0;
   for (let point = 1; point <= 24; point += 1) {
@@ -559,16 +560,18 @@ function actionAnalysisHTML(position) {
 function summaryAnalysisHTML(position) {
   const pips = pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
-  const isTake = position.decisionKind === "take";
-  const rawPlayerScore = isTake && position.quizPlayerScore != null ? position.quizPlayerScore : position.playerScore;
-  const rawOpponentScore = isTake && position.quizOpponentScore != null ? position.quizOpponentScore : position.opponentScore;
-  const rawCubeValue = isTake && position.quizCubeValue != null ? position.quizCubeValue : position.cubeValue;
-  const winRate = isTake && position.quizWinRate != null ? position.quizWinRate : position.winRate;
-  const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
-  const gammonWinRate = isTake && position.quizGammonWinRate != null ? position.quizGammonWinRate : position.gammonWinRate;
-  const gammonLoseRate = isTake && position.quizGammonLoseRate != null ? position.quizGammonLoseRate : position.gammonLoseRate;
-  const backgammonWinRate = isTake && position.quizBackgammonWinRate != null ? position.quizBackgammonWinRate : position.backgammonWinRate;
-  const backgammonLoseRate = isTake && position.quizBackgammonLoseRate != null ? position.quizBackgammonLoseRate : position.backgammonLoseRate;
+
+  // Double Action and Take Action both show the position immediately before
+  // the cube offer.  The regular row fields are the doubler/on-roll view.
+  const rawPlayerScore = position.playerScore;
+  const rawOpponentScore = position.opponentScore;
+  const rawCubeValue = position.cubeValue;
+  const winRate = position.winRate;
+  const loseRate = position.loseRate;
+  const gammonWinRate = position.gammonWinRate;
+  const gammonLoseRate = position.gammonLoseRate;
+  const backgammonWinRate = position.backgammonWinRate;
+  const backgammonLoseRate = position.backgammonLoseRate;
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;
