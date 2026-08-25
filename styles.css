@@ -437,6 +437,40 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .empty-state[hidden] { display: none; }
 
+/* Zero-result filter state: preserve every area and its height. */
+.quiz-card.is-empty .board-wrap {
+  position: relative;
+}
+
+.quiz-card.is-empty .board-wrap img {
+  visibility: hidden;
+}
+
+.quiz-card.is-empty .board-wrap::after {
+  content: "EMPTY";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.quiz-card.is-empty .judge-area {
+  visibility: hidden;
+}
+
+.quiz-card.is-empty .summary-analysis .stat-value {
+  visibility: hidden;
+}
+
+.quiz-card.is-empty .summary-analysis .win-bar {
+  background: transparent;
+}
+
 @media (max-width: 790px) {
   .quiz-card { border-radius: 0; border-left: 0; border-right: 0; }
 

@@ -84,14 +84,20 @@ function run(name, fn) {
   }
 }
 
-run("Task: unseen is task; learned is not; more wrong than correct is task", () => {
+run("Task: stays until correct strictly exceeds wrong", () => {
   evaluate("state.progress = {}");
   assert.equal(
     evaluate('isChallenge({id:"P1",decisionKind:"checker"})'),
     true,
   );
 
-  evaluate('state.progress = {P1:{correct:1,wrong:0}}');
+  evaluate('state.progress = {P1:{correct:1,wrong:1}}');
+  assert.equal(
+    evaluate('isChallenge({id:"P1",decisionKind:"checker"})'),
+    true,
+  );
+
+  evaluate('state.progress = {P1:{correct:2,wrong:1}}');
   assert.equal(
     evaluate('isChallenge({id:"P1",decisionKind:"checker"})'),
     false,
@@ -224,5 +230,29 @@ run("DMP and Unlimited game-info conventions stay fixed", () => {
     /<span class="stat-label">CB<\/span><span class="stat-value ">4<\/span>/,
   );
 });
+
+
+run("Zero-result filter keeps the drill areas and game-info skeleton", () => {
+  evaluate(`
+    state.positions = [];
+    state.current = null;
+    state.filters = {task:true,new:true};
+    renderCurrent();
+  `);
+
+  assert.equal(evaluate("elements.card.hidden"), false);
+  assert.equal(evaluate("elements.empty.hidden"), true);
+  assert.equal(evaluate("elements.sourceFile.hidden"), false);
+
+  const summary = evaluate("elements.summaryAnalysis.innerHTML");
+  assert.match(summary, />ML</);
+  assert.match(summary, />CB</);
+  assert.match(summary, />PIP</);
+  assert.match(summary, />GW</);
+  assert.match(summary, />BG</);
+  assert.match(summary, /class="win-bar"/);
+  assert.match(summary, /class="win-grid-line is-mid"/);
+});
+
 
 console.log("All app regression tests passed.");

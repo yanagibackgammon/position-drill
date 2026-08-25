@@ -256,7 +256,7 @@ function migrateProgressKeys() {
 
 function isChallenge(position) {
   const record = recordFor(position);
-  return record.correct === 0 || record.correct < record.wrong;
+  return record.correct <= record.wrong;
 }
 
 function isNewPosition(position, now = Date.now()) {
@@ -684,6 +684,53 @@ function summaryAnalysisHTML(position) {
     </div>`;
 }
 
+function emptySummaryAnalysisHTML() {
+  // Preserve the complete game-information layout when the active filter has
+  // no matching positions. Labels and the graph frame stay visible; only
+  // position-specific values are blank.
+  return `
+    <div class="summary-text-scroll" aria-label="Game information">
+      <div class="summary-text-grid">
+        ${statLine("ML", "")}
+        ${statLine("BK", "", "side-black")}
+        ${statLine("WH", "", "side-white")}
+
+        ${statLine("CB", "")}
+        ${statLine("PIP", "")}
+        ${statLine("PIP", "")}
+
+        <div aria-hidden="true"></div>
+        ${statLine("W", "")}
+        ${statLine("W", "")}
+
+        <div aria-hidden="true"></div>
+        ${statLine("GW", "")}
+        ${statLine("GW", "")}
+
+        <div aria-hidden="true"></div>
+        ${statLine("BG", "")}
+        ${statLine("BG", "")}
+      </div>
+    </div>
+    <div class="win-scale" aria-hidden="true">
+      <span style="left:30%">30%</span>
+      <span style="left:50%">50%</span>
+      <span style="left:70%">70%</span>
+    </div>
+    <div class="win-bar" aria-hidden="true">
+      <span class="win-grid-line" style="left:10%"></span>
+      <span class="win-grid-line" style="left:20%"></span>
+      <span class="win-grid-line" style="left:30%"></span>
+      <span class="win-grid-line" style="left:40%"></span>
+      <span class="win-grid-line is-mid" style="left:50%"></span>
+      <span class="win-grid-line" style="left:60%"></span>
+      <span class="win-grid-line" style="left:70%"></span>
+      <span class="win-grid-line" style="left:80%"></span>
+      <span class="win-grid-line" style="left:90%"></span>
+    </div>`;
+}
+
+
 function totalRecord() {
   let correct = 0;
   let wrong = 0;
@@ -811,6 +858,36 @@ function resetAnswerUI() {
   resetSummaryTextScroll();
 }
 
+function renderEmptyDrillState() {
+  state.current = null;
+  state.answered = false;
+
+  // Keep every layout area mounted so filtering to zero positions does not
+  // cause the page to jump or collapse.
+  elements.card.hidden = false;
+  elements.card.classList.remove("is-answered");
+  elements.card.classList.add("is-empty");
+  elements.empty.hidden = true;
+
+  elements.board.alt = "No matching positions";
+  elements.actionAnalysis.innerHTML = '<div class="action-list" aria-hidden="true"></div>';
+  elements.summaryAnalysis.innerHTML = emptySummaryAnalysisHTML();
+
+  elements.answerPanel.hidden = false;
+  elements.answerButton.hidden = false;
+  elements.judgeButtons.hidden = true;
+  elements.nextButton.hidden = false;
+
+  elements.positionCorrect.textContent = "0";
+  elements.positionWrong.textContent = "0";
+  elements.sourceFile.textContent = "";
+  elements.sourceFile.hidden = false;
+
+  elements.actionAnalysis.scrollTop = 0;
+  elements.summaryAnalysis.scrollTop = 0;
+}
+
+
 function renderCurrent() {
   const pool = activePool();
   updateCounts();
@@ -821,14 +898,12 @@ function renderCurrent() {
   }
 
   if (!state.current) {
-    elements.card.hidden = true;
-    elements.empty.hidden = false;
-    elements.sourceFile.textContent = "";
-    elements.sourceFile.hidden = true;
+    renderEmptyDrillState();
     return;
   }
 
   elements.card.hidden = false;
+  elements.card.classList.remove("is-empty");
   elements.sourceFile.hidden = false;
   elements.empty.hidden = true;
   elements.board.fetchPriority = "high";
