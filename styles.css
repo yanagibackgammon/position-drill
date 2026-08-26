@@ -156,12 +156,13 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .filter-tab:hover { background: var(--active); }
 .selector-slot.is-disabled {
-  opacity: .45;
+  opacity: 1;
 }
 
 .selector-slot.is-disabled .menu-selector {
   cursor: default;
   color: var(--gray);
+  opacity: .45;
 }
 
 .selector-slot.is-disabled .menu-selector:hover,
