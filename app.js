@@ -51,7 +51,7 @@ const elements = {
   kindCount: document.getElementById("kind-count"),
   matchSelector: document.getElementById("match-selector"),
   matchSelectorSlot: document.getElementById("match-selector-slot"),
-  selectorSteps: [...document.querySelectorAll("[data-selector-step]")],
+  matchCount: document.getElementById("match-count"),
   filterButtons: [...document.querySelectorAll("[data-filter]")],
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
@@ -863,9 +863,9 @@ function updateTotals() {
 }
 
 function updateCounts() {
-  if (elements.kindCount) {
-    elements.kindCount.textContent = String(filteredPositionsForKind(state.currentKind).length);
-  }
+  const activeCount = filteredPositionsForKind(state.currentKind).length;
+  if (elements.kindCount) elements.kindCount.textContent = String(activeCount);
+  if (elements.matchCount) elements.matchCount.textContent = String(activeCount);
 }
 
 function sourceFileLabel(position) {
@@ -1178,13 +1178,6 @@ function installSmartphoneZoomGuard() {
 function installEvents() {
   elements.kindSelector.addEventListener("click", () => cycleKind(1));
   elements.matchSelector.addEventListener("click", () => cycleMatchType(1));
-
-  elements.selectorSteps.forEach((button) => {
-    button.addEventListener("click", () => {
-      const [selector, rawDelta] = String(button.dataset.selectorStep || "").split(":");
-      cycleSelector(selector, Number(rawDelta) || 0);
-    });
-  });
 
   elements.filterButtons.forEach((button) => {
     button.addEventListener("click", () => toggleFilter(button.dataset.filter));

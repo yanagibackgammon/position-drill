@@ -33,22 +33,19 @@
     <section class="controls" aria-label="Drill settings">
       <div class="menu-grid">
         <div id="kind-selector-slot" class="menu-slot selector-slot" data-selector="kind">
-          <button type="button" class="selector-step selector-step-up" data-selector-step="kind:-1" aria-label="Previous position type">▲</button>
-          <button id="kind-selector" type="button" class="menu-selector is-active" aria-label="Position type" aria-pressed="true">
+          <button id="kind-selector" type="button" class="menu-selector" aria-label="Position type">
             <span class="selector-label-full">ALL</span>
             <span class="selector-label-short">ALL</span>
             <span id="kind-count" class="selector-count">0</span>
           </button>
-          <button type="button" class="selector-step selector-step-down" data-selector-step="kind:1" aria-label="Next position type">▼</button>
         </div>
 
         <div id="match-selector-slot" class="menu-slot selector-slot" data-selector="match">
-          <button type="button" class="selector-step selector-step-up" data-selector-step="match:-1" aria-label="Previous match type">▲</button>
-          <button id="match-selector" type="button" class="menu-selector is-active" aria-label="Match type" aria-pressed="true">
+          <button id="match-selector" type="button" class="menu-selector" aria-label="Match type">
             <span class="selector-label-full">ALL</span>
             <span class="selector-label-short">ALL</span>
+            <span id="match-count" class="selector-count">0</span>
           </button>
-          <button type="button" class="selector-step selector-step-down" data-selector-step="match:1" aria-label="Next match type">▼</button>
         </div>
 
         <button type="button" class="menu-slot filter-tab" data-filter="task" aria-pressed="false"><span class="filter-label">Task</span></button>

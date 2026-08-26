@@ -384,4 +384,23 @@ run("Match selector cycles ALL / Point / DMP / Unlimited", () => {
 });
 
 
+
+run("Both primary selectors show the active pool count", () => {
+  evaluate(`
+    state.positions = [
+      {id:"C7",decisionKind:"checker",matchLength:7,isNew:true},
+      {id:"C1",decisionKind:"checker",matchLength:1,isNew:true},
+      {id:"DU",decisionKind:"double",matchLength:99999,isNew:true}
+    ];
+    state.progress = {};
+    state.currentKind = "all";
+    state.matchType = "point";
+    state.filters = {task:false,new:false};
+    updateCounts();
+  `);
+
+  assert.equal(evaluate("elements.kindCount.textContent"), "1");
+  assert.equal(evaluate("elements.matchCount.textContent"), "1");
+});
+
 console.log("All app regression tests passed.");

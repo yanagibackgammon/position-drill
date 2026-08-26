@@ -121,13 +121,11 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .selector-slot {
   position: relative;
-  display: grid;
-  grid-template-rows: 9px 26px 9px;
+  display: block;
   overflow: hidden;
 }
 
-.menu-selector,
-.selector-step {
+.menu-selector {
   width: 100%;
   min-width: 0;
   padding: 0;
@@ -139,7 +137,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 }
 
 .menu-selector {
-  grid-row: 2;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,20 +147,13 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   white-space: nowrap;
 }
 
-.selector-step {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray);
-  font-size: 8px;
-  line-height: 9px;
+.menu-selector:hover { background: var(--black); }
+.menu-selector:focus,
+.menu-selector:active,
+.menu-selector:focus-visible {
+  background: var(--black);
 }
 
-.selector-step-up { grid-row: 1; }
-.selector-step-down { grid-row: 3; }
-
-.selector-step:hover,
-.menu-selector:hover,
 .filter-tab:hover { background: var(--active); }
 
 .selector-count {
@@ -557,8 +548,6 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
     touch-action: pan-x;
     overscroll-behavior: contain;
   }
-
-  .selector-step { display: none; }
 
   .menu-selector {
     width: 100%;
@@ -1001,7 +990,6 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .stat-line.side-white .stat-label { color: var(--black); background: var(--white); }
 
-.menu-selector.is-active,
 .filter-tab.is-active {
   color: var(--white);
   background: var(--active);
