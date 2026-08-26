@@ -255,4 +255,78 @@ run("Zero-result filter keeps the drill areas and game-info skeleton", () => {
 });
 
 
+
+run("Checker candidate selection switches only W/GW/BG rates and graph", () => {
+  context.checkerPosition = {
+    decisionKind: "checker",
+    decisionType: "checker",
+    position: Array(26).fill(0),
+    playerScore: 2,
+    opponentScore: 3,
+    cubeValue: 1,
+    matchLength: 7,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.40,
+    loseRate: 0.60,
+    gammonWinRate: 0.10,
+    gammonLoseRate: 0.20,
+    backgammonWinRate: 0.01,
+    backgammonLoseRate: 0.02,
+    candidates: [
+      {
+        rank: 1,
+        action: "13/8 6/5",
+        equityLoss: 0,
+        winRate: 0.62,
+        loseRate: 0.38,
+        gammonWinRate: 0.18,
+        gammonLoseRate: 0.08,
+        backgammonWinRate: 0.03,
+        backgammonLoseRate: 0.01
+      },
+      {
+        rank: 2,
+        action: "13/7",
+        equityLoss: 0.025,
+        winRate: 0.55,
+        loseRate: 0.45,
+        gammonWinRate: 0.12,
+        gammonLoseRate: 0.11,
+        backgammonWinRate: 0.02,
+        backgammonLoseRate: 0.01
+      }
+    ]
+  };
+
+  const actionHtml = evaluate("actionAnalysisHTML(checkerPosition)");
+  assert.match(actionHtml, /data-checker-candidate-index="0"/);
+  assert.match(actionHtml, /data-checker-candidate-index="1"/);
+
+  context.selectedChecker = context.checkerPosition.candidates[1];
+  const summary = evaluate("summaryAnalysisHTML(checkerPosition, selectedChecker)");
+  assert.match(summary, />55\.0%<\/span>/);
+  assert.match(summary, />45\.0%<\/span>/);
+  assert.match(summary, />12\.0%<\/span>/);
+  assert.match(summary, /left:55\.000%/);
+});
+
+run("Cube actions remain non-selectable", () => {
+  context.cubePosition = {
+    decisionKind: "double",
+    decisionType: "cube",
+    playedAction: "No Double",
+    bestAction: "No Double",
+    candidates: [
+      {rank:1,action:"No Double",equityDifference:null},
+      {rank:2,action:"Double/Take",equityDifference:-0.050}
+    ]
+  };
+
+  const html = evaluate("actionAnalysisHTML(cubePosition)");
+  assert.doesNotMatch(html, /data-checker-candidate-index/);
+  assert.doesNotMatch(html, /is-checker-candidate/);
+});
+
+
 console.log("All app regression tests passed.");

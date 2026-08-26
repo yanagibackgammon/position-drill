@@ -259,6 +259,15 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .action-option.is-best { color: var(--white); font-size: var(--font-md); font-weight: 700; }
 
+.quiz-card.is-answered .action-option.is-checker-candidate {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.quiz-card.is-answered .action-option.is-checker-candidate.is-selected {
+  background: var(--active);
+}
+
 .action-text { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
 
 .action-text.is-played { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }

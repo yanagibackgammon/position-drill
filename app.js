@@ -485,6 +485,18 @@ function displayedPlayedAction(position) {
   return played;
 }
 
+function checkerCandidateHasRates(candidate) {
+  if (!candidate) return false;
+  return [
+    "winRate",
+    "loseRate",
+    "gammonWinRate",
+    "gammonLoseRate",
+    "backgammonWinRate",
+    "backgammonLoseRate",
+  ].every((key) => candidate[key] != null && Number.isFinite(Number(candidate[key])));
+}
+
 function actionAnalysisHTML(position) {
   const playedAction = displayedPlayedAction(position);
   const isPlayed = (action) => playedAction && String(action || "").trim() === playedAction;
@@ -551,15 +563,16 @@ function actionAnalysisHTML(position) {
   return `<div class="action-list">${candidates.map((candidate, index) => {
     const best = index === 0 || Number(candidate.rank) === 1;
     const tone = best ? "" : errorToneClass(candidate.equityLoss, { lossMagnitude: true });
+    const inspectable = checkerCandidateHasRates(candidate);
     return `
-      <div class="action-option ${best ? "is-best" : ""}">
+      <div class="action-option ${best ? "is-best" : ""} ${inspectable ? "is-checker-candidate" : ""}"${inspectable ? ` data-checker-candidate-index="${index}" role="button" tabindex="0"` : ""}>
         <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
         <span class="action-error ${best ? "best-marker" : tone}">${escapeHTML(best ? "BEST" : formatError(candidate.equityLoss))}</span>
       </div>`;
   }).join("")}</div>`;
 }
 
-function summaryAnalysisHTML(position) {
+function summaryAnalysisHTML(position, checkerCandidate = null) {
   const pips = pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
   const isTake = position.decisionKind === "take";
@@ -574,20 +587,27 @@ function summaryAnalysisHTML(position) {
     ? position.quizOpponentScore
     : position.opponentScore;
   const rawCubeValue = position.cubeValue;
-  const winRate = isTake && position.quizWinRate != null ? position.quizWinRate : position.winRate;
-  const loseRate = isTake && position.quizLoseRate != null ? position.quizLoseRate : position.loseRate;
+  const checkerRateSource = position.decisionKind === "checker" && checkerCandidate
+    ? checkerCandidate
+    : position;
+  const winRate = isTake && position.quizWinRate != null
+    ? position.quizWinRate
+    : checkerRateSource.winRate;
+  const loseRate = isTake && position.quizLoseRate != null
+    ? position.quizLoseRate
+    : checkerRateSource.loseRate;
   const gammonWinRate = isTake && position.quizGammonWinRate != null
     ? position.quizGammonWinRate
-    : position.gammonWinRate;
+    : checkerRateSource.gammonWinRate;
   const gammonLoseRate = isTake && position.quizGammonLoseRate != null
     ? position.quizGammonLoseRate
-    : position.gammonLoseRate;
+    : checkerRateSource.gammonLoseRate;
   const backgammonWinRate = isTake && position.quizBackgammonWinRate != null
     ? position.quizBackgammonWinRate
-    : position.backgammonWinRate;
+    : checkerRateSource.backgammonWinRate;
   const backgammonLoseRate = isTake && position.quizBackgammonLoseRate != null
     ? position.quizBackgammonLoseRate
-    : position.backgammonLoseRate;
+    : checkerRateSource.backgammonLoseRate;
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;
@@ -844,6 +864,46 @@ function resetSummaryTextScroll() {
   if (scroller) scroller.scrollTop = 0;
 }
 
+function selectCheckerCandidate(index) {
+  if (!state.current || !state.answered || state.current.decisionKind !== "checker") return;
+
+  const candidates = (Array.isArray(state.current.candidates) ? state.current.candidates : [])
+    .filter((candidate) => {
+      const loss = Number(candidate?.equityLoss);
+      return Number.isFinite(loss) && loss >= 0 && loss < 100;
+    })
+    .slice()
+    .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+
+  const candidate = candidates[Number(index)];
+  if (!checkerCandidateHasRates(candidate)) return;
+
+  elements.actionAnalysis
+    .querySelectorAll(".action-option.is-selected")
+    .forEach((row) => row.classList.remove("is-selected"));
+
+  const selected = elements.actionAnalysis.querySelector(
+    `[data-checker-candidate-index="${Number(index)}"]`,
+  );
+  if (selected) selected.classList.add("is-selected");
+
+  elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, candidate);
+  elements.summaryAnalysis.scrollTop = 0;
+  resetSummaryTextScroll();
+}
+
+function handleCheckerCandidateInteraction(event) {
+  if (!state.current || !state.answered || state.current.decisionKind !== "checker") return;
+
+  const row = event.target.closest?.("[data-checker-candidate-index]");
+  if (!row || !elements.actionAnalysis.contains(row)) return;
+
+  if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") return;
+  if (event.type === "keydown") event.preventDefault();
+
+  selectCheckerCandidate(row.dataset.checkerCandidateIndex);
+}
+
 function resetAnswerUI() {
   state.answered = false;
   elements.card.classList.remove("is-answered");
@@ -1025,6 +1085,8 @@ function installEvents() {
   elements.correctButton.addEventListener("click", () => judge("correct"));
   elements.wrongButton.addEventListener("click", () => judge("wrong"));
   elements.nextButton.addEventListener("click", selectNext);
+  elements.actionAnalysis.addEventListener("click", handleCheckerCandidateInteraction);
+  elements.actionAnalysis.addEventListener("keydown", handleCheckerCandidateInteraction);
 }
 
 async function syncPositions({ initial = false } = {}) {
