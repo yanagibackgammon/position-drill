@@ -304,7 +304,32 @@ function positionMatchType(position) {
   if (!Number.isFinite(matchLength) || matchLength <= 0 || matchLength >= 99999) {
     return "unlimited";
   }
+
+  const playerScore = Number(position?.playerScore);
+  const opponentScore = Number(position?.opponentScore);
+  const rawCubeValue = Number(position?.cubeValue);
+  const cubeValue = Number.isFinite(rawCubeValue) && rawCubeValue > 0
+    ? rawCubeValue
+    : 1;
+
+  if (Number.isFinite(playerScore) && Number.isFinite(opponentScore)) {
+    const playerAway = matchLength - playerScore;
+    const opponentAway = matchLength - opponentScore;
+
+    if (
+      playerAway > 0 &&
+      opponentAway > 0 &&
+      playerAway <= cubeValue &&
+      opponentAway <= cubeValue
+    ) {
+      return "dmp";
+    }
+  }
+
+  // A one-point match is always DMP, including older data that may not
+  // contain explicit score fields.
   if (matchLength === 1) return "dmp";
+
   return "point";
 }
 

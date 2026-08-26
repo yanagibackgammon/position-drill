@@ -332,8 +332,31 @@ run("Cube actions remain non-selectable", () => {
 
 
 
-run("Match type classification separates Point Match, DMP, and Unlimited", () => {
-  assert.equal(evaluate('positionMatchType({matchLength:7})'), "point");
+run("Match type classification uses score and current cube for DMP", () => {
+  assert.equal(
+    evaluate('positionMatchType({matchLength:11,playerScore:9,opponentScore:9,cubeValue:2})'),
+    "dmp",
+  );
+  assert.equal(
+    evaluate('positionMatchType({matchLength:11,playerScore:7,opponentScore:7,cubeValue:4})'),
+    "dmp",
+  );
+  assert.equal(
+    evaluate('positionMatchType({matchLength:11,playerScore:10,opponentScore:10,cubeValue:1})'),
+    "dmp",
+  );
+  assert.equal(
+    evaluate('positionMatchType({matchLength:11,playerScore:9,opponentScore:8,cubeValue:2})'),
+    "point",
+  );
+  assert.equal(
+    evaluate('positionMatchType({matchLength:11,playerScore:9,opponentScore:9,cubeValue:1})'),
+    "point",
+  );
+  assert.equal(
+    evaluate('positionMatchType({matchLength:7,playerScore:4,opponentScore:4,cubeValue:2})'),
+    "point",
+  );
   assert.equal(evaluate('positionMatchType({matchLength:1})'), "dmp");
   assert.equal(evaluate('positionMatchType({matchLength:0})'), "unlimited");
   assert.equal(evaluate('positionMatchType({matchLength:99999})'), "unlimited");
@@ -421,6 +444,47 @@ run("DMP forces Checker Play and disables the second selector", () => {
 
   evaluate('setMatchType("point")');
   assert.equal(evaluate("elements.kindSelector.disabled"), false);
+});
+
+
+run("Cube-aware DMP positions sort into DMP instead of Point Match", () => {
+  evaluate(`
+    state.positions = [
+      {
+        id:"DMP-99-11-C2",
+        decisionKind:"checker",
+        matchLength:11,
+        playerScore:9,
+        opponentScore:9,
+        cubeValue:2,
+        isNew:true
+      },
+      {
+        id:"POINT-99-11-C1",
+        decisionKind:"checker",
+        matchLength:11,
+        playerScore:9,
+        opponentScore:9,
+        cubeValue:1,
+        isNew:true
+      }
+    ];
+    state.progress = {};
+    state.currentKind = "checker";
+    state.filters = {task:false,new:false};
+  `);
+
+  evaluate('state.matchType = "dmp"');
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["DMP-99-11-C2"],
+  );
+
+  evaluate('state.matchType = "point"');
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["POINT-99-11-C1"],
+  );
 });
 
 console.log("All app regression tests passed.");
