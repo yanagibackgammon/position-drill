@@ -4,6 +4,7 @@ const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
+const FILTER_MODE_VERSION = 2;
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const BOARD_PRELOAD_COUNT = 3;
@@ -40,7 +41,7 @@ const state = {
   dailyResetTimer: null,
   dataVersion: "",
   boardQueue: [],
-  filters: { task: false, new: false },
+  filters: { task: true, new: true },
 };
 
 const elements = {
@@ -188,6 +189,7 @@ function saveSettings() {
     matchType: state.matchType,
     taskOnly: state.filters.task,
     newOnly: state.filters.new,
+    filterModeVersion: FILTER_MODE_VERSION,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
   mirrorLocalDB(SETTINGS_KEY, settings);
@@ -336,6 +338,11 @@ function positionMatchType(position) {
 function positionsForKind(kind) {
   if (kind === "all") return state.positions.slice();
   return state.positions.filter((position) => decisionKind(position) === kind);
+}
+
+function positionsForMatchType(matchType) {
+  if (matchType === "all") return state.positions.slice();
+  return state.positions.filter((position) => positionMatchType(position) === matchType);
 }
 
 function filteredPositionsForKind(kind) {
@@ -888,9 +895,10 @@ function updateTotals() {
 }
 
 function updateCounts() {
-  const activeCount = filteredPositionsForKind(state.currentKind).length;
-  if (elements.kindCount) elements.kindCount.textContent = String(activeCount);
-  if (elements.matchCount) elements.matchCount.textContent = String(activeCount);
+  const matchTotal = positionsForMatchType(state.matchType).length;
+  const filteredKindCount = filteredPositionsForKind(state.currentKind).length;
+  if (elements.matchCount) elements.matchCount.textContent = String(matchTotal);
+  if (elements.kindCount) elements.kindCount.textContent = String(filteredKindCount);
 }
 
 function sourceFileLabel(position) {
@@ -1174,9 +1182,14 @@ function cycleSelector(selector, delta) {
 
 function syncFilterButtons() {
   elements.filterButtons.forEach((button) => {
-    const active = Boolean(state.filters[button.dataset.filter]);
+    const filter = button.dataset.filter;
+    const active = Boolean(state.filters[filter]);
+    const activeLabel = filter === "task" ? "Task" : "New";
+    const label = button.querySelector(".filter-label");
+    if (label) label.textContent = active ? activeLabel : "ALL";
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-label", `${activeLabel} filter: ${active ? activeLabel : "ALL"}`);
   });
 }
 
@@ -1320,8 +1333,15 @@ async function start() {
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
   if (state.matchType === "dmp") state.currentKind = "checker";
-  state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly);
-  state.filters.new = Boolean(settings.newOnly);
+  if (Number(settings.filterModeVersion) >= FILTER_MODE_VERSION) {
+    state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? true);
+    state.filters.new = Boolean(settings.newOnly ?? true);
+  } else {
+    // The redesigned third/fourth selectors start at Task / New once, even
+    // when an older saved setting had the former toggle buttons turned off.
+    state.filters.task = true;
+    state.filters.new = true;
+  }
   syncKindButtons();
   syncMatchTypeButtons();
   syncFilterButtons();

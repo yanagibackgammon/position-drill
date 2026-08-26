@@ -409,22 +409,24 @@ run("Match selector cycles Point / Unlimited / DMP", () => {
 
 
 
-run("Both primary selectors show the active pool count", () => {
+run("Match count stays total while kind count follows Task/New filters", () => {
   evaluate(`
     state.positions = [
       {id:"C7",decisionKind:"checker",matchLength:7,isNew:true},
+      {id:"C7OLD",decisionKind:"checker",matchLength:7,isNew:false},
+      {id:"D7",decisionKind:"double",matchLength:7,isNew:true},
       {id:"C1",decisionKind:"checker",matchLength:1,isNew:true},
       {id:"DU",decisionKind:"double",matchLength:99999,isNew:true}
     ];
     state.progress = {};
     state.currentKind = "checker";
     state.matchType = "point";
-    state.filters = {task:false,new:false};
+    state.filters = {task:false,new:true};
     updateCounts();
   `);
 
   assert.equal(evaluate("elements.kindCount.textContent"), "1");
-  assert.equal(evaluate("elements.matchCount.textContent"), "1");
+  assert.equal(evaluate("elements.matchCount.textContent"), "3");
 });
 
 

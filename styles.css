@@ -154,7 +154,10 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   background: var(--black);
 }
 
-.filter-tab:hover { background: var(--active); }
+.filter-tab:hover,
+.filter-tab:focus,
+.filter-tab:active,
+.filter-tab:focus-visible { background: var(--black); }
 .selector-slot.is-disabled {
   opacity: 1;
 }
@@ -1008,7 +1011,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .filter-tab.is-active {
   color: var(--white);
-  background: var(--active);
+  background: var(--black);
 }
 
 .selector-label-full,
