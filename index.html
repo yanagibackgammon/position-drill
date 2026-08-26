@@ -31,39 +31,29 @@
 
   <main>
     <section class="controls" aria-label="Drill settings">
-      <button id="menu-prev" class="menu-arrow menu-arrow-up" type="button" aria-label="Previous menu">▲</button>
-      <div id="menu-viewport" class="menu-viewport">
-        <div class="menu-page is-active" data-menu-page="0" aria-label="Position type">
-          <div class="menu-options menu-options-four" role="group" aria-label="Position type">
-            <button type="button" class="menu-option type-tab is-active" data-kind="all"><span class="type-label-full">ALL</span><span class="type-label-short">ALL</span><span class="type-count"><span data-count="all">0</span></span></button>
-            <button type="button" class="menu-option type-tab" data-kind="checker"><span class="type-label-full">Checker Play</span><span class="type-label-short">Checker</span><span class="type-count"><span data-count="checker">0</span></span></button>
-            <button type="button" class="menu-option type-tab" data-kind="double"><span class="type-label-full">Double Action</span><span class="type-label-short">Double</span><span class="type-count"><span data-count="double">0</span></span></button>
-            <button type="button" class="menu-option type-tab" data-kind="take"><span class="type-label-full">Take Action</span><span class="type-label-short">Take</span><span class="type-count"><span data-count="take">0</span></span></button>
-          </div>
+      <div class="menu-grid">
+        <div id="kind-selector-slot" class="menu-slot selector-slot" data-selector="kind">
+          <button type="button" class="selector-step selector-step-up" data-selector-step="kind:-1" aria-label="Previous position type">▲</button>
+          <button id="kind-selector" type="button" class="menu-selector is-active" aria-label="Position type" aria-pressed="true">
+            <span class="selector-label-full">ALL</span>
+            <span class="selector-label-short">ALL</span>
+            <span id="kind-count" class="selector-count">0</span>
+          </button>
+          <button type="button" class="selector-step selector-step-down" data-selector-step="kind:1" aria-label="Next position type">▼</button>
         </div>
 
-        <div class="menu-page" data-menu-page="1" aria-label="Match type" hidden>
-          <div class="menu-options menu-options-four" role="group" aria-label="Match type">
-            <button type="button" class="menu-option match-tab is-active" data-match-type="all"><span class="match-label-full">ALL</span><span class="match-label-short">ALL</span></button>
-            <button type="button" class="menu-option match-tab" data-match-type="point"><span class="match-label-full">Point Match</span><span class="match-label-short">Point</span></button>
-            <button type="button" class="menu-option match-tab" data-match-type="dmp"><span class="match-label-full">DMP</span><span class="match-label-short">DMP</span></button>
-            <button type="button" class="menu-option match-tab" data-match-type="unlimited"><span class="match-label-full">Unlimited</span><span class="match-label-short">Unlimited</span></button>
-          </div>
+        <div id="match-selector-slot" class="menu-slot selector-slot" data-selector="match">
+          <button type="button" class="selector-step selector-step-up" data-selector-step="match:-1" aria-label="Previous match type">▲</button>
+          <button id="match-selector" type="button" class="menu-selector is-active" aria-label="Match type" aria-pressed="true">
+            <span class="selector-label-full">ALL</span>
+            <span class="selector-label-short">ALL</span>
+          </button>
+          <button type="button" class="selector-step selector-step-down" data-selector-step="match:1" aria-label="Next match type">▼</button>
         </div>
 
-        <div class="menu-page" data-menu-page="2" aria-label="Task filter" hidden>
-          <div class="menu-options menu-options-one" role="group" aria-label="Task filter">
-            <button type="button" class="menu-option filter-tab" data-filter="task" aria-pressed="false"><span class="filter-label">Task</span></button>
-          </div>
-        </div>
-
-        <div class="menu-page" data-menu-page="3" aria-label="New filter" hidden>
-          <div class="menu-options menu-options-one" role="group" aria-label="New filter">
-            <button type="button" class="menu-option filter-tab" data-filter="new" aria-pressed="false"><span class="filter-label">New</span></button>
-          </div>
-        </div>
+        <button type="button" class="menu-slot filter-tab" data-filter="task" aria-pressed="false"><span class="filter-label">Task</span></button>
+        <button type="button" class="menu-slot filter-tab" data-filter="new" aria-pressed="false"><span class="filter-label">New</span></button>
       </div>
-      <button id="menu-next" class="menu-arrow menu-arrow-down" type="button" aria-label="Next menu">▼</button>
     </section>
 
     <section id="quiz-card" class="quiz-card" aria-live="polite">

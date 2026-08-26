@@ -26,13 +26,13 @@ const MATCH_TYPE_LABELS = {
   unlimited: "Unlimited",
 };
 
-const MENU_PAGE_COUNT = 4;
+const KIND_ORDER = ["all", "checker", "double", "take"];
+const MATCH_TYPE_ORDER = ["all", "point", "dmp", "unlimited"];
 
 const state = {
   positions: [],
   currentKind: "all",
   matchType: "all",
-  menuPage: 0,
   current: null,
   answered: false,
   progress: {},
@@ -46,14 +46,13 @@ const state = {
 const elements = {
   card: document.getElementById("quiz-card"),
   empty: document.getElementById("empty-state"),
-  tabs: [...document.querySelectorAll("[data-kind]")],
-  matchTypeButtons: [...document.querySelectorAll("[data-match-type]")],
-  counts: [...document.querySelectorAll("[data-count]")],
+  kindSelector: document.getElementById("kind-selector"),
+  kindSelectorSlot: document.getElementById("kind-selector-slot"),
+  kindCount: document.getElementById("kind-count"),
+  matchSelector: document.getElementById("match-selector"),
+  matchSelectorSlot: document.getElementById("match-selector-slot"),
+  selectorSteps: [...document.querySelectorAll("[data-selector-step]")],
   filterButtons: [...document.querySelectorAll("[data-filter]")],
-  menuPages: [...document.querySelectorAll("[data-menu-page]")],
-  menuViewport: document.getElementById("menu-viewport"),
-  menuPrev: document.getElementById("menu-prev"),
-  menuNext: document.getElementById("menu-next"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -864,10 +863,9 @@ function updateTotals() {
 }
 
 function updateCounts() {
-  elements.counts.forEach((element) => {
-    const kind = element.dataset.count;
-    element.textContent = String(filteredPositionsForKind(kind).length);
-  });
+  if (elements.kindCount) {
+    elements.kindCount.textContent = String(filteredPositionsForKind(state.currentKind).length);
+  }
 }
 
 function sourceFileLabel(position) {
@@ -1049,11 +1047,39 @@ function judge(result) {
   selectNext();
 }
 
+function kindDisplayLabels(kind) {
+  return {
+    full: kind === "all" ? "ALL" : KIND_LABELS[kind],
+    short: kind === "checker"
+      ? "Checker"
+      : kind === "double"
+        ? "Double"
+        : kind === "take"
+          ? "Take"
+          : "ALL",
+  };
+}
+
+function matchTypeDisplayLabels(matchType) {
+  return {
+    full: matchType === "all" ? "ALL" : MATCH_TYPE_LABELS[matchType],
+    short: matchType === "point" ? "Point" : (matchType === "all" ? "ALL" : MATCH_TYPE_LABELS[matchType]),
+  };
+}
+
+function setSelectorLabels(button, labels) {
+  if (!button) return;
+  const full = button.querySelector(".selector-label-full");
+  const short = button.querySelector(".selector-label-short");
+  if (full) full.textContent = labels.full;
+  if (short) short.textContent = labels.short;
+}
+
 function syncKindButtons() {
-  elements.tabs.forEach((tab) => {
-    tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind);
-    tab.setAttribute("aria-pressed", String(tab.dataset.kind === state.currentKind));
-  });
+  setSelectorLabels(elements.kindSelector, kindDisplayLabels(state.currentKind));
+  if (elements.kindSelector) {
+    elements.kindSelector.setAttribute("aria-label", `Position type: ${KIND_LABELS[state.currentKind]}`);
+  }
 }
 
 function setKind(kind) {
@@ -1067,11 +1093,10 @@ function setKind(kind) {
 }
 
 function syncMatchTypeButtons() {
-  elements.matchTypeButtons.forEach((button) => {
-    const active = button.dataset.matchType === state.matchType;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
+  setSelectorLabels(elements.matchSelector, matchTypeDisplayLabels(state.matchType));
+  if (elements.matchSelector) {
+    elements.matchSelector.setAttribute("aria-label", `Match type: ${MATCH_TYPE_LABELS[state.matchType]}`);
+  }
 }
 
 function setMatchType(matchType) {
@@ -1084,23 +1109,23 @@ function setMatchType(matchType) {
   renderCurrent();
 }
 
-function normalizeMenuPageIndex(index) {
-  const numeric = Number(index) || 0;
-  return ((numeric % MENU_PAGE_COUNT) + MENU_PAGE_COUNT) % MENU_PAGE_COUNT;
+function cycleOptionValue(order, current, delta) {
+  const currentIndex = Math.max(0, order.indexOf(current));
+  const nextIndex = (currentIndex + Number(delta) + order.length) % order.length;
+  return order[nextIndex];
 }
 
-function setMenuPage(index) {
-  state.menuPage = normalizeMenuPageIndex(index);
-  elements.menuPages.forEach((page) => {
-    const active = Number(page.dataset.menuPage) === state.menuPage;
-    page.hidden = !active;
-    page.classList.toggle("is-active", active);
-    page.setAttribute("aria-hidden", String(!active));
-  });
+function cycleKind(delta) {
+  setKind(cycleOptionValue(KIND_ORDER, state.currentKind, delta));
 }
 
-function shiftMenuPage(delta) {
-  setMenuPage(state.menuPage + delta);
+function cycleMatchType(delta) {
+  setMatchType(cycleOptionValue(MATCH_TYPE_ORDER, state.matchType, delta));
+}
+
+function cycleSelector(selector, delta) {
+  if (selector === "kind") cycleKind(delta);
+  if (selector === "match") cycleMatchType(delta);
 }
 
 function syncFilterButtons() {
@@ -1151,44 +1176,52 @@ function installSmartphoneZoomGuard() {
 }
 
 function installEvents() {
-  elements.tabs.forEach((tab) => {
-    tab.addEventListener("click", () => setKind(tab.dataset.kind));
+  elements.kindSelector.addEventListener("click", () => cycleKind(1));
+  elements.matchSelector.addEventListener("click", () => cycleMatchType(1));
+
+  elements.selectorSteps.forEach((button) => {
+    button.addEventListener("click", () => {
+      const [selector, rawDelta] = String(button.dataset.selectorStep || "").split(":");
+      cycleSelector(selector, Number(rawDelta) || 0);
+    });
   });
-  elements.matchTypeButtons.forEach((button) => {
-    button.addEventListener("click", () => setMatchType(button.dataset.matchType));
-  });
+
   elements.filterButtons.forEach((button) => {
     button.addEventListener("click", () => toggleFilter(button.dataset.filter));
   });
 
-  elements.menuPrev.addEventListener("click", () => shiftMenuPage(-1));
-  elements.menuNext.addEventListener("click", () => shiftMenuPage(1));
+  const installSelectorSwipe = (slot, selector) => {
+    let startPoint = null;
 
-  let menuTouchStart = null;
-  elements.menuViewport.addEventListener("touchstart", (event) => {
-    if (!window.matchMedia("(max-width: 790px)").matches || event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    menuTouchStart = { x: touch.clientX, y: touch.clientY };
-  }, { passive: true });
+    slot.addEventListener("touchstart", (event) => {
+      if (!window.matchMedia("(max-width: 790px)").matches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      startPoint = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
 
-  elements.menuViewport.addEventListener("touchend", (event) => {
-    if (!menuTouchStart || !window.matchMedia("(max-width: 790px)").matches) {
-      menuTouchStart = null;
-      return;
-    }
-    const touch = event.changedTouches?.[0];
-    if (!touch) {
-      menuTouchStart = null;
-      return;
-    }
+    slot.addEventListener("touchend", (event) => {
+      if (!startPoint || !window.matchMedia("(max-width: 790px)").matches) {
+        startPoint = null;
+        return;
+      }
 
-    const dx = touch.clientX - menuTouchStart.x;
-    const dy = touch.clientY - menuTouchStart.y;
-    menuTouchStart = null;
+      const touch = event.changedTouches?.[0];
+      if (!touch) {
+        startPoint = null;
+        return;
+      }
 
-    if (Math.abs(dy) < 32 || Math.abs(dy) <= Math.abs(dx)) return;
-    shiftMenuPage(dy < 0 ? 1 : -1);
-  }, { passive: true });
+      const dx = touch.clientX - startPoint.x;
+      const dy = touch.clientY - startPoint.y;
+      startPoint = null;
+
+      if (Math.abs(dy) < 28 || Math.abs(dy) <= Math.abs(dx)) return;
+      cycleSelector(selector, dy < 0 ? 1 : -1);
+    }, { passive: true });
+  };
+
+  installSelectorSwipe(elements.kindSelectorSlot, "kind");
+  installSelectorSwipe(elements.matchSelectorSlot, "match");
 
   elements.answerButton.addEventListener("click", showAnswer);
   elements.correctButton.addEventListener("click", () => judge("correct"));
@@ -1254,7 +1287,6 @@ async function start() {
   syncKindButtons();
   syncMatchTypeButtons();
   syncFilterButtons();
-  setMenuPage(0);
   installSmartphoneZoomGuard();
   installEvents();
   scheduleDailyReset();

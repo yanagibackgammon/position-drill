@@ -367,11 +367,20 @@ run("ALL decision kind and match type filter compose with Task/New", () => {
   evaluate('state.matchType = "all"; state.filters = {task:false,new:false};');
 });
 
-run("Menu page navigation wraps through four menu pages", () => {
-  assert.equal(evaluate('normalizeMenuPageIndex(0)'), 0);
-  assert.equal(evaluate('normalizeMenuPageIndex(3)'), 3);
-  assert.equal(evaluate('normalizeMenuPageIndex(4)'), 0);
-  assert.equal(evaluate('normalizeMenuPageIndex(-1)'), 3);
+run("Kind selector cycles ALL / Checker / Double / Take", () => {
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "all", 1)'), "checker");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "checker", 1)'), "double");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "double", 1)'), "take");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "take", 1)'), "all");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "all", -1)'), "take");
+});
+
+run("Match selector cycles ALL / Point / DMP / Unlimited", () => {
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "all", 1)'), "point");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "point", 1)'), "dmp");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "dmp", 1)'), "unlimited");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "unlimited", 1)'), "all");
+  assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point");
 });
 
 
