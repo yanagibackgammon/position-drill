@@ -13,14 +13,26 @@ const LOCAL_DB_STORE = "records";
 const NEW_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const KIND_LABELS = {
+  all: "All",
   checker: "Checker Play",
   double: "Double Action",
   take: "Take Action",
 };
 
+const MATCH_TYPE_LABELS = {
+  all: "All",
+  point: "Point Match",
+  dmp: "DMP",
+  unlimited: "Unlimited",
+};
+
+const MENU_PAGE_COUNT = 4;
+
 const state = {
   positions: [],
-  currentKind: "checker",
+  currentKind: "all",
+  matchType: "all",
+  menuPage: 0,
   current: null,
   answered: false,
   progress: {},
@@ -35,8 +47,13 @@ const elements = {
   card: document.getElementById("quiz-card"),
   empty: document.getElementById("empty-state"),
   tabs: [...document.querySelectorAll("[data-kind]")],
+  matchTypeButtons: [...document.querySelectorAll("[data-match-type]")],
   counts: [...document.querySelectorAll("[data-count]")],
   filterButtons: [...document.querySelectorAll("[data-filter]")],
+  menuPages: [...document.querySelectorAll("[data-menu-page]")],
+  menuViewport: document.getElementById("menu-viewport"),
+  menuPrev: document.getElementById("menu-prev"),
+  menuNext: document.getElementById("menu-next"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -169,6 +186,7 @@ function saveProgress() {
 function saveSettings() {
   const settings = {
     kind: state.currentKind,
+    matchType: state.matchType,
     taskOnly: state.filters.task,
     newOnly: state.filters.new,
   };
@@ -282,12 +300,25 @@ function decisionKind(position) {
   return null;
 }
 
+function positionMatchType(position) {
+  const matchLength = Number(position?.matchLength);
+  if (!Number.isFinite(matchLength) || matchLength <= 0 || matchLength >= 99999) {
+    return "unlimited";
+  }
+  if (matchLength === 1) return "dmp";
+  return "point";
+}
+
 function positionsForKind(kind) {
+  if (kind === "all") return state.positions.slice();
   return state.positions.filter((position) => decisionKind(position) === kind);
 }
 
 function filteredPositionsForKind(kind) {
   let pool = positionsForKind(kind);
+  if (state.matchType !== "all") {
+    pool = pool.filter((position) => positionMatchType(position) === state.matchType);
+  }
   if (state.filters.task) pool = pool.filter(isChallenge);
   if (state.filters.new) pool = pool.filter(isNewPosition);
   return pool;
@@ -968,7 +999,8 @@ function renderCurrent() {
   elements.empty.hidden = true;
   elements.board.fetchPriority = "high";
   elements.board.src = absoluteBoardUrl(state.current);
-  elements.board.alt = `${KIND_LABELS[state.currentKind]} quiz position`;
+  const currentKindLabel = KIND_LABELS[decisionKind(state.current)] || KIND_LABELS[state.currentKind] || "Position";
+  elements.board.alt = `${currentKindLabel} quiz position`;
   refillBoardQueue();
   updatePositionRecord();
   populateAnswerData();
@@ -1017,14 +1049,58 @@ function judge(result) {
   selectNext();
 }
 
+function syncKindButtons() {
+  elements.tabs.forEach((tab) => {
+    tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind);
+    tab.setAttribute("aria-pressed", String(tab.dataset.kind === state.currentKind));
+  });
+}
+
 function setKind(kind) {
   if (!KIND_LABELS[kind]) return;
   state.currentKind = kind;
   state.current = null;
   resetBoardQueue();
-  elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === kind));
+  syncKindButtons();
   saveSettings();
   renderCurrent();
+}
+
+function syncMatchTypeButtons() {
+  elements.matchTypeButtons.forEach((button) => {
+    const active = button.dataset.matchType === state.matchType;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function setMatchType(matchType) {
+  if (!MATCH_TYPE_LABELS[matchType]) return;
+  state.matchType = matchType;
+  state.current = null;
+  resetBoardQueue();
+  syncMatchTypeButtons();
+  saveSettings();
+  renderCurrent();
+}
+
+function normalizeMenuPageIndex(index) {
+  const numeric = Number(index) || 0;
+  return ((numeric % MENU_PAGE_COUNT) + MENU_PAGE_COUNT) % MENU_PAGE_COUNT;
+}
+
+function setMenuPage(index) {
+  state.menuPage = normalizeMenuPageIndex(index);
+  elements.menuPages.forEach((page) => {
+    const active = Number(page.dataset.menuPage) === state.menuPage;
+    page.hidden = !active;
+    page.classList.toggle("is-active", active);
+    page.setAttribute("aria-hidden", String(!active));
+  });
+}
+
+function shiftMenuPage(delta) {
+  setMenuPage(state.menuPage + delta);
 }
 
 function syncFilterButtons() {
@@ -1046,7 +1122,7 @@ function toggleFilter(filter) {
 }
 
 function installSmartphoneZoomGuard() {
-  const smartphone = window.matchMedia("(max-width: 760px)");
+  const smartphone = window.matchMedia("(max-width: 790px)");
   const preventGesture = (event) => {
     if (smartphone.matches) event.preventDefault();
   };
@@ -1078,9 +1154,42 @@ function installEvents() {
   elements.tabs.forEach((tab) => {
     tab.addEventListener("click", () => setKind(tab.dataset.kind));
   });
+  elements.matchTypeButtons.forEach((button) => {
+    button.addEventListener("click", () => setMatchType(button.dataset.matchType));
+  });
   elements.filterButtons.forEach((button) => {
     button.addEventListener("click", () => toggleFilter(button.dataset.filter));
   });
+
+  elements.menuPrev.addEventListener("click", () => shiftMenuPage(-1));
+  elements.menuNext.addEventListener("click", () => shiftMenuPage(1));
+
+  let menuTouchStart = null;
+  elements.menuViewport.addEventListener("touchstart", (event) => {
+    if (!window.matchMedia("(max-width: 790px)").matches || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    menuTouchStart = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+
+  elements.menuViewport.addEventListener("touchend", (event) => {
+    if (!menuTouchStart || !window.matchMedia("(max-width: 790px)").matches) {
+      menuTouchStart = null;
+      return;
+    }
+    const touch = event.changedTouches?.[0];
+    if (!touch) {
+      menuTouchStart = null;
+      return;
+    }
+
+    const dx = touch.clientX - menuTouchStart.x;
+    const dy = touch.clientY - menuTouchStart.y;
+    menuTouchStart = null;
+
+    if (Math.abs(dy) < 32 || Math.abs(dy) <= Math.abs(dx)) return;
+    shiftMenuPage(dy < 0 ? 1 : -1);
+  }, { passive: true });
+
   elements.answerButton.addEventListener("click", showAnswer);
   elements.correctButton.addEventListener("click", () => judge("correct"));
   elements.wrongButton.addEventListener("click", () => judge("wrong"));
@@ -1139,10 +1248,13 @@ async function start() {
     backupSettings && typeof backupSettings === "object" ? backupSettings : {}
   );
   if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
+  if (MATCH_TYPE_LABELS[settings.matchType]) state.matchType = settings.matchType;
   state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly);
   state.filters.new = Boolean(settings.newOnly);
-  elements.tabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.kind === state.currentKind));
+  syncKindButtons();
+  syncMatchTypeButtons();
   syncFilterButtons();
+  setMenuPage(0);
   installSmartphoneZoomGuard();
   installEvents();
   scheduleDailyReset();

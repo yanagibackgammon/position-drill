@@ -329,4 +329,50 @@ run("Cube actions remain non-selectable", () => {
 });
 
 
+
+run("Match type classification separates Point Match, DMP, and Unlimited", () => {
+  assert.equal(evaluate('positionMatchType({matchLength:7})'), "point");
+  assert.equal(evaluate('positionMatchType({matchLength:1})'), "dmp");
+  assert.equal(evaluate('positionMatchType({matchLength:0})'), "unlimited");
+  assert.equal(evaluate('positionMatchType({matchLength:99999})'), "unlimited");
+});
+
+run("ALL decision kind and match type filter compose with Task/New", () => {
+  evaluate(`
+    state.positions = [
+      {id:"C7",decisionKind:"checker",matchLength:7,isNew:true},
+      {id:"D1",decisionKind:"double",matchLength:1,isNew:true},
+      {id:"TU",decisionKind:"take",matchLength:99999,isNew:true},
+      {id:"C7OLD",decisionKind:"checker",matchLength:7,isNew:false}
+    ];
+    state.progress = {
+      C7:{correct:0,wrong:0},
+      D1:{correct:0,wrong:0},
+      TU:{correct:0,wrong:0},
+      C7OLD:{correct:0,wrong:0}
+    };
+    state.matchType = "point";
+    state.filters = {task:true,new:true};
+  `);
+
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("all").map(p => p.id)')),
+    ["C7"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["C7"],
+  );
+
+  evaluate('state.matchType = "all"; state.filters = {task:false,new:false};');
+});
+
+run("Menu page navigation wraps through four menu pages", () => {
+  assert.equal(evaluate('normalizeMenuPageIndex(0)'), 0);
+  assert.equal(evaluate('normalizeMenuPageIndex(3)'), 3);
+  assert.equal(evaluate('normalizeMenuPageIndex(4)'), 0);
+  assert.equal(evaluate('normalizeMenuPageIndex(-1)'), 3);
+});
+
+
 console.log("All app regression tests passed.");
