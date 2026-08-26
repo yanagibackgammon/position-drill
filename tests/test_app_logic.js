@@ -26,6 +26,7 @@ function dummyElement() {
     addEventListener() {},
     removeAttribute() {},
     setAttribute() {},
+    querySelector() { return dummyElement(); },
   };
 }
 
@@ -129,10 +130,10 @@ run("New: build-time boolean wins, timestamp fallback is seven days", () => {
 run("Task + New filters intersect and counts are per decision kind", () => {
   evaluate(`
     state.positions = [
-      {id:"C1",decisionKind:"checker",isNew:true},
-      {id:"C2",decisionKind:"checker",isNew:false},
-      {id:"D1",decisionKind:"double",isNew:true},
-      {id:"T1",decisionKind:"take",isNew:true}
+      {id:"C1",decisionKind:"checker",matchLength:7,isNew:true},
+      {id:"C2",decisionKind:"checker",matchLength:7,isNew:false},
+      {id:"D1",decisionKind:"double",matchLength:7,isNew:true},
+      {id:"T1",decisionKind:"take",matchLength:7,isNew:true}
     ];
     state.progress = {
       C1:{correct:0,wrong:0},
@@ -140,6 +141,7 @@ run("Task + New filters intersect and counts are per decision kind", () => {
       D1:{correct:2,wrong:0},
       T1:{correct:0,wrong:1}
     };
+    state.matchType = "point";
     state.filters = {task:true,new:true};
   `);
 
@@ -367,19 +369,18 @@ run("ALL decision kind and match type filter compose with Task/New", () => {
   evaluate('state.matchType = "all"; state.filters = {task:false,new:false};');
 });
 
-run("Kind selector cycles ALL / Checker / Double / Take", () => {
-  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "all", 1)'), "checker");
+run("Kind selector cycles Checker / Double / Take", () => {
   assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "checker", 1)'), "double");
   assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "double", 1)'), "take");
-  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "take", 1)'), "all");
-  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "all", -1)'), "take");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "take", 1)'), "checker");
+  assert.equal(evaluate('cycleOptionValue(KIND_ORDER, "checker", -1)'), "take");
 });
 
-run("Match selector cycles ALL / Point / DMP / Unlimited", () => {
-  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "all", 1)'), "point");
-  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "point", 1)'), "dmp");
-  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "dmp", 1)'), "unlimited");
-  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "unlimited", 1)'), "all");
+run("Match selector cycles Point / Unlimited / DMP", () => {
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "point", 1)'), "unlimited");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "unlimited", 1)'), "dmp");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "dmp", 1)'), "point");
+  assert.equal(evaluate('cycleOptionValue(MATCH_TYPE_ORDER, "point", -1)'), "dmp");
   assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point");
 });
 
@@ -393,7 +394,7 @@ run("Both primary selectors show the active pool count", () => {
       {id:"DU",decisionKind:"double",matchLength:99999,isNew:true}
     ];
     state.progress = {};
-    state.currentKind = "all";
+    state.currentKind = "checker";
     state.matchType = "point";
     state.filters = {task:false,new:false};
     updateCounts();
@@ -401,6 +402,25 @@ run("Both primary selectors show the active pool count", () => {
 
   assert.equal(evaluate("elements.kindCount.textContent"), "1");
   assert.equal(evaluate("elements.matchCount.textContent"), "1");
+});
+
+
+run("DMP forces Checker Play and disables the second selector", () => {
+  evaluate(`
+    state.currentKind = "take";
+    state.matchType = "point";
+    setMatchType("dmp");
+  `);
+
+  assert.equal(evaluate("state.matchType"), "dmp");
+  assert.equal(evaluate("state.currentKind"), "checker");
+  assert.equal(evaluate("elements.kindSelector.disabled"), true);
+
+  evaluate("cycleKind(1)");
+  assert.equal(evaluate("state.currentKind"), "checker");
+
+  evaluate('setMatchType("point")');
+  assert.equal(evaluate("elements.kindSelector.disabled"), false);
 });
 
 console.log("All app regression tests passed.");

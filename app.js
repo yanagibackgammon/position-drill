@@ -26,13 +26,13 @@ const MATCH_TYPE_LABELS = {
   unlimited: "Unlimited",
 };
 
-const KIND_ORDER = ["all", "checker", "double", "take"];
-const MATCH_TYPE_ORDER = ["all", "point", "dmp", "unlimited"];
+const KIND_ORDER = ["checker", "double", "take"];
+const MATCH_TYPE_ORDER = ["point", "unlimited", "dmp"];
 
 const state = {
   positions: [],
-  currentKind: "all",
-  matchType: "all",
+  currentKind: "checker",
+  matchType: "point",
   current: null,
   answered: false,
   progress: {},
@@ -1049,21 +1049,21 @@ function judge(result) {
 
 function kindDisplayLabels(kind) {
   return {
-    full: kind === "all" ? "ALL" : KIND_LABELS[kind],
+    full: KIND_LABELS[kind] || "Checker Play",
     short: kind === "checker"
       ? "Checker"
       : kind === "double"
         ? "Double"
         : kind === "take"
           ? "Take"
-          : "ALL",
+          : "Checker",
   };
 }
 
 function matchTypeDisplayLabels(matchType) {
   return {
-    full: matchType === "all" ? "ALL" : MATCH_TYPE_LABELS[matchType],
-    short: matchType === "point" ? "Point" : (matchType === "all" ? "ALL" : MATCH_TYPE_LABELS[matchType]),
+    full: MATCH_TYPE_LABELS[matchType] || "Point Match",
+    short: matchType === "point" ? "Point" : (MATCH_TYPE_LABELS[matchType] || "Point"),
   };
 }
 
@@ -1076,14 +1076,26 @@ function setSelectorLabels(button, labels) {
 }
 
 function syncKindButtons() {
-  setSelectorLabels(elements.kindSelector, kindDisplayLabels(state.currentKind));
+  const dmpLocked = state.matchType === "dmp";
+  const displayedKind = dmpLocked ? "checker" : state.currentKind;
+
+  setSelectorLabels(elements.kindSelector, kindDisplayLabels(displayedKind));
+
   if (elements.kindSelector) {
-    elements.kindSelector.setAttribute("aria-label", `Position type: ${KIND_LABELS[state.currentKind]}`);
+    elements.kindSelector.disabled = dmpLocked;
+    elements.kindSelector.setAttribute(
+      "aria-label",
+      dmpLocked
+        ? "Position type: Checker Play (DMP only)"
+        : `Position type: ${KIND_LABELS[state.currentKind]}`,
+    );
   }
+
+  elements.kindSelectorSlot?.classList.toggle("is-disabled", dmpLocked);
 }
 
 function setKind(kind) {
-  if (!KIND_LABELS[kind]) return;
+  if (!KIND_ORDER.includes(kind) || state.matchType === "dmp") return;
   state.currentKind = kind;
   state.current = null;
   resetBoardQueue();
@@ -1100,11 +1112,17 @@ function syncMatchTypeButtons() {
 }
 
 function setMatchType(matchType) {
-  if (!MATCH_TYPE_LABELS[matchType]) return;
+  if (!MATCH_TYPE_ORDER.includes(matchType)) return;
   state.matchType = matchType;
+
+  if (matchType === "dmp") {
+    state.currentKind = "checker";
+  }
+
   state.current = null;
   resetBoardQueue();
   syncMatchTypeButtons();
+  syncKindButtons();
   saveSettings();
   renderCurrent();
 }
@@ -1116,6 +1134,7 @@ function cycleOptionValue(order, current, delta) {
 }
 
 function cycleKind(delta) {
+  if (state.matchType === "dmp") return;
   setKind(cycleOptionValue(KIND_ORDER, state.currentKind, delta));
 }
 
@@ -1273,8 +1292,9 @@ async function start() {
   const settings = localSettings || (
     backupSettings && typeof backupSettings === "object" ? backupSettings : {}
   );
-  if (KIND_LABELS[settings.kind]) state.currentKind = settings.kind;
-  if (MATCH_TYPE_LABELS[settings.matchType]) state.matchType = settings.matchType;
+  if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
+  if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
+  if (state.matchType === "dmp") state.currentKind = "checker";
   state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly);
   state.filters.new = Boolean(settings.newOnly);
   syncKindButtons();

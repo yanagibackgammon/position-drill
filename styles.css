@@ -155,6 +155,21 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 }
 
 .filter-tab:hover { background: var(--active); }
+.selector-slot.is-disabled {
+  opacity: .45;
+}
+
+.selector-slot.is-disabled .menu-selector {
+  cursor: default;
+  color: var(--gray);
+}
+
+.selector-slot.is-disabled .menu-selector:hover,
+.selector-slot.is-disabled .menu-selector:focus,
+.selector-slot.is-disabled .menu-selector:active {
+  background: var(--black);
+}
+
 
 .selector-count {
   color: var(--gray);
