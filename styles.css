@@ -98,7 +98,15 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   min-width: 0;
   height: 44px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.menu-group {
+  min-width: 0;
+  height: 44px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
@@ -560,7 +568,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 .record-source-row { min-width: 0; }
 
 @media (max-width: 790px) {
-  .menu-grid { border-radius: 10px; }
+  .menu-group { border-radius: 10px; }
 
   .selector-slot {
     display: block;
@@ -1011,7 +1019,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .filter-tab.is-active {
   color: var(--white);
-  background: var(--black);
+  background: var(--active);
 }
 
 .selector-label-full,
