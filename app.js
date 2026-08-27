@@ -14,21 +14,21 @@ const LOCAL_DB_STORE = "records";
 const NEW_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const KIND_LABELS = {
-  all: "All",
+  all: "ALL",
   checker: "Checker Play",
   double: "Double Action",
   take: "Take Action",
 };
 
 const MATCH_TYPE_LABELS = {
-  all: "All",
+  all: "ALL",
   point: "Point Match",
   dmp: "DMP",
   unlimited: "Unlimited",
 };
 
-const KIND_ORDER = ["checker", "double", "take"];
-const MATCH_TYPE_ORDER = ["point", "unlimited", "dmp"];
+const KIND_ORDER = ["checker", "double", "take", "all"];
+const MATCH_TYPE_ORDER = ["point", "unlimited", "dmp", "all"];
 
 const state = {
   positions: [],
@@ -1089,7 +1089,7 @@ function kindDisplayLabels(kind) {
         ? "Double"
         : kind === "take"
           ? "Take"
-          : "Checker",
+          : "ALL",
   };
 }
 
