@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the static backgammon error-position database from imports/*.xg."""
+"""Build the static backgammon drill database from imports/*.xg and imports/*.xgp."""
 
 from __future__ import annotations
 
@@ -29,6 +29,66 @@ DIST_DIR = ROOT / "dist"
 BOARD_DIR = DIST_DIR / "assets" / "boards"
 DATA_DIR = DIST_DIR / "data"
 CONFIG_PATH = ROOT / "config.json"
+
+
+SUPPORTED_XG_SUFFIXES = {".xg", ".xgp"}
+
+
+def imported_source_files() -> list[Path]:
+    """Return XG/XGP sources recursively, case-insensitively.
+
+    GitHub Actions runs on Linux, where pathlib glob patterns are case-sensitive.
+    eXtreme Gammon files can arrive as .XG/.XGP as well as lowercase, so suffix
+    comparison must not rely on rglob("*.xgp").
+    """
+    return sorted(
+        (
+            path
+            for path in IMPORTS_DIR.rglob("*")
+            if path.is_file() and path.suffix.casefold() in SUPPORTED_XG_SUFFIXES
+        ),
+        key=lambda path: path.as_posix().casefold(),
+    )
+
+
+def is_xgp_source(source: Path) -> bool:
+    return source.suffix.casefold() == ".xgp"
+
+
+def primary_decisions(source: Path, match: Any) -> list[Any]:
+    """Return drill decisions for one source.
+
+    XGP is a standalone-position export, not a played match.  When XG saves a
+    checker-play position it may also attach a CubeAction record as context.
+    In that case the Move is the actual drill question and the attached cube
+    record must not create a second/spurious question.
+    """
+    decisions = list(match.decisions())
+    if is_xgp_source(source) and any(isinstance(item.event, Move) for item in decisions):
+        return [item for item in decisions if isinstance(item.event, Move)]
+    return decisions
+
+
+def xgp_identity(decisions: list[Any]) -> str:
+    """Return a stable identity for a standalone XGP position export.
+
+    Match.identity_hash intentionally hashes played history only.  Standalone
+    XGP files often contain no played action, so many unrelated XGP positions
+    otherwise collapse to the same match hash.  XGID + question kind describes
+    the actual saved drill position and remains stable across re-analysis.
+    """
+    parts: list[str] = ["xgp-v1"]
+    for decision in decisions:
+        event = decision.event
+        if isinstance(event, Move):
+            kind = "checker"
+        elif isinstance(event, CubeAction):
+            kind = "take" if event.doubled and event.took is not None else "double"
+        else:
+            kind = type(event).__name__.casefold()
+        parts.append(f"{kind}|{decision.xgid}")
+    digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+    return f"xgpid1-{digest}"
 
 
 def source_uploaded_at(source: Path) -> str:
@@ -508,9 +568,19 @@ def cube_candidate_payload(
         for order, (key, action, equity, evaluation) in enumerate(raw_rows, start=1)
     ]
 
-def make_checker_row(match: Any, decision: Any, move: Move, cfg: dict[str, Any]) -> dict[str, Any] | None:
+def make_checker_row(
+    match: Any,
+    decision: Any,
+    move: Move,
+    cfg: dict[str, Any],
+    *,
+    standalone: bool = False,
+    source_identity: str | None = None,
+) -> dict[str, Any] | None:
     actor = player_name(match, move.player)
-    if not is_drill_owner(match, move.player) or not cfg["includeCheckerErrors"]:
+    if not cfg["includeCheckerErrors"]:
+        return None
+    if not standalone and not is_drill_owner(match, move.player):
         return None
 
     played_index = move.played_index
@@ -526,28 +596,36 @@ def make_checker_row(match: Any, decision: Any, move: Move, cfg: dict[str, Any])
         *(candidate.evaluation for candidate in move.candidates),
     )
 
-    if loss + 1e-12 < float(cfg["errorThreshold"]):
+    checker_candidates = candidate_payload(move)
+    if standalone:
+        # XGP is a saved analysis position.  It commonly has ErrMove=-1000
+        # because there is no historical "played mistake" to score.  The
+        # candidate analysis itself is the authoritative payload.
+        if not checker_candidates:
+            return None
+        loss = 0.0
+    elif loss + 1e-12 < float(cfg["errorThreshold"]):
         return None
 
-    checker_candidates = candidate_payload(move)
     best_action = checker_candidates[0]["action"] if checker_candidates else "—"
     actor_score, opponent_score = score_for_sign(decision, move.player)
     opponent = player_name(match, -move.player)
-    row_id = event_id(match.identity_hash, decision.game_number, decision.move_number, "checker", actor)
+    identity = source_identity or match.identity_hash
+    row_id = event_id(identity, decision.game_number, decision.move_number, "checker", actor)
 
     return {
         "id": row_id,
         "decisionType": "checker",
         "decisionKind": "checker",
         "decisionLabel": "Checker Play",
-        "classification": classification(loss, float(cfg["blunderThreshold"])),
+        "classification": "Position" if standalone else classification(loss, float(cfg["blunderThreshold"])),
         "errorLoss": loss,
         "player": actor,
         "opponent": opponent,
         "onRollPlayer": actor,
         "onRollOpponent": opponent,
         "sourceFile": "",
-        "matchId": match.identity_hash,
+        "matchId": identity,
         "matchLength": match.header.match_length,
         "gameNumber": decision.game_number,
         "moveNumber": decision.move_number,
@@ -557,7 +635,7 @@ def make_checker_row(match: Any, decision: Any, move: Move, cfg: dict[str, Any])
         "onRollOpponentScore": opponent_score,
         "dice": f"{move.dice[0]}{move.dice[1]}",
         "diceValues": list(move.dice),
-        "playedAction": compact_move_notation(move.notation),
+        "playedAction": "" if standalone else compact_move_notation(move.notation),
         "bestAction": best_action,
         "xgid": decision.xgid,
         "cubeValue": cube_value_number(move.cube_value),
@@ -596,14 +674,35 @@ def best_double_action(cube: CubeAction) -> str:
         return labels["take"] if response == "Take" else labels["pass"]
     return non_double_action(cube)
 
-def make_double_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, Any]) -> dict[str, Any] | None:
+def make_double_row(
+    match: Any,
+    decision: Any,
+    cube: CubeAction,
+    cfg: dict[str, Any],
+    *,
+    standalone: bool = False,
+    source_identity: str | None = None,
+) -> dict[str, Any] | None:
     actor_sign = cube.player
     actor = player_name(match, actor_sign)
-    if not is_drill_owner(match, actor_sign) or not cfg["includeCubeErrors"]:
+    if not cfg["includeCubeErrors"]:
+        return None
+    if not standalone and not is_drill_owner(match, actor_sign):
         return None
 
     loss = abs(float(cube.error_double))
-    if cube.error_double == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
+    if standalone:
+        # Standalone XGP cube positions normally carry ErrCube=-1000 even
+        # though their No Double / Double analysis is fully populated.
+        analysis_values = (
+            cube.no_double_equity,
+            cube.double_take_equity,
+            cube.double_drop_equity,
+        )
+        if not all(math.isfinite(float(value)) for value in analysis_values):
+            return None
+        loss = 0.0
+    elif cube.error_double == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
         return None
 
     invalid_reason = invalid_match_cube_reason(match, decision, cube)
@@ -634,20 +733,21 @@ def make_double_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, 
 
     actor_score, opponent_score = score_for_sign(decision, actor_sign)
     opponent = player_name(match, -actor_sign)
-    row_id = event_id(match.identity_hash, decision.game_number, decision.move_number, "double", actor)
+    identity = source_identity or match.identity_hash
+    row_id = event_id(identity, decision.game_number, decision.move_number, "double", actor)
     return {
         "id": row_id,
         "decisionType": "cube",
         "decisionKind": "double",
         "decisionLabel": "Cube Action",
-        "classification": classification(loss, float(cfg["blunderThreshold"])),
+        "classification": "Position" if standalone else classification(loss, float(cfg["blunderThreshold"])),
         "errorLoss": loss,
         "player": actor,
         "opponent": opponent,
         "onRollPlayer": actor,
         "onRollOpponent": opponent,
         "sourceFile": "",
-        "matchId": match.identity_hash,
+        "matchId": identity,
         "matchLength": match.header.match_length,
         "gameNumber": decision.game_number,
         "moveNumber": decision.move_number,
@@ -657,7 +757,7 @@ def make_double_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, 
         "onRollOpponentScore": opponent_score,
         "dice": "—",
         "diceValues": [],
-        "playedAction": actual,
+        "playedAction": "" if standalone else actual,
         "bestAction": best_double_action(cube),
         "xgid": decision.xgid,
         "cubeValue": cube_value_number(cube.cube_value),
@@ -695,17 +795,30 @@ def take_quiz_candidate_payload(cube: CubeAction) -> list[dict[str, Any]]:
     ]
 
 
-def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, Any]) -> dict[str, Any] | None:
+def make_take_row(
+    match: Any,
+    decision: Any,
+    cube: CubeAction,
+    cfg: dict[str, Any],
+    *,
+    standalone: bool = False,
+    source_identity: str | None = None,
+) -> dict[str, Any] | None:
     if not cube.doubled or cube.took is None or not cfg["includeTakeErrors"]:
         return None
 
     taker_sign = -cube.player
     taker = player_name(match, taker_sign)
-    if not is_drill_owner(match, taker_sign):
+    if not standalone and not is_drill_owner(match, taker_sign):
         return None
 
     loss = abs(float(cube.error_take))
-    if cube.error_take == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
+    if standalone:
+        analysis_values = (cube.double_take_equity, cube.double_drop_equity)
+        if not all(math.isfinite(float(value)) for value in analysis_values):
+            return None
+        loss = 0.0
+    elif cube.error_take == xgread.NOT_ANALYSED or loss + 1e-12 < float(cfg["errorThreshold"]):
         return None
 
     invalid_reason = invalid_match_cube_reason(match, decision, cube)
@@ -738,21 +851,22 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
     doubler = player_name(match, doubler_sign)
     doubler_score, taker_score = score_for_sign(decision, doubler_sign)
     quiz_rates = probability_fields(actual_eval, invert=True)
-    row_id = event_id(match.identity_hash, decision.game_number, decision.move_number, "take", taker)
+    identity = source_identity or match.identity_hash
+    row_id = event_id(identity, decision.game_number, decision.move_number, "take", taker)
 
     return {
         "id": row_id,
         "decisionType": "cube",
         "decisionKind": "take",
         "decisionLabel": "Cube Action",
-        "classification": classification(loss, float(cfg["blunderThreshold"])),
+        "classification": "Position" if standalone else classification(loss, float(cfg["blunderThreshold"])),
         "errorLoss": loss,
         "player": doubler,
         "opponent": taker,
         "onRollPlayer": doubler,
         "onRollOpponent": taker,
         "sourceFile": "",
-        "matchId": match.identity_hash,
+        "matchId": identity,
         "matchLength": match.header.match_length,
         "gameNumber": decision.game_number,
         "moveNumber": decision.move_number,
@@ -762,10 +876,10 @@ def make_take_row(match: Any, decision: Any, cube: CubeAction, cfg: dict[str, An
         "onRollOpponentScore": taker_score,
         "dice": "—",
         "diceValues": [],
-        "playedAction": actual,
+        "playedAction": "" if standalone else actual,
         "bestAction": best,
         "quizBestAction": cube_response(cube),
-        "quizPlayedAction": "Take" if cube.took else "Pass",
+        "quizPlayedAction": "" if standalone else ("Take" if cube.took else "Pass"),
         "quizCandidates": take_quiz_candidate_payload(cube),
         "xgid": decision.xgid,
         "cubeValue": cube_value_number(cube.cube_value),
@@ -1175,31 +1289,45 @@ def build() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
 
-    imported_files = sorted(
-        [*IMPORTS_DIR.rglob("*.xg"), *IMPORTS_DIR.rglob("*.xgp")],
-        key=lambda path: path.as_posix().casefold(),
-    )
+    imported_files = imported_source_files()
     rows: list[dict[str, Any]] = []
     match_summaries: list[dict[str, Any]] = []
     seen_matches: dict[str, str] = {}
+    seen_xgp_positions: dict[str, str] = {}
     duplicate_match_files: list[tuple[str, str]] = []
+    duplicate_xgp_files: list[tuple[str, str]] = []
 
     for source in imported_files:
         match = xgread.read(source)
+        standalone = is_xgp_source(source)
+        decisions = primary_decisions(source, match)
+        source_identity = xgp_identity(decisions) if standalone else match.identity_hash
 
-        # The same XG match can exist under multiple filenames (for example a
-        # generic match_*.xg export plus a later descriptive filename).  Keep
-        # only the first file in deterministic filename order so the drill does
-        # not contain duplicate positions or duplicate IDs.
-        previous_source = seen_matches.get(match.identity_hash)
-        if previous_source is not None:
-            duplicate_match_files.append((source.name, previous_source))
-            print(
-                "WARNING: Skipping duplicate match file "
-                f"{source.name}; same parsed match as {previous_source}"
-            )
-            continue
-        seen_matches[match.identity_hash] = source.name
+        if standalone:
+            # XGP files are standalone analysis positions.  Deduplicate by the
+            # saved question/XGID, never by Match.identity_hash (which hashes
+            # played history and therefore collides for unrelated XGP files).
+            previous_source = seen_xgp_positions.get(source_identity)
+            if previous_source is not None:
+                duplicate_xgp_files.append((source.name, previous_source))
+                print(
+                    "WARNING: Skipping duplicate XGP position file "
+                    f"{source.name}; same saved position as {previous_source}"
+                )
+                continue
+            seen_xgp_positions[source_identity] = source.name
+        else:
+            # The same XG match can exist under multiple filenames (for example
+            # a generic match_*.xg export plus a later descriptive filename).
+            previous_source = seen_matches.get(source_identity)
+            if previous_source is not None:
+                duplicate_match_files.append((source.name, previous_source))
+                print(
+                    "WARNING: Skipping duplicate match file "
+                    f"{source.name}; same parsed match as {previous_source}"
+                )
+                continue
+            seen_matches[source_identity] = source.name
 
         uploaded_at = source_uploaded_at(source)
         is_new_source = source_is_new(uploaded_at)
@@ -1211,16 +1339,37 @@ def build() -> None:
         }
         crawford_game_number = min(crawford_game_numbers) if crawford_game_numbers else None
         before = len(rows)
-        for decision in match.decisions():
+        for decision in decisions:
             event = decision.event
             generated: list[dict[str, Any] | None]
             if isinstance(event, Move):
-                generated = [make_checker_row(match, decision, event, cfg)]
-            elif isinstance(event, CubeAction):
                 generated = [
-                    make_double_row(match, decision, event, cfg),
-                    make_take_row(match, decision, event, cfg),
+                    make_checker_row(
+                        match, decision, event, cfg,
+                        standalone=standalone, source_identity=source_identity,
+                    )
                 ]
+            elif isinstance(event, CubeAction):
+                if standalone and event.doubled and event.took is not None:
+                    # A standalone responded-to cube position is a Take/Pass
+                    # question.  Do not create a second Double Action card.
+                    generated = [
+                        make_take_row(
+                            match, decision, event, cfg,
+                            standalone=True, source_identity=source_identity,
+                        )
+                    ]
+                else:
+                    generated = [
+                        make_double_row(
+                            match, decision, event, cfg,
+                            standalone=standalone, source_identity=source_identity,
+                        ),
+                        None if standalone else make_take_row(
+                            match, decision, event, cfg,
+                            source_identity=source_identity,
+                        ),
+                    ]
             else:
                 generated = []
 
@@ -1275,7 +1424,7 @@ def build() -> None:
                     datetime.fromisoformat(uploaded_at.replace("Z", "+00:00")).timestamp() * 1000
                 ),
                 "isNew": is_new_source,
-                "matchId": match.identity_hash,
+                "matchId": source_identity,
                 "player1": match.header.player1,
                 "player2": match.header.player2,
                 "matchLength": match.header.match_length,
@@ -1300,6 +1449,7 @@ def build() -> None:
             "sourceFileCount": len(match_summaries),
             "importedFileCount": len(imported_files),
             "duplicateMatchFileCount": len(duplicate_match_files),
+            "duplicatePositionFileCount": len(duplicate_xgp_files),
             "positionCount": len(rows),
             "matches": match_summaries,
         },
@@ -1316,13 +1466,15 @@ def build() -> None:
         for kind in ("checker", "double", "take")
     }
     print(
-        f"Built {len(rows)} positions from {len(match_summaries)} unique match file(s) "
-        f"({len(imported_files)} imported, {len(duplicate_match_files)} duplicate skipped)."
+        f"Built {len(rows)} positions from {len(match_summaries)} unique XG/XGP source file(s) "
+        f"({len(imported_files)} imported, "
+        f"{len(duplicate_match_files)} duplicate match file(s), "
+        f"{len(duplicate_xgp_files)} duplicate XGP position file(s) skipped)."
     )
-    print(f"Git upload/update dates resolved for {len(dated_sources)}/{len(match_summaries)} XG file(s).")
+    print(f"Git upload/update dates resolved for {len(dated_sources)}/{len(match_summaries)} XG/XGP file(s).")
     print(
         "New at build time: "
-        f"{len(new_sources)} XG file(s), {len(new_rows)} position(s) "
+        f"{len(new_sources)} XG/XGP file(s), {len(new_rows)} position(s) "
         f"(Checker {new_by_kind['checker']}, "
         f"Double {new_by_kind['double']}, Take {new_by_kind['take']})."
     )

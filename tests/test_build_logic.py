@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -36,6 +38,86 @@ class BuildLogicTests(unittest.TestCase):
         self.assertEqual(build.cube_value_number(1), 2)
         self.assertEqual(build.cube_value_number(-2), 4)
         self.assertEqual(build.cube_value_number(3), 8)
+
+    def test_imported_source_files_accepts_uppercase_xg_extensions(self) -> None:
+        original = build.IMPORTS_DIR
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.XGP").write_bytes(b"x")
+            (root / "b.XG").write_bytes(b"x")
+            (root / "ignore.txt").write_text("x", encoding="utf-8")
+            build.IMPORTS_DIR = root
+            try:
+                self.assertEqual(
+                    [path.name for path in build.imported_source_files()],
+                    ["a.XGP", "b.XG"],
+                )
+            finally:
+                build.IMPORTS_DIR = original
+
+    def test_standalone_xgp_cube_is_kept_when_errcube_is_not_analysed(self) -> None:
+        evaluation = build.Evaluation(
+            lose_bg=0.01,
+            lose_gammon=0.10,
+            lose_single=0.40,
+            win_single=0.60,
+            win_gammon=0.20,
+            win_bg=0.01,
+            equity=0.30,
+        )
+        cube = SimpleNamespace(
+            player=1,
+            doubled=False,
+            took=None,
+            cube_value=0,
+            error_double=build.xgread.NOT_ANALYSED,
+            error_take=build.xgread.NOT_ANALYSED,
+            no_double_equity=0.30,
+            double_take_equity=0.55,
+            double_drop_equity=1.0,
+            no_double_analysis=evaluation,
+            double_take_analysis=evaluation,
+            position=SimpleNamespace(points=tuple([0] * 26)),
+        )
+        match = SimpleNamespace(
+            identity_hash="match-history-hash",
+            header=SimpleNamespace(
+                player1="Player 1",
+                player2="Player 2",
+                match_length=99999,
+                invert=1,
+                date=None,
+            ),
+            games=[],
+        )
+        decision = SimpleNamespace(
+            game_number=1, move_number=1, score1=0, score2=0, xgid="XGID=standalone"
+        )
+        cfg = build.load_config()
+
+        self.assertIsNone(build.make_double_row(match, decision, cube, cfg))
+        row = build.make_double_row(
+            match,
+            decision,
+            cube,
+            cfg,
+            standalone=True,
+            source_identity="xgpid1-test",
+        )
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual(row["errorLoss"], 0.0)
+        self.assertEqual(row["classification"], "Position")
+        self.assertEqual(row["matchId"], "xgpid1-test")
+        self.assertEqual(row["playedAction"], "")
+        self.assertEqual(row["bestAction"], "Double/Take")
+
+    def test_xgp_identity_uses_saved_position_not_played_match_history(self) -> None:
+        event = SimpleNamespace()
+        first = [SimpleNamespace(event=event, xgid="XGID=AAA")]
+        second = [SimpleNamespace(event=event, xgid="XGID=BBB")]
+        self.assertNotEqual(build.xgp_identity(first), build.xgp_identity(second))
+        self.assertEqual(build.xgp_identity(first), build.xgp_identity(first))
 
     def test_dead_cube_guard_allows_2_to_4_but_rejects_4_to_8_at_4_4_in_7pt(self) -> None:
         game = SimpleNamespace(
