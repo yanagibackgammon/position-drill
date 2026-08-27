@@ -1109,27 +1109,22 @@ function setSelectorLabels(button, labels) {
 }
 
 function syncKindButtons() {
-  const dmpLocked = state.matchType === "dmp";
-  const displayedKind = dmpLocked ? "checker" : state.currentKind;
-
-  setSelectorLabels(elements.kindSelector, kindDisplayLabels(displayedKind));
+  setSelectorLabels(elements.kindSelector, kindDisplayLabels(state.currentKind));
 
   if (elements.kindSelector) {
-    elements.kindSelector.disabled = dmpLocked;
+    elements.kindSelector.disabled = false;
     elements.kindSelector.setAttribute(
       "aria-label",
-      dmpLocked
-        ? "Position type: Checker Play (DMP only)"
-        : `Position type: ${KIND_LABELS[state.currentKind]}`,
+      `Position type: ${KIND_LABELS[state.currentKind]}`,
     );
   }
 
-  elements.kindSelector?.classList.toggle("is-active", displayedKind !== "all");
-  elements.kindSelectorSlot?.classList.toggle("is-disabled", dmpLocked);
+  elements.kindSelector?.classList.toggle("is-active", state.currentKind !== "all");
+  elements.kindSelectorSlot?.classList.remove("is-disabled");
 }
 
 function setKind(kind) {
-  if (!KIND_ORDER.includes(kind) || state.matchType === "dmp") return;
+  if (!KIND_ORDER.includes(kind)) return;
   state.currentKind = kind;
   state.current = null;
   resetBoardQueue();
@@ -1150,10 +1145,6 @@ function setMatchType(matchType) {
   if (!MATCH_TYPE_ORDER.includes(matchType)) return;
   state.matchType = matchType;
 
-  if (matchType === "dmp") {
-    state.currentKind = "checker";
-  }
-
   state.current = null;
   resetBoardQueue();
   syncMatchTypeButtons();
@@ -1169,7 +1160,6 @@ function cycleOptionValue(order, current, delta) {
 }
 
 function cycleKind(delta) {
-  if (state.matchType === "dmp") return;
   setKind(cycleOptionValue(KIND_ORDER, state.currentKind, delta));
 }
 
@@ -1334,7 +1324,6 @@ async function start() {
   );
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
-  if (state.matchType === "dmp") state.currentKind = "checker";
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);

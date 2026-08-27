@@ -436,22 +436,29 @@ run("Match count stays total while kind count follows Task/New filters", () => {
 });
 
 
-run("DMP forces Checker Play and disables the second selector", () => {
+run("DMP preserves the selected decision kind and keeps the selector active", () => {
   evaluate(`
-    state.currentKind = "take";
-    state.matchType = "point";
+    state.positions = [
+      {id:"DMP-C",decisionKind:"checker",matchLength:1},
+      {id:"PM-D",decisionKind:"double",matchLength:7,playerScore:0,opponentScore:0}
+    ];
+    state.currentKind = "double";
+    state.matchType = "unlimited";
     setMatchType("dmp");
   `);
 
   assert.equal(evaluate("state.matchType"), "dmp");
-  assert.equal(evaluate("state.currentKind"), "checker");
-  assert.equal(evaluate("elements.kindSelector.disabled"), true);
+  assert.equal(evaluate("state.currentKind"), "double");
+  assert.equal(evaluate("elements.kindSelector.disabled"), false);
+  assert.equal(evaluate("activePool().length"), 0);
 
   evaluate("cycleKind(1)");
-  assert.equal(evaluate("state.currentKind"), "checker");
+  assert.equal(evaluate("state.currentKind"), "take");
 
+  evaluate('setMatchType("all")');
+  assert.equal(evaluate("state.currentKind"), "take");
   evaluate('setMatchType("point")');
-  assert.equal(evaluate("elements.kindSelector.disabled"), false);
+  assert.equal(evaluate("state.currentKind"), "take");
 });
 
 
