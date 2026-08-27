@@ -4,7 +4,7 @@ const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
-const FILTER_MODE_VERSION = 2;
+const FILTER_MODE_VERSION = 3;
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const BOARD_PRELOAD_COUNT = 3;
@@ -32,8 +32,8 @@ const MATCH_TYPE_ORDER = ["point", "unlimited", "dmp", "all"];
 
 const state = {
   positions: [],
-  currentKind: "checker",
-  matchType: "point",
+  currentKind: "all",
+  matchType: "all",
   current: null,
   answered: false,
   progress: {},
@@ -41,7 +41,7 @@ const state = {
   dailyResetTimer: null,
   dataVersion: "",
   boardQueue: [],
-  filters: { task: true, new: true },
+  filters: { task: false, new: false },
 };
 
 const elements = {
@@ -1124,6 +1124,7 @@ function syncKindButtons() {
     );
   }
 
+  elements.kindSelector?.classList.toggle("is-active", displayedKind !== "all");
   elements.kindSelectorSlot?.classList.toggle("is-disabled", dmpLocked);
 }
 
@@ -1140,6 +1141,7 @@ function setKind(kind) {
 function syncMatchTypeButtons() {
   setSelectorLabels(elements.matchSelector, matchTypeDisplayLabels(state.matchType));
   if (elements.matchSelector) {
+    elements.matchSelector.classList.toggle("is-active", state.matchType !== "all");
     elements.matchSelector.setAttribute("aria-label", `Match type: ${MATCH_TYPE_LABELS[state.matchType]}`);
   }
 }
@@ -1333,14 +1335,12 @@ async function start() {
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
   if (state.matchType === "dmp") state.currentKind = "checker";
-  if (Number(settings.filterModeVersion) >= FILTER_MODE_VERSION) {
-    state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? true);
-    state.filters.new = Boolean(settings.newOnly ?? true);
+  if (Number(settings.filterModeVersion) >= 2) {
+    state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
+    state.filters.new = Boolean(settings.newOnly ?? false);
   } else {
-    // The redesigned third/fourth selectors start at Task / New once, even
-    // when an older saved setting had the former toggle buttons turned off.
-    state.filters.task = true;
-    state.filters.new = true;
+    state.filters.task = false;
+    state.filters.new = false;
   }
   syncKindButtons();
   syncMatchTypeButtons();

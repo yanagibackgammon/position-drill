@@ -1017,8 +1017,27 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .stat-line.side-white .stat-label { color: var(--black); background: var(--white); }
 
+.menu-selector.is-active,
 .filter-tab.is-active {
   color: var(--white);
+  background: var(--active);
+}
+
+.menu-selector.is-active:hover,
+.menu-selector.is-active:focus,
+.menu-selector.is-active:active,
+.menu-selector.is-active:focus-visible,
+.filter-tab.is-active:hover,
+.filter-tab.is-active:focus,
+.filter-tab.is-active:active,
+.filter-tab.is-active:focus-visible {
+  background: var(--active);
+}
+
+.selector-slot.is-disabled .menu-selector.is-active,
+.selector-slot.is-disabled .menu-selector.is-active:hover,
+.selector-slot.is-disabled .menu-selector.is-active:focus,
+.selector-slot.is-disabled .menu-selector.is-active:active {
   background: var(--active);
 }
 
