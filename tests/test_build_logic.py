@@ -55,6 +55,33 @@ class BuildLogicTests(unittest.TestCase):
             finally:
                 build.IMPORTS_DIR = original
 
+    def test_imported_source_files_reads_nested_subfolders_recursively(self) -> None:
+        original = build.IMPORTS_DIR
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = root / "archive" / "2026" / "august"
+            nested.mkdir(parents=True)
+            (root / "root.xg").write_bytes(b"x")
+            (nested / "nested.xgp").write_bytes(b"x")
+            (nested / "UPPER.XG").write_bytes(b"x")
+            (nested / "ignore.txt").write_text("x", encoding="utf-8")
+            build.IMPORTS_DIR = root
+            try:
+                relative = [
+                    path.relative_to(root).as_posix()
+                    for path in build.imported_source_files()
+                ]
+                self.assertEqual(
+                    relative,
+                    [
+                        "archive/2026/august/nested.xgp",
+                        "archive/2026/august/UPPER.XG",
+                        "root.xg",
+                    ],
+                )
+            finally:
+                build.IMPORTS_DIR = original
+
     def test_standalone_xgp_cube_is_kept_when_errcube_is_not_analysed(self) -> None:
         evaluation = build.Evaluation(
             lose_bg=0.01,

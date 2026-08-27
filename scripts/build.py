@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the static backgammon drill database from imports/*.xg and imports/*.xgp."""
+"""Build the static backgammon drill database from XG/XGP files anywhere under imports/."""
 
 from __future__ import annotations
 
