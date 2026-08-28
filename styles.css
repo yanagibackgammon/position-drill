@@ -178,8 +178,31 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .filter-tab {
   padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.filter-check {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gray);
+  background: var(--black);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.filter-tab.is-active .filter-check::after {
+  content: "✓";
 }
 
 .quiz-card {
@@ -1054,11 +1077,17 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 @media (max-width: 790px) {
   .filter-tab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 3px;
     line-height: 1;
   }
 
   .filter-tab .filter-label { line-height: 1; }
+
+  .filter-check {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+    font-size: 10px;
+  }
 }

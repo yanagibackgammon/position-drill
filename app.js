@@ -1241,10 +1241,10 @@ function syncFilterButtons() {
     const active = Boolean(state.filters[filter]);
     const activeLabel = filter === "task" ? "Task" : "New";
     const label = button.querySelector(".filter-label");
-    if (label) label.textContent = active ? activeLabel : "ALL";
+    if (label) label.textContent = activeLabel;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
-    button.setAttribute("aria-label", `${activeLabel} filter: ${active ? activeLabel : "ALL"}`);
+    button.setAttribute("aria-label", `${activeLabel} filter: ${active ? "on" : "off"}`);
   });
 }
 
