@@ -244,6 +244,62 @@ class BuildLogicTests(unittest.TestCase):
             "7/4*(2)",
         )
 
+
+    def test_checker_move_highlights_track_only_mover_final_checker(self) -> None:
+        before = [0] * 26
+        after = [0] * 26
+        before[13] = 1
+        before[8] = -1
+        after[8] = 1
+        after[0] = -1
+
+        highlights = build.checker_move_highlights(before, after, 1)
+        self.assertEqual(highlights["sign"], 1)
+        self.assertEqual(highlights["points"], {"8": 1})
+        self.assertEqual(highlights["off"], 0)
+
+    def test_checker_move_highlights_support_white_and_bearoff(self) -> None:
+        before = [0] * 26
+        after = [0] * 26
+        before[1] = -1
+
+        highlights = build.checker_move_highlights(before, after, -1)
+        self.assertEqual(highlights["sign"], -1)
+        self.assertEqual(highlights["points"], {})
+        self.assertEqual(highlights["off"], 1)
+
+    def test_move_highlight_svg_uses_dark_gold_fill_for_black_and_outline_for_white(self) -> None:
+        base_row = {
+            "id": "TEST-HIGHLIGHT",
+            "position": [0] * 26,
+            "matchLength": 7,
+            "onRollScore": 0,
+            "onRollOpponentScore": 0,
+            "cubeOwner": "center",
+            "cubeValue": 1,
+            "diceValues": [],
+        }
+
+        black_row = dict(base_row)
+        black_row["position"] = [0] * 26
+        black_row["position"][6] = 1
+        black_svg = build.render_board_svg(
+            black_row,
+            show_pip_counts=False,
+            move_highlights={"sign": 1, "points": {"6": 1}, "off": 0},
+        )
+        self.assertIn('fill="#6F5424" stroke="#000000"', black_svg)
+
+        white_row = dict(base_row)
+        white_row["position"] = [0] * 26
+        white_row["position"][19] = -1
+        white_svg = build.render_board_svg(
+            white_row,
+            show_pip_counts=False,
+            move_highlights={"sign": -1, "points": {"19": 1}, "off": 0},
+        )
+        self.assertIn('fill="#ffffff" stroke="#6F5424" stroke-width="4.0"', white_svg)
+
     def test_unlimited_board_score_is_zero_zero(self) -> None:
         row = {
             "id": "TEST-UNLIMITED",

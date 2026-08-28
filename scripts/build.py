@@ -23,6 +23,7 @@ if str(VENDOR) not in sys.path:
 
 import xgread  # noqa: E402
 from xgread import CubeAction, Evaluation, Move  # noqa: E402
+from xgread._notation import _apply_moves  # noqa: E402
 
 IMPORTS_DIR = ROOT / "imports"
 DIST_DIR = ROOT / "dist"
@@ -473,12 +474,49 @@ def compact_move_notation(notation: str) -> str:
     return " ".join(compacted)
 
 
+def checker_move_highlights(
+    before_view: list[int],
+    after_view: list[int],
+    mover_sign: int,
+) -> dict[str, Any]:
+    """Return the moved checkers' final locations in the displayed position.
+
+    The move itself can contain chained hops (13/8/5), hits, bar entries and
+    bear-offs.  Comparing only the mover's checker counts before/after leaves
+    intermediate points unhighlighted and does not accidentally highlight an
+    opponent checker sent to the bar by a hit.
+    """
+    sign = 1 if int(mover_sign) >= 0 else -1
+
+    def side_count(value: int) -> int:
+        return max(sign * int(value), 0)
+
+    points: dict[str, int] = {}
+    for point in range(26):
+        increase = side_count(after_view[point]) - side_count(before_view[point])
+        if increase > 0:
+            points[str(point)] = increase
+
+    before_on_board = sum(side_count(value) for value in before_view)
+    after_on_board = sum(side_count(value) for value in after_view)
+    off_increase = max(0, before_on_board - after_on_board)
+
+    return {
+        "sign": sign,
+        "points": points,
+        "off": off_increase,
+    }
+
+
 def candidate_payload(move: Move) -> list[dict[str, Any]]:
     """Return only genuinely analysed checker candidates, best to worst.
 
     XG may store the played move in an unused candidate slot whose evaluation is
     all zero and whose equity is -1000.  Filtering those placeholders prevents
     both false 0.0% rates and absurd -1000.xxx error values.
+
+    Internal ``_positionAfter`` / ``_moveHighlights`` fields are consumed later
+    by the build step to render selectable move-result boards.
     """
     valid_candidates = [
         candidate for candidate in move.candidates
@@ -488,15 +526,21 @@ def candidate_payload(move: Move) -> list[dict[str, Any]]:
     if not valid_candidates:
         return []
 
+    before_view = position_for_view(move.position_before.points, move.player)
+    mover_sign = 1 if int(move.player) >= 0 else -1
     best_equity = float(valid_candidates[0].evaluation.equity)
     rows: list[dict[str, Any]] = []
     for rank, candidate in enumerate(valid_candidates, start=1):
         equity_loss = max(0.0, best_equity - float(candidate.evaluation.equity))
+        after_points, _ = _apply_moves(candidate.moves, move.position_before)
+        after_view = position_for_view(after_points, move.player)
         rows.append(
             {
                 "rank": rank,
                 "action": compact_move_notation(xgread.format_moves(candidate.moves, move.position_before)),
                 "equityLoss": equity_loss,
+                "_positionAfter": after_view,
+                "_moveHighlights": checker_move_highlights(before_view, after_view, mover_sign),
                 **probability_fields(candidate.evaluation),
             }
         )
@@ -951,6 +995,7 @@ def render_board_svg(
     *,
     show_pip_counts: bool = True,
     on_roll_marker: str = "black",
+    move_highlights: dict[str, Any] | None = None,
 ) -> str:
     """Render a clean monochrome bgLog/Minstrels-inspired board diagram.
 
@@ -980,6 +1025,14 @@ def render_board_svg(
     checker_r = 21.1
 
     points = row["position"]
+    highlight_sign = int((move_highlights or {}).get("sign") or 0)
+    highlight_points = {
+        int(point): int(count)
+        for point, count in ((move_highlights or {}).get("points") or {}).items()
+        if str(point).lstrip("-").isdigit() and int(count) > 0
+    }
+    highlight_off = max(0, int((move_highlights or {}).get("off") or 0))
+    highlight_color = "#6F5424"
 
     on_roll_pips = sum(point * max(int(points[point]), 0) for point in range(1, 25))
     on_roll_pips += 25 * max(int(points[25]), 0)
@@ -1076,11 +1129,29 @@ def render_board_svg(
         col = 6 - point
         return right_board_x1 + (col + 0.5) * point_w, False
 
-    def checker(cx: float, cy: float, black: bool, count_label: int | None = None) -> None:
-        fill = "#000000" if black else "#ffffff"
+    def checker(
+        cx: float,
+        cy: float,
+        black: bool,
+        count_label: int | None = None,
+        *,
+        highlighted: bool = False,
+    ) -> None:
+        if highlighted and black:
+            fill = highlight_color
+            stroke = "#000000"
+            stroke_width = 1.6
+        elif highlighted:
+            fill = "#ffffff"
+            stroke = highlight_color
+            stroke_width = 4.0
+        else:
+            fill = "#000000" if black else "#ffffff"
+            stroke = "#000000"
+            stroke_width = 1.2
         text_fill = "#ffffff" if black else "#000000"
         elements.append(
-            f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{checker_r}" fill="{fill}" stroke="#000000" stroke-width="1.2"/>'
+            f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{checker_r}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}"/>'
         )
         if count_label is not None:
             elements.append(
@@ -1098,9 +1169,18 @@ def render_board_svg(
         cx, top = point_center(point)
         visible = min(count, 5)
         step = 43.0
+        side_sign = 1 if black else -1
+        highlighted_count = min(count, highlight_points.get(point, 0)) if side_sign == highlight_sign else 0
+        highlight_from = max(0, visible - min(highlighted_count, visible))
         for idx in range(visible):
             cy = board_top + 25 + idx * step if top else board_bottom - 25 - idx * step
-            checker(cx, cy, black, count if idx == visible - 1 and count > 5 else None)
+            checker(
+                cx,
+                cy,
+                black,
+                count if idx == visible - 1 and count > 5 else None,
+                highlighted=idx >= highlight_from and highlighted_count > 0,
+            )
 
     # Bar checkers.  Centre each visible stack halfway between the central
     # cube and the corresponding outer edge, keeping it clear of the cube.
@@ -1112,23 +1192,29 @@ def render_board_svg(
     opponent_visible = min(opponent_bar, 5)
     opponent_anchor_y = (board_top + board_center_y) / 2
     opponent_start_y = opponent_anchor_y - (opponent_visible - 1) * bar_checker_step / 2
+    opponent_highlighted = min(opponent_bar, highlight_points.get(0, 0)) if highlight_sign == -1 else 0
+    opponent_highlight_from = max(0, opponent_visible - min(opponent_highlighted, opponent_visible))
     for idx in range(opponent_visible):
         checker(
             bar_center,
             opponent_start_y + idx * bar_checker_step,
             False,
             opponent_bar if idx == opponent_visible - 1 and opponent_bar > 5 else None,
+            highlighted=idx >= opponent_highlight_from and opponent_highlighted > 0,
         )
 
     on_roll_visible = min(on_roll_bar, 5)
     on_roll_anchor_y = (board_bottom + board_center_y) / 2
     on_roll_start_y = on_roll_anchor_y - (on_roll_visible - 1) * bar_checker_step / 2
+    on_roll_highlighted = min(on_roll_bar, highlight_points.get(25, 0)) if highlight_sign == 1 else 0
+    on_roll_highlight_from = max(0, on_roll_visible - min(on_roll_highlighted, on_roll_visible))
     for idx in range(on_roll_visible):
         checker(
             bar_center,
             on_roll_start_y + idx * bar_checker_step,
             True,
             on_roll_bar if idx == on_roll_visible - 1 and on_roll_bar > 5 else None,
+            highlighted=idx >= on_roll_highlight_from and on_roll_highlighted > 0,
         )
 
     # Doubling cube in the bar.
@@ -1169,19 +1255,27 @@ def render_board_svg(
     # Borne-off checkers in the right tray.
     tray_center = (right_tray_x1 + right_tray_x2) / 2
     off_w, off_h = 41, 12
+    opponent_off_highlight = min(opponent_off, highlight_off) if highlight_sign == -1 else 0
+    opponent_off_from = max(0, opponent_off - opponent_off_highlight)
     for idx in range(opponent_off):
         y = board_top + 5 + idx * 13.8
         if y + off_h > side_band_top - 3:
             break
+        highlighted = idx >= opponent_off_from and opponent_off_highlight > 0
         elements.append(
-            f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1"/>'
+            f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" '
+            f'fill="#ffffff" stroke="{highlight_color if highlighted else "#000000"}" stroke-width="{4 if highlighted else 1}"/>'
         )
+    on_roll_off_highlight = min(on_roll_off, highlight_off) if highlight_sign == 1 else 0
+    on_roll_off_from = max(0, on_roll_off - on_roll_off_highlight)
     for idx in range(on_roll_off):
         y = board_bottom - 5 - off_h - idx * 13.8
         if y < side_band_bottom + 3:
             break
+        highlighted = idx >= on_roll_off_from and on_roll_off_highlight > 0
         elements.append(
-            f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" fill="#000000" stroke="#000000" stroke-width="1"/>'
+            f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" '
+            f'fill="{highlight_color if highlighted else "#000000"}" stroke="#000000" stroke-width="{1.6 if highlighted else 1}"/>'
         )
 
     # On-roll marker.  Checker/Double positions show the black near-side
@@ -1413,6 +1507,29 @@ def build() -> None:
                     ),
                     encoding="utf-8",
                 )
+
+                if row.get("decisionKind") == "checker":
+                    for candidate in row.get("candidates") or []:
+                        after_position = candidate.pop("_positionAfter", None)
+                        move_highlights = candidate.pop("_moveHighlights", None)
+                        if after_position is None:
+                            continue
+                        move_board_relative = (
+                            f"assets/boards-moves/{row['id']}-{int(candidate.get('rank') or 0)}.svg"
+                        )
+                        move_board_row = dict(row)
+                        move_board_row["position"] = after_position
+                        candidate["moveBoardImage"] = move_board_relative
+                        (DIST_DIR / move_board_relative).parent.mkdir(parents=True, exist_ok=True)
+                        (DIST_DIR / move_board_relative).write_text(
+                            render_board_svg(
+                                move_board_row,
+                                show_pip_counts=False,
+                                move_highlights=move_highlights,
+                            ),
+                            encoding="utf-8",
+                        )
+
                 rows.append(row)
 
         match_summaries.append(

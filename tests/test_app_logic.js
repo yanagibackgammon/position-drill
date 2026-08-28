@@ -570,9 +570,11 @@ run("Checker candidate can be selected and deselected by pressing the same move"
     gammonLoseRate: 0.10,
     backgammonWinRate: 0.01,
     backgammonLoseRate: 0.01,
+    quizBoardImage: "assets/boards-quiz/CHK1.svg",
     candidates: [{
       rank: 1,
       action: "13/8 6/5",
+      moveBoardImage: "assets/boards-moves/CHK1-1.svg",
       equityLoss: 0,
       winRate: 0.60,
       loseRate: 0.40,
@@ -586,10 +588,18 @@ run("Checker candidate can be selected and deselected by pressing the same move"
   evaluate("selectCheckerCandidate(0)");
   assert.equal(evaluate("state.selectedCheckerCandidateIndex"), 0);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />60\.0%<\/span>/);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-moves/CHK1-1.svg",
+  );
 
   evaluate("selectCheckerCandidate(0)");
   assert.equal(evaluate("state.selectedCheckerCandidateIndex"), null);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/CHK1.svg",
+  );
 });
 
 console.log("All app regression tests passed.");

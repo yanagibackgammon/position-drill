@@ -370,11 +370,18 @@ function randomPosition(pool, avoidId = null) {
   return choices[Math.floor(Math.random() * choices.length)] || pool[0];
 }
 
-function absoluteBoardUrl(position) {
-  const path = position.quizBoardImage || position.boardImage || "";
-  const url = new URL(path, POSITIONS_ROOT);
+function absoluteAssetUrl(path) {
+  const url = new URL(path || "", POSITIONS_ROOT);
   if (state.dataVersion) url.searchParams.set("v", state.dataVersion);
   return url.href;
+}
+
+function absoluteBoardUrl(position) {
+  return absoluteAssetUrl(position.quizBoardImage || position.boardImage || "");
+}
+
+function absoluteCheckerMoveBoardUrl(candidate) {
+  return candidate?.moveBoardImage ? absoluteAssetUrl(candidate.moveBoardImage) : "";
 }
 
 const boardPreloadCache = new Map();
@@ -958,6 +965,8 @@ function selectCheckerCandidate(index) {
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
+    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.alt = `${KIND_LABELS.checker} quiz position`;
     return;
   }
 
@@ -970,6 +979,14 @@ function selectCheckerCandidate(index) {
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, candidate);
   elements.summaryAnalysis.scrollTop = 0;
   resetSummaryTextScroll();
+
+  const moveBoardUrl = absoluteCheckerMoveBoardUrl(candidate);
+  if (moveBoardUrl) {
+    elements.board.src = moveBoardUrl;
+    elements.board.alt = `${candidate.action || "Checker move"} after position`;
+  } else {
+    elements.board.src = absoluteBoardUrl(state.current);
+  }
 }
 
 function handleCheckerCandidateInteraction(event) {
