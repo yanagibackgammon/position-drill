@@ -418,7 +418,7 @@ run("Checker match selector includes DMP, Double/Take selector skips it", () => 
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("checker"), "unlimited", 1)'), "dmp");
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("double"), "unlimited", 1)'), "all");
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("take"), "all", -1)'), "unlimited");
-  assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point");
+  assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point Match");
   assert.equal(evaluate('matchTypeDisplayLabels("all").full'), "ALL");
 });
 
