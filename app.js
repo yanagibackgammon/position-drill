@@ -17,7 +17,7 @@ const KIND_LABELS = {
   all: "ALL",
   checker: "Checker Play",
   double: "Double Action",
-  take: "Take Action",
+  take: "Take/Pass",
 };
 
 const MATCH_TYPE_LABELS = {
@@ -1121,7 +1121,7 @@ function kindDisplayLabels(kind) {
       : kind === "double"
         ? "Double"
         : kind === "take"
-          ? "Take"
+          ? "Take/Pass"
           : "ALL",
   };
 }
