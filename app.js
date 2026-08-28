@@ -1146,7 +1146,7 @@ function kindDisplayLabels(kind) {
 function matchTypeDisplayLabels(matchType) {
   return {
     full: MATCH_TYPE_LABELS[matchType] || "Point Match",
-    short: matchType === "point" ? "Point" : (MATCH_TYPE_LABELS[matchType] || "Point"),
+    short: matchType === "point" ? "Point Match" : (MATCH_TYPE_LABELS[matchType] || "Point"),
   };
 }
 
