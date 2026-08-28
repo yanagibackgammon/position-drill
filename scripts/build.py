@@ -1139,7 +1139,7 @@ def render_board_svg(
     ) -> None:
         if highlighted and black:
             fill = highlight_color
-            stroke = "#000000"
+            stroke = highlight_color
             stroke_width = 1.6
         elif highlighted:
             fill = "#ffffff"
@@ -1275,7 +1275,7 @@ def render_board_svg(
         highlighted = idx >= on_roll_off_from and on_roll_off_highlight > 0
         elements.append(
             f'<rect x="{tray_center-off_w/2:.2f}" y="{y:.2f}" width="{off_w}" height="{off_h}" rx="4" '
-            f'fill="{highlight_color if highlighted else "#000000"}" stroke="#000000" stroke-width="{1.6 if highlighted else 1}"/>'
+            f'fill="{highlight_color if highlighted else "#000000"}" stroke="{highlight_color if highlighted else "#000000"}" stroke-width="{1.6 if highlighted else 1}"/>'
         )
 
     # On-roll marker.  Checker/Double positions show the black near-side

@@ -288,7 +288,17 @@ class BuildLogicTests(unittest.TestCase):
             show_pip_counts=False,
             move_highlights={"sign": 1, "points": {"6": 1}, "off": 0},
         )
-        self.assertIn('fill="#6F5424" stroke="#000000"', black_svg)
+        self.assertIn('fill="#6F5424" stroke="#6F5424"', black_svg)
+
+        black_off_row = dict(base_row)
+        black_off_row["position"] = [0] * 26
+        black_off_row["onRollOff"] = 1
+        black_off_svg = build.render_board_svg(
+            black_off_row,
+            show_pip_counts=False,
+            move_highlights={"sign": 1, "points": {}, "off": 1},
+        )
+        self.assertIn('fill="#6F5424" stroke="#6F5424" stroke-width="1.6"', black_off_svg)
 
         white_row = dict(base_row)
         white_row["position"] = [0] * 26
