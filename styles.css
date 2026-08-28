@@ -326,6 +326,19 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .quiz-card.is-answered .answer-only-value { visibility: visible; }
 
+.pip-placeholder { display: inline; }
+.pip-real { display: none; }
+
+.quiz-card.is-answered .pip-placeholder,
+.quiz-card.is-pip-revealed .pip-placeholder { display: none; }
+
+.quiz-card.is-answered .pip-real,
+.quiz-card.is-pip-revealed .pip-real { display: inline; }
+
+.summary-analysis { cursor: pointer; }
+.quiz-card.is-answered .summary-analysis,
+.quiz-card.is-empty .summary-analysis { cursor: default; }
+
 .win-scale {
   position: relative;
   height: 19px;

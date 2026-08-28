@@ -37,6 +37,8 @@ const state = {
   matchType: "all",
   current: null,
   answered: false,
+  pipRevealed: false,
+  selectedCheckerCandidateIndex: null,
   progress: {},
   daily: { day: "", correct: 0, wrong: 0 },
   dailyResetTimer: null,
@@ -726,8 +728,8 @@ function summaryAnalysisHTML(position, checkerCandidate = null) {
         ${statLine("WH", escapeHTML(opponentScoreText), "side-white")}
 
         ${statLine("CB", escapeHTML(isDmp ? "1" : cubeStateText(position, cubeValue)))}
-        ${statLine("PIP", escapeHTML(pipDisplay.black), "", "answer-only-value")}
-        ${statLine("PIP", escapeHTML(pipDisplay.white), "", "answer-only-value")}
+        ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.black)}</span>`)}
+        ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.white)}</span>`)}
 
         <div aria-hidden="true"></div>
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
@@ -935,6 +937,7 @@ function resetSummaryTextScroll() {
 function selectCheckerCandidate(index) {
   if (!state.current || !state.answered || state.current.decisionKind !== "checker") return;
 
+  const numericIndex = Number(index);
   const candidates = (Array.isArray(state.current.candidates) ? state.current.candidates : [])
     .filter((candidate) => {
       const loss = Number(candidate?.equityLoss);
@@ -943,15 +946,24 @@ function selectCheckerCandidate(index) {
     .slice()
     .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
 
-  const candidate = candidates[Number(index)];
+  const candidate = candidates[numericIndex];
   if (!checkerCandidateHasRates(candidate)) return;
 
   elements.actionAnalysis
     .querySelectorAll(".action-option.is-selected")
     .forEach((row) => row.classList.remove("is-selected"));
 
+  if (state.selectedCheckerCandidateIndex === numericIndex) {
+    state.selectedCheckerCandidateIndex = null;
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+    elements.summaryAnalysis.scrollTop = 0;
+    resetSummaryTextScroll();
+    return;
+  }
+
+  state.selectedCheckerCandidateIndex = numericIndex;
   const selected = elements.actionAnalysis.querySelector(
-    `[data-checker-candidate-index="${Number(index)}"]`,
+    `[data-checker-candidate-index="${numericIndex}"]`,
   );
   if (selected) selected.classList.add("is-selected");
 
@@ -974,7 +986,10 @@ function handleCheckerCandidateInteraction(event) {
 
 function resetAnswerUI() {
   state.answered = false;
+  state.pipRevealed = false;
+  state.selectedCheckerCandidateIndex = null;
   elements.card.classList.remove("is-answered");
+  elements.card.classList.remove("is-pip-revealed");
   elements.answerPanel.hidden = false;
   elements.answerButton.hidden = false;
   elements.judgeButtons.hidden = true;
@@ -989,11 +1004,14 @@ function resetAnswerUI() {
 function renderEmptyDrillState() {
   state.current = null;
   state.answered = false;
+  state.pipRevealed = false;
+  state.selectedCheckerCandidateIndex = null;
 
   // Keep every layout area mounted so filtering to zero positions does not
   // cause the page to jump or collapse.
   elements.card.hidden = false;
   elements.card.classList.remove("is-answered");
+  elements.card.classList.remove("is-pip-revealed");
   elements.card.classList.add("is-empty");
   elements.empty.hidden = true;
 
@@ -1068,9 +1086,18 @@ function selectNext() {
   renderCurrent();
 }
 
+function togglePreAnswerPip() {
+  if (!state.current || state.answered) return;
+  state.pipRevealed = !state.pipRevealed;
+  elements.card.classList.toggle("is-pip-revealed", state.pipRevealed);
+}
+
 function showAnswer() {
   if (!state.current) return;
   state.answered = true;
+  state.pipRevealed = false;
+  state.selectedCheckerCandidateIndex = null;
+  elements.card.classList.remove("is-pip-revealed");
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
   resetSummaryTextScroll();
@@ -1287,6 +1314,7 @@ function installEvents() {
   elements.correctButton.addEventListener("click", () => judge("correct"));
   elements.wrongButton.addEventListener("click", () => judge("wrong"));
   elements.nextButton.addEventListener("click", selectNext);
+  elements.summaryAnalysis.addEventListener("click", togglePreAnswerPip);
   elements.actionAnalysis.addEventListener("click", handleCheckerCandidateInteraction);
   elements.actionAnalysis.addEventListener("keydown", handleCheckerCandidateInteraction);
 }

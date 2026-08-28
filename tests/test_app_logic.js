@@ -27,6 +27,8 @@ function dummyElement() {
     removeAttribute() {},
     setAttribute() {},
     querySelector() { return dummyElement(); },
+    querySelectorAll() { return []; },
+    contains() { return true; },
   };
 }
 
@@ -514,6 +516,80 @@ run("Cube-aware DMP positions sort into DMP instead of Point Match", () => {
     Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
     ["POINT-99-11-C1"],
   );
+});
+
+
+run("Pre-answer PIP starts hidden as -- and toggles without answering", () => {
+  context.pipPosition = {
+    id: "PIP1",
+    decisionKind: "checker",
+    position: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 0,
+    opponentScore: 0,
+    cubeValue: 1,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.5,
+    loseRate: 0.5,
+    gammonWinRate: 0,
+    gammonLoseRate: 0,
+    backgammonWinRate: 0,
+    backgammonLoseRate: 0,
+  };
+  context.pipPosition.position[1] = 15;
+  context.pipPosition.position[24] = -15;
+
+  const html = evaluate("summaryAnalysisHTML(pipPosition)");
+  assert.match(html, /class="pip-placeholder">--<\/span>/);
+  assert.match(html, /class="pip-real">15<\/span>/);
+
+  evaluate("state.current = pipPosition; state.answered = false; state.pipRevealed = false");
+  evaluate("togglePreAnswerPip()");
+  assert.equal(evaluate("state.pipRevealed"), true);
+  assert.equal(evaluate("state.answered"), false);
+  evaluate("togglePreAnswerPip()");
+  assert.equal(evaluate("state.pipRevealed"), false);
+});
+
+run("Checker candidate can be selected and deselected by pressing the same move", () => {
+  context.checkerTogglePosition = {
+    id: "CHK1",
+    decisionKind: "checker",
+    decisionType: "move",
+    position: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 0,
+    opponentScore: 0,
+    cubeValue: 1,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.50,
+    loseRate: 0.50,
+    gammonWinRate: 0.10,
+    gammonLoseRate: 0.10,
+    backgammonWinRate: 0.01,
+    backgammonLoseRate: 0.01,
+    candidates: [{
+      rank: 1,
+      action: "13/8 6/5",
+      equityLoss: 0,
+      winRate: 0.60,
+      loseRate: 0.40,
+      gammonWinRate: 0.12,
+      gammonLoseRate: 0.08,
+      backgammonWinRate: 0.02,
+      backgammonLoseRate: 0.01,
+    }],
+  };
+  evaluate("state.current = checkerTogglePosition; state.answered = true; state.selectedCheckerCandidateIndex = null");
+  evaluate("selectCheckerCandidate(0)");
+  assert.equal(evaluate("state.selectedCheckerCandidateIndex"), 0);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />60\.0%<\/span>/);
+
+  evaluate("selectCheckerCandidate(0)");
+  assert.equal(evaluate("state.selectedCheckerCandidateIndex"), null);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
 });
 
 console.log("All app regression tests passed.");
