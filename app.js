@@ -1180,7 +1180,8 @@ function setKind(kind) {
 function syncMatchTypeButtons() {
   setSelectorLabels(elements.matchSelector, matchTypeDisplayLabels(state.matchType));
   if (elements.matchSelector) {
-    elements.matchSelector.classList.toggle("is-active", state.matchType !== "all");
+    // The second selector (ALL / Point Match / Unlimited / DMP) also stays visually neutral.
+    elements.matchSelector.classList.remove("is-active");
     elements.matchSelector.setAttribute("aria-label", `Match type: ${MATCH_TYPE_LABELS[state.matchType]}`);
   }
 }
