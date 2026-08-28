@@ -1125,7 +1125,8 @@ function syncKindButtons() {
     );
   }
 
-  elements.kindSelector?.classList.toggle("is-active", state.currentKind !== "all");
+  // The first selector (Checker / Double / Take) never uses the gold active fill.
+  elements.kindSelector?.classList.remove("is-active");
   elements.kindSelectorSlot?.classList.remove("is-disabled");
 }
 
