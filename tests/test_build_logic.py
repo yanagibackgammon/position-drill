@@ -252,6 +252,27 @@ class BuildLogicTests(unittest.TestCase):
             build.compact_move_notation("7/4 7/4*"),
             "7/4*(2)",
         )
+        self.assertEqual(
+            build.compact_move_notation("13/11 8/6 6/4*(2)", (2, 2)),
+            "13/11 8/4* 6/4",
+        )
+        self.assertEqual(
+            build.compact_move_notation("8/6 6/5*(2)", (1, 1)),
+            "8/5* 6/5",
+        )
+        self.assertEqual(
+            build.compact_move_notation("Bar/23* 6/4 4/2(2)", (2, 2)),
+            "Bar/23* 6/2 4/2",
+        )
+        self.assertEqual(
+            build.compact_move_notation("Bar/24 24/23(2) 9/8", (1, 1)),
+            "Bar/23 24/23 9/8",
+        )
+        # Keep the legacy grouping rule for ordinary, non-double dice.
+        self.assertEqual(
+            build.compact_move_notation("8/6 6/5*(2)", (2, 1)),
+            "8/6 6/5*(2)",
+        )
 
 
     def test_checker_move_highlights_track_only_mover_final_checker(self) -> None:

@@ -429,48 +429,141 @@ def cube_owner_for_view(cube_value: int, black_sign: int) -> str:
     return "onRoll" if owner_sign == black_sign else "opponent"
 
 
-def compact_move_notation(notation: str) -> str:
-    """Collapse repeated checker moves, keeping a hit marker if any copy hits.
+def compact_move_notation(
+    notation: str,
+    dice: tuple[int, int] | list[int] | None = None,
+) -> str:
+    """Render checker notation compactly, matching XG2 doubles conventions.
 
-    Examples:
-      8/4 8/4 8/4     -> 8/4(3)
-      7/4 7/4*        -> 7/4*(2)
-      8/5(2) 7/4 7/4* -> 8/5(2) 7/4*(2)
-      Bar/23 Bar/23*   -> Bar/23*(2)
-      4/Off 4/Off      -> 4/Off(2)
+    The base xgread formatter deliberately avoids joining through an
+    intermediate point when several checkers enter or leave that point.  XG2
+    is more aggressive for doubles: it prefers to continue one of the moved
+    checkers through the shared point.  For example::
+
+      13/11 8/6 6/4 6/4* -> 13/11 8/4* 6/4
+      8/6 6/5 6/5*       -> 8/5* 6/5
+      Bar/23* 6/4 4/2(2) -> Bar/23* 6/2 4/2
+      Bar/24 24/23(2) 9/8 -> Bar/23 24/23 9/8
+
+    Non-doubles keep the previous behaviour: identical displayed segments are
+    grouped as ``(2)``, ``(3)``, etc., with a hit marker if any copy hits.
     """
-    tokens = str(notation).split()
+    text = str(notation)
+    tokens = text.split()
     if len(tokens) < 2:
-        return str(notation)
+        return text
 
-    grouped: dict[str, dict[str, int | bool]] = {}
-    order: list[str] = []
-
-    for token in tokens:
-        match = re.fullmatch(r"(.+?)(\*)?(?:\((\d+)\))?", token)
+    # Each entry is [source, destination, hit, original_order].  Expand an
+    # existing ``(n)`` so the doubles-specific chaining step can move just one
+    # checker from a repeated segment.  ``*(n)`` means the group contains a hit;
+    # only one of identical arrivals can hit the blot, so only one expanded copy
+    # carries the star.
+    segments: list[list[Any]] = []
+    for order, token in enumerate(tokens):
+        match = re.fullmatch(r"([^/\s]+)/([^/\s]+?)(\*)?(?:\((\d+)\))?", token)
         if not match:
-            base = token
-            is_hit = False
-            count = 1
-        else:
-            base = match.group(1)
-            is_hit = bool(match.group(2))
-            count = int(match.group(3) or 1)
+            # Preserve an unrecognised token as an opaque segment.  It cannot
+            # participate in chaining, but grouping below will still leave it
+            # intact.
+            segments.append([token, "", False, order])
+            continue
 
-        if base not in grouped:
-            grouped[base] = {"count": 0, "hit": False}
-            order.append(base)
+        source = match.group(1)
+        destination = match.group(2)
+        has_hit = bool(match.group(3))
+        count = max(1, int(match.group(4) or 1))
+        for copy_index in range(count):
+            segments.append([source, destination, has_hit and copy_index == 0, order + copy_index / 100.0])
 
-        grouped[base]["count"] = int(grouped[base]["count"]) + count
-        grouped[base]["hit"] = bool(grouped[base]["hit"]) or is_hit
+    is_double = bool(dice and len(dice) >= 2 and int(dice[0]) == int(dice[1]))
+    if is_double:
+        # XG2's doubles notation follows one checker through a shared
+        # intermediate point even when more than one checker also leaves that
+        # point.  Never hide a hit at the intermediate point.  When one of the
+        # outgoing copies hits, consume that copy first so the star stays on the
+        # continued checker (e.g. 8/5* 6/5 rather than 8/5 6/5*).
+        while True:
+            pair: tuple[int, int] | None = None
+            best_key: tuple[int, float, float] | None = None
+
+            for incoming_index, incoming in enumerate(segments):
+                source, intermediate, incoming_hit, incoming_order = incoming
+                if incoming_hit or not intermediate:
+                    continue
+                for outgoing_index, outgoing in enumerate(segments):
+                    if incoming_index == outgoing_index:
+                        continue
+                    outgoing_source, _, outgoing_hit, outgoing_order = outgoing
+                    if intermediate != outgoing_source:
+                        continue
+
+                    # Prefer a hitting continuation, then preserve the source
+                    # order produced by xgread as a deterministic tiebreaker.
+                    key = (0 if outgoing_hit else 1, float(incoming_order), float(outgoing_order))
+                    if best_key is None or key < best_key:
+                        best_key = key
+                        pair = (incoming_index, outgoing_index)
+
+            if pair is None:
+                break
+
+            incoming_index, outgoing_index = pair
+            incoming = segments[incoming_index]
+            outgoing = segments[outgoing_index]
+            merged = [incoming[0], outgoing[1], bool(outgoing[2]), min(float(incoming[3]), float(outgoing[3]))]
+
+            # Remove higher index first, then append the merged path.  A second
+            # pass may extend it again (e.g. four identical dice used by one
+            # checker over several points).
+            for index in sorted(pair, reverse=True):
+                segments.pop(index)
+            segments.append(merged)
+
+    def point_rank(name: str) -> int:
+        if name == "Bar":
+            return 25
+        if name == "Off":
+            return -1
+        try:
+            return int(name)
+        except (TypeError, ValueError):
+            return -2
+
+    # XG display order is source point descending.  For a shared source, show
+    # the higher destination first.  This also restores the canonical order
+    # after doubles-specific paths have been merged above.
+    segments.sort(
+        key=lambda item: (
+            -point_rank(str(item[0])),
+            -point_rank(str(item[1])),
+            float(item[3]),
+        )
+    )
+
+    grouped: dict[tuple[str, str], dict[str, int | bool]] = {}
+    order: list[tuple[str, str]] = []
+    opaque: list[str] = []
+
+    for source, destination, is_hit, _ in segments:
+        if not destination:
+            opaque.append(str(source))
+            continue
+        key = (str(source), str(destination))
+        if key not in grouped:
+            grouped[key] = {"count": 0, "hit": False}
+            order.append(key)
+        grouped[key]["count"] = int(grouped[key]["count"]) + 1
+        grouped[key]["hit"] = bool(grouped[key]["hit"]) or bool(is_hit)
 
     compacted: list[str] = []
-    for base in order:
-        count = int(grouped[base]["count"])
-        hit = "*" if grouped[base]["hit"] else ""
+    for source, destination in order:
+        info = grouped[(source, destination)]
+        count = int(info["count"])
+        hit = "*" if info["hit"] else ""
         suffix = f"({count})" if count > 1 else ""
-        compacted.append(f"{base}{hit}{suffix}")
+        compacted.append(f"{source}/{destination}{hit}{suffix}")
 
+    compacted.extend(opaque)
     return " ".join(compacted)
 
 
@@ -567,7 +660,7 @@ def candidate_payload(move: Move) -> list[dict[str, Any]]:
         rows.append(
             {
                 "rank": rank,
-                "action": compact_move_notation(xgread.format_moves(candidate.moves, move.position_before)),
+                "action": compact_move_notation(xgread.format_moves(candidate.moves, move.position_before), move.dice),
                 "equityLoss": equity_loss,
                 "pipBlack": pip_black,
                 "pipWhite": pip_white,
@@ -711,7 +804,7 @@ def make_checker_row(
         "onRollOpponentScore": opponent_score,
         "dice": f"{move.dice[0]}{move.dice[1]}",
         "diceValues": list(move.dice),
-        "playedAction": "" if standalone else compact_move_notation(move.notation),
+        "playedAction": "" if standalone else compact_move_notation(move.notation, move.dice),
         "bestAction": best_action,
         "xgid": decision.xgid,
         "cubeValue": cube_value_number(move.cube_value),
