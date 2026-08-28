@@ -33,6 +33,15 @@ class BuildLogicTests(unittest.TestCase):
             )
         )
 
+
+    def test_pip_counts_for_view_returns_both_sides_after_move(self) -> None:
+        points = [0] * 26
+        points[6] = 2
+        points[25] = 1
+        points[24] = -1
+        points[0] = -1
+        self.assertEqual(build.pip_counts_for_view(points), (37, 26))
+
     def test_cube_value_number(self) -> None:
         self.assertEqual(build.cube_value_number(0), 1)
         self.assertEqual(build.cube_value_number(1), 2)

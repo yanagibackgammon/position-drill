@@ -491,6 +491,20 @@ function cubeStateText(position, cubeValue = position.cubeValue) {
   return String(cubeValue ?? "—");
 }
 
+function pipCountsFromPoints(points) {
+  const boardPoints = Array.isArray(points) ? points : [];
+  let black = 0;
+  let white = 0;
+  for (let point = 1; point <= 24; point += 1) {
+    const value = Number(boardPoints[point] || 0);
+    if (value > 0) black += point * value;
+    if (value < 0) white += (25 - point) * -value;
+  }
+  black += 25 * Math.max(Number(boardPoints[25] || 0), 0);
+  white += 25 * Math.max(-Number(boardPoints[0] || 0), 0);
+  return { black, white };
+}
+
 function pipCounts(position) {
   // Keep the drill owner as black/bottom.  For Take Action that means the
   // cube receiver/taker is black, even though the displayed state is still
@@ -498,16 +512,16 @@ function pipCounts(position) {
   const points = position.decisionKind === "take" && Array.isArray(position.quizPosition)
     ? position.quizPosition
     : (Array.isArray(position.position) ? position.position : []);
-  let black = 0;
-  let white = 0;
-  for (let point = 1; point <= 24; point += 1) {
-    const value = Number(points[point] || 0);
-    if (value > 0) black += point * value;
-    if (value < 0) white += (25 - point) * -value;
+  return pipCountsFromPoints(points);
+}
+
+function checkerCandidatePipCounts(position, candidate) {
+  const black = Number(candidate?.pipBlack);
+  const white = Number(candidate?.pipWhite);
+  if (Number.isFinite(black) && Number.isFinite(white)) {
+    return { black, white };
   }
-  black += 25 * Math.max(Number(points[25] || 0), 0);
-  white += 25 * Math.max(-Number(points[0] || 0), 0);
-  return { black, white };
+  return pipCounts(position);
 }
 
 function statLine(label, value, extraClass = "", valueClass = "") {
@@ -645,7 +659,9 @@ function actionAnalysisHTML(position) {
 }
 
 function summaryAnalysisHTML(position, checkerCandidate = null) {
-  const pips = pipCounts(position);
+  const pips = position.decisionKind === "checker" && checkerCandidate
+    ? checkerCandidatePipCounts(position, checkerCandidate)
+    : pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
   const isTake = position.decisionKind === "take";
 

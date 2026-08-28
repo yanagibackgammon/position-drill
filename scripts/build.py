@@ -528,6 +528,15 @@ def checker_move_highlights(
     }
 
 
+def pip_counts_for_view(points: list[int] | tuple[int, ...]) -> tuple[int, int]:
+    """Return displayed black/white pip counts for a normalized board view."""
+    black = sum(point * max(int(points[point]), 0) for point in range(1, 25))
+    black += 25 * max(int(points[25]), 0)
+    white = sum((25 - point) * max(-int(points[point]), 0) for point in range(1, 25))
+    white += 25 * max(-int(points[0]), 0)
+    return black, white
+
+
 def candidate_payload(move: Move) -> list[dict[str, Any]]:
     """Return only genuinely analysed checker candidates, best to worst.
 
@@ -554,11 +563,14 @@ def candidate_payload(move: Move) -> list[dict[str, Any]]:
         equity_loss = max(0.0, best_equity - float(candidate.evaluation.equity))
         after_points, _ = _apply_moves(candidate.moves, move.position_before)
         after_view = position_for_view(after_points, move.player)
+        pip_black, pip_white = pip_counts_for_view(after_view)
         rows.append(
             {
                 "rank": rank,
                 "action": compact_move_notation(xgread.format_moves(candidate.moves, move.position_before)),
                 "equityLoss": equity_loss,
+                "pipBlack": pip_black,
+                "pipWhite": pip_white,
                 "_positionAfter": after_view,
                 "_moveHighlights": checker_move_highlights(before_view, after_view, mover_sign),
                 **probability_fields(candidate.evaluation),
