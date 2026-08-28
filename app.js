@@ -896,10 +896,15 @@ function updateTotals() {
 }
 
 function updateCounts() {
-  const matchTotal = positionsForMatchType(state.matchType).length;
-  const filteredKindCount = filteredPositionsForKind(state.currentKind).length;
-  if (elements.matchCount) elements.matchCount.textContent = String(matchTotal);
-  if (elements.kindCount) elements.kindCount.textContent = String(filteredKindCount);
+  // 1st menu: total positions for the selected decision kind, independent of
+  // match type / Task / New filters.
+  const kindTotal = positionsForKind(state.currentKind).length;
+
+  // 2nd menu: positions remaining after every active filter is applied.
+  const filteredCount = filteredPositionsForKind(state.currentKind).length;
+
+  if (elements.kindCount) elements.kindCount.textContent = String(kindTotal);
+  if (elements.matchCount) elements.matchCount.textContent = String(filteredCount);
 }
 
 function sourceFileLabel(position) {

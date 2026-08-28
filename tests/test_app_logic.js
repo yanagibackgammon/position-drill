@@ -422,7 +422,7 @@ run("Checker match selector includes DMP, Double/Take selector skips it", () => 
 
 
 
-run("Match count stays total while kind count follows Task/New filters", () => {
+run("Kind count stays total while match count follows all active filters", () => {
   evaluate(`
     state.positions = [
       {id:"C7",decisionKind:"checker",matchLength:7,isNew:true},
@@ -438,8 +438,8 @@ run("Match count stays total while kind count follows Task/New filters", () => {
     updateCounts();
   `);
 
-  assert.equal(evaluate("elements.kindCount.textContent"), "1");
-  assert.equal(evaluate("elements.matchCount.textContent"), "3");
+  assert.equal(evaluate("elements.kindCount.textContent"), "3");
+  assert.equal(evaluate("elements.matchCount.textContent"), "1");
 });
 
 
