@@ -27,12 +27,13 @@ const MATCH_TYPE_LABELS = {
   unlimited: "Unlimited",
 };
 
-const KIND_ORDER = ["checker", "double", "take", "all"];
-const MATCH_TYPE_ORDER = ["point", "unlimited", "dmp", "all"];
+const KIND_ORDER = ["checker", "double", "take"];
+const MATCH_TYPE_ORDER = ["all", "point", "unlimited", "dmp"];
+const CUBE_MATCH_TYPE_ORDER = ["all", "point", "unlimited"];
 
 const state = {
   positions: [],
-  currentKind: "all",
+  currentKind: "checker",
   matchType: "all",
   current: null,
   answered: false,
@@ -1123,12 +1124,22 @@ function syncKindButtons() {
   elements.kindSelectorSlot?.classList.remove("is-disabled");
 }
 
+function matchTypeOrderForKind(kind = state.currentKind) {
+  return kind === "checker" ? MATCH_TYPE_ORDER : CUBE_MATCH_TYPE_ORDER;
+}
+
+function normalizeMatchTypeForKind(kind, matchType) {
+  return matchTypeOrderForKind(kind).includes(matchType) ? matchType : "all";
+}
+
 function setKind(kind) {
   if (!KIND_ORDER.includes(kind)) return;
   state.currentKind = kind;
+  state.matchType = normalizeMatchTypeForKind(kind, state.matchType);
   state.current = null;
   resetBoardQueue();
   syncKindButtons();
+  syncMatchTypeButtons();
   saveSettings();
   renderCurrent();
 }
@@ -1142,7 +1153,7 @@ function syncMatchTypeButtons() {
 }
 
 function setMatchType(matchType) {
-  if (!MATCH_TYPE_ORDER.includes(matchType)) return;
+  if (!matchTypeOrderForKind().includes(matchType)) return;
   state.matchType = matchType;
 
   state.current = null;
@@ -1164,7 +1175,8 @@ function cycleKind(delta) {
 }
 
 function cycleMatchType(delta) {
-  setMatchType(cycleOptionValue(MATCH_TYPE_ORDER, state.matchType, delta));
+  const order = matchTypeOrderForKind();
+  setMatchType(cycleOptionValue(order, state.matchType, delta));
 }
 
 function cycleSelector(selector, delta) {
@@ -1324,6 +1336,7 @@ async function start() {
   );
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
+  state.matchType = normalizeMatchTypeForKind(state.currentKind, state.matchType);
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);
