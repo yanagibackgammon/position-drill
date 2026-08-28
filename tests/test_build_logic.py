@@ -257,6 +257,7 @@ class BuildLogicTests(unittest.TestCase):
         self.assertEqual(highlights["sign"], 1)
         self.assertEqual(highlights["points"], {"8": 1})
         self.assertEqual(highlights["off"], 0)
+        self.assertEqual(highlights["opponentBar"], 1)
 
     def test_checker_move_highlights_support_white_and_bearoff(self) -> None:
         before = [0] * 26
@@ -267,6 +268,41 @@ class BuildLogicTests(unittest.TestCase):
         self.assertEqual(highlights["sign"], -1)
         self.assertEqual(highlights["points"], {})
         self.assertEqual(highlights["off"], 1)
+        self.assertEqual(highlights["opponentBar"], 0)
+
+
+    def test_hit_white_bar_highlights_only_newly_hit_checker(self) -> None:
+        before = [0] * 26
+        after = [0] * 26
+        # One white checker was already on the bar; a second is hit by black.
+        before[0] = -1
+        before[8] = -1
+        before[13] = 1
+        after[0] = -2
+        after[8] = 1
+
+        highlights = build.checker_move_highlights(before, after, 1)
+        self.assertEqual(highlights["opponentBar"], 1)
+
+        row = {
+            "id": "TEST-HIT-BAR",
+            "position": after,
+            "matchLength": 7,
+            "onRollScore": 0,
+            "onRollOpponentScore": 0,
+            "cubeOwner": "center",
+            "cubeValue": 1,
+            "diceValues": [],
+        }
+        svg = build.render_board_svg(
+            row,
+            show_pip_counts=False,
+            move_highlights=highlights,
+        )
+        self.assertEqual(
+            svg.count('fill="#ffffff" stroke="#6F5424" stroke-width="4.0"'),
+            1,
+        )
 
     def test_move_highlight_svg_uses_dark_gold_fill_for_black_and_outline_for_white(self) -> None:
         base_row = {

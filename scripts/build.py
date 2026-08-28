@@ -501,10 +501,30 @@ def checker_move_highlights(
     after_on_board = sum(side_count(value) for value in after_view)
     off_increase = max(0, before_on_board - after_on_board)
 
+    # A checker hit by the mover is the only opponent checker that actually
+    # moves during this checker play.  Track the increase on the opponent bar
+    # separately so the rendered result can outline only the newly hit
+    # checker(s), even when the opponent already had checkers on the bar.
+    opponent_sign = -sign
+
+    def opponent_side_count(value: int) -> int:
+        return max(opponent_sign * int(value), 0)
+
+    # In the normalized display, the opponent bar is index 0 when the mover is
+    # black/on-roll (the normal rendered case), and index 25 for the mirrored
+    # case.  Derive the bar slot from the mover sign instead of assuming black.
+    opponent_bar_index = 0 if sign == 1 else 25
+    opponent_bar_increase = max(
+        0,
+        opponent_side_count(after_view[opponent_bar_index])
+        - opponent_side_count(before_view[opponent_bar_index]),
+    )
+
     return {
         "sign": sign,
         "points": points,
         "off": off_increase,
+        "opponentBar": opponent_bar_increase,
     }
 
 
@@ -1192,7 +1212,15 @@ def render_board_svg(
     opponent_visible = min(opponent_bar, 5)
     opponent_anchor_y = (board_top + board_center_y) / 2
     opponent_start_y = opponent_anchor_y - (opponent_visible - 1) * bar_checker_step / 2
-    opponent_highlighted = min(opponent_bar, highlight_points.get(0, 0)) if highlight_sign == -1 else 0
+    # White/opponent checkers can move only when they are hit.  Highlight only
+    # the checkers newly sent to the bar by this selected move; do not color
+    # checkers that were already on the bar before the move.
+    opponent_hit_bar = max(0, int((move_highlights or {}).get("opponentBar") or 0))
+    opponent_highlighted = min(opponent_bar, opponent_hit_bar)
+    # Preserve the generic white-mover highlighting path for mirrored/test
+    # positions where the mover itself is white and enters onto its own bar.
+    if opponent_highlighted == 0 and highlight_sign == -1:
+        opponent_highlighted = min(opponent_bar, highlight_points.get(0, 0))
     opponent_highlight_from = max(0, opponent_visible - min(opponent_highlighted, opponent_visible))
     for idx in range(opponent_visible):
         checker(
