@@ -1141,8 +1141,11 @@ def render_board_svg(
     bottom_tip_y = 294
     side_band_top, side_band_bottom = 247, 300
     score_x = (left_tray_x1 + left_tray_x2) / 2
-    score_top_y = side_band_top - 10
-    score_bottom_y = side_band_bottom + 22
+    score_top_y = side_band_top - 14
+    score_bottom_y = side_band_bottom + 31
+    match_label_y = side_band_top + 17
+    match_value_y = side_band_bottom - 7
+    unlimited_y = (side_band_top + side_band_bottom) / 2 + 11
     point_w = (left_board_x2 - left_board_x1) / 6
     # Centre bar contents on the actually rendered bar: the left boundary is
     # the line at left_board_x2 and the right boundary is the line at bar_x2.
@@ -1208,19 +1211,33 @@ def render_board_svg(
 
     elements.append('</g>')
 
-    # Point labels, scores and pip counts.
-    # XG represents unlimited/money games with the sentinel match length 99999.
-    # On the board, display money-game scores as 0/0 instead of 0/99999.
+    # Point labels, match/score display and pip counts.
+    # Match play separates the match length from the current scores:
+    # - the centre black band shows ML / <match length> in white,
+    # - the opponent (top) and on-roll (bottom) scores sit above/below it.
+    # XG represents unlimited/money games with the sentinel match length 99999;
+    # those positions show only a large U in the black band and no scores.
     match_length = int(row.get("matchLength") or 0)
-    is_unlimited = match_length >= 99999
-    score_match_length = 0 if is_unlimited else match_length
-    opponent_score_label = 0 if is_unlimited else row["onRollOpponentScore"]
-    on_roll_score_label = 0 if is_unlimited else row["onRollScore"]
-    elements.extend([
-        '<g fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="19">',
-        f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle">{opponent_score_label}/{score_match_length}</text>',
-        f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle">{on_roll_score_label}/{score_match_length}</text>',
-    ])
+    is_unlimited = match_length <= 0 or match_length >= 99999
+    elements.append('<g font-family="Arial, Helvetica, sans-serif">')
+    if is_unlimited:
+        elements.append(
+            f'<text x="{score_x:.1f}" y="{unlimited_y:.1f}" text-anchor="middle" '
+            f'fill="#ffffff" font-size="30" font-weight="700">U</text>'
+        )
+    else:
+        opponent_score_label = int(row.get("onRollOpponentScore") or 0)
+        on_roll_score_label = int(row.get("onRollScore") or 0)
+        elements.extend([
+            f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle" '
+            f'fill="#000000" font-size="30" font-weight="700">{opponent_score_label}</text>',
+            f'<text x="{score_x:.1f}" y="{match_label_y}" text-anchor="middle" '
+            f'fill="#ffffff" font-size="12" font-weight="700">ML</text>',
+            f'<text x="{score_x:.1f}" y="{match_value_y}" text-anchor="middle" '
+            f'fill="#ffffff" font-size="26" font-weight="700">{match_length}</text>',
+            f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle" '
+            f'fill="#000000" font-size="30" font-weight="700">{on_roll_score_label}</text>',
+        ])
     if show_pip_counts:
         elements.extend([
             f'<text x="{bar_center:.1f}" y="{top_label_y}" text-anchor="middle">{opponent_pips}</text>',

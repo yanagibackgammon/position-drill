@@ -376,7 +376,26 @@ class BuildLogicTests(unittest.TestCase):
         )
         self.assertIn('fill="#ffffff" stroke="#6F5424" stroke-width="4.0"', white_svg)
 
-    def test_unlimited_board_score_is_zero_zero(self) -> None:
+    def test_match_board_separates_match_length_and_scores(self) -> None:
+        row = {
+            "id": "TEST-MATCH",
+            "position": [0] * 26,
+            "matchLength": 25,
+            "onRollScore": 7,
+            "onRollOpponentScore": 12,
+            "cubeOwner": "center",
+            "cubeValue": 4,
+            "diceValues": [],
+        }
+        svg = build.render_board_svg(row, show_pip_counts=False)
+        self.assertIn('fill="#ffffff" font-size="12" font-weight="700">ML</text>', svg)
+        self.assertIn('fill="#ffffff" font-size="26" font-weight="700">25</text>', svg)
+        self.assertIn('fill="#000000" font-size="30" font-weight="700">12</text>', svg)
+        self.assertIn('fill="#000000" font-size="30" font-weight="700">7</text>', svg)
+        self.assertNotIn(">12/25</text>", svg)
+        self.assertNotIn(">7/25</text>", svg)
+
+    def test_unlimited_board_shows_u_without_scores(self) -> None:
         row = {
             "id": "TEST-UNLIMITED",
             "position": [0] * 26,
@@ -388,7 +407,10 @@ class BuildLogicTests(unittest.TestCase):
             "diceValues": [],
         }
         svg = build.render_board_svg(row, show_pip_counts=False)
-        self.assertGreaterEqual(svg.count(">0/0</text>"), 2)
+        self.assertIn('fill="#ffffff" font-size="30" font-weight="700">U</text>', svg)
+        self.assertNotIn('font-size="30" font-weight="700">12</text>', svg)
+        self.assertNotIn('font-size="30" font-weight="700">34</text>', svg)
+        self.assertNotIn(">ML</text>", svg)
         self.assertIn(">4</text>", svg)
 
 
