@@ -553,9 +553,10 @@ function memoButtonHTML(position) {
   const activeClass = hasMemo ? " is-active" : "";
   const label = hasMemo ? "Open saved memo" : "Add memo";
   return `<button type="button" class="memo-button${activeClass}" data-memo-button aria-label="${label}" title="${label}">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M6 3.5h8.5L18 7v13.5H6z"></path>
-      <path d="M14.5 3.5V7H18M8.5 10h7M8.5 13.5h7M8.5 17h4.5"></path>
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <rect class="memo-paper" x="5.5" y="4.5" width="18" height="23" rx="2"></rect>
+      <path class="memo-lines" d="M9.5 10.5h10M9.5 15h8M9.5 19.5h5.5"></path>
+      <path class="memo-pencil" d="M17.4 23.2l7.9-7.9 2.8 2.8-7.9 7.9-4.1 1.3zM23.9 16.7l2.8 2.8"></path>
     </svg>
   </button>`;
 }
@@ -790,7 +791,6 @@ function summaryAnalysisHTML(position, checkerCandidate = null) {
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
 
-        <div aria-hidden="true"></div>
         ${statLine("GW", escapeHTML(formatPercent(gammonWinRate)), "", "answer-only-value")}
         ${statLine("GW", escapeHTML(formatPercent(gammonLoseRate)), "", "answer-only-value")}
 
@@ -843,7 +843,6 @@ function emptySummaryAnalysisHTML() {
         ${statLine("W", "")}
         ${statLine("W", "")}
 
-        <div aria-hidden="true"></div>
         ${statLine("GW", "")}
         ${statLine("GW", "")}
 

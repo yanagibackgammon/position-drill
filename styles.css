@@ -339,21 +339,25 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 .best-marker { color: var(--good); font-weight: 800; letter-spacing: .05em; }
 
 .memo-cell {
+  --memo-size: 51.5px;
+  grid-row: span 2;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
 }
 
 .memo-button {
-  width: 22px;
-  height: 22px;
+  width: var(--memo-size);
+  height: var(--memo-size);
+  aspect-ratio: 1 / 1;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--gray);
   background: transparent;
   opacity: .62;
@@ -361,14 +365,17 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 }
 
 .memo-button svg {
-  width: 14px;
-  height: 14px;
+  width: 31px;
+  height: 31px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.memo-button .memo-paper { fill: transparent; }
+.memo-button .memo-pencil { fill: none; }
 
 .memo-button.is-active {
   color: var(--black);
@@ -1175,15 +1182,13 @@ body.memo-open { overflow: hidden; }
 
   .summary-text-grid > .stat-line { height: 20px; min-height: 20px; }
 
-  .memo-button {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-  }
+  .memo-cell { --memo-size: 42.5px; }
+
+  .memo-button { border-radius: 5px; }
 
   .memo-button svg {
-    width: 12px;
-    height: 12px;
+    width: 26px;
+    height: 26px;
   }
 
   .memo-modal { padding: 12px; }
