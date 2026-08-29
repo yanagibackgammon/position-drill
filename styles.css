@@ -181,12 +181,13 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.filter-check {
+.filter-checkbox {
+  box-sizing: border-box;
   width: 15px;
   height: 15px;
   flex: 0 0 15px;
@@ -195,14 +196,14 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   justify-content: center;
   border: 1px solid var(--gray);
   background: var(--black);
-  color: var(--white);
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
 }
 
-.filter-tab.is-active .filter-check::after {
+.filter-tab.is-active .filter-checkbox::after {
   content: "✓";
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .quiz-card {
@@ -631,6 +632,10 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .action-option.is-best { font-size: var(--font-lg); }
 
   .action-error { font-size: var(--font-md); }
+
+  .quiz-card.is-answered .action-option.is-checker-candidate.is-selected .best-marker {
+    align-self: center;
+  }
 
   .quiz-card.is-answered .action-option.is-checker-candidate.is-selected {
     width: calc(100% + 20px);
@@ -1084,10 +1089,13 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
   .filter-tab .filter-label { line-height: 1; }
 
-  .filter-check {
+  .filter-checkbox {
     width: 13px;
     height: 13px;
     flex-basis: 13px;
+  }
+
+  .filter-tab.is-active .filter-checkbox::after {
     font-size: 10px;
   }
 }
