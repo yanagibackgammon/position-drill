@@ -388,8 +388,8 @@ class BuildLogicTests(unittest.TestCase):
             "diceValues": [],
         }
         svg = build.render_board_svg(row, show_pip_counts=False)
-        self.assertIn('fill="#ffffff" font-size="12" font-weight="700">ML</text>', svg)
-        self.assertIn('fill="#ffffff" font-size="26" font-weight="700">25</text>', svg)
+        self.assertIn('fill="#ffffff" font-size="30" font-weight="700">25</text>', svg)
+        self.assertNotIn(">ML</text>", svg)
         self.assertIn('fill="#000000" font-size="30" font-weight="700">12</text>', svg)
         self.assertIn('fill="#000000" font-size="30" font-weight="700">7</text>', svg)
         self.assertNotIn(">12/25</text>", svg)

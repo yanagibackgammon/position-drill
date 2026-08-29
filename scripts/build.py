@@ -1143,8 +1143,6 @@ def render_board_svg(
     score_x = (left_tray_x1 + left_tray_x2) / 2
     score_top_y = side_band_top - 14
     score_bottom_y = side_band_bottom + 31
-    match_label_y = side_band_top + 17
-    match_value_y = side_band_bottom - 7
     unlimited_y = (side_band_top + side_band_bottom) / 2 + 11
     point_w = (left_board_x2 - left_board_x1) / 6
     # Centre bar contents on the actually rendered bar: the left boundary is
@@ -1213,7 +1211,7 @@ def render_board_svg(
 
     # Point labels, match/score display and pip counts.
     # Match play separates the match length from the current scores:
-    # - the centre black band shows ML / <match length> in white,
+    # - the centre black band shows only the match length in white,
     # - the opponent (top) and on-roll (bottom) scores sit above/below it.
     # XG represents unlimited/money games with the sentinel match length 99999;
     # those positions show only a large U in the black band and no scores.
@@ -1231,10 +1229,8 @@ def render_board_svg(
         elements.extend([
             f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle" '
             f'fill="#000000" font-size="30" font-weight="700">{opponent_score_label}</text>',
-            f'<text x="{score_x:.1f}" y="{match_label_y}" text-anchor="middle" '
-            f'fill="#ffffff" font-size="12" font-weight="700">ML</text>',
-            f'<text x="{score_x:.1f}" y="{match_value_y}" text-anchor="middle" '
-            f'fill="#ffffff" font-size="26" font-weight="700">{match_length}</text>',
+            f'<text x="{score_x:.1f}" y="{unlimited_y:.1f}" text-anchor="middle" '
+            f'fill="#ffffff" font-size="30" font-weight="700">{match_length}</text>',
             f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle" '
             f'fill="#000000" font-size="30" font-weight="700">{on_roll_score_label}</text>',
         ])
