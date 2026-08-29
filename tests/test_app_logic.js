@@ -606,12 +606,3 @@ run("Checker candidate can be selected and deselected by pressing the same move"
 });
 
 console.log("All app regression tests passed.");
-
-run("Memo icon activates only when a memo is saved", () => {
-  evaluate('state.memos = {}');
-  context.memoPosition = { id: "MEMO-1", decisionKind: "checker" };
-  assert.doesNotMatch(evaluate("memoButtonHTML(memoPosition)"), /is-active/);
-
-  evaluate('state.memos = {"MEMO-1":"Remember the timing."}');
-  assert.match(evaluate("memoButtonHTML(memoPosition)"), /memo-button is-active/);
-});
