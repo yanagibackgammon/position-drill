@@ -633,7 +633,7 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
   .action-error { font-size: var(--font-md); }
 
-  .quiz-card.is-answered .action-option.is-checker-candidate.is-selected .best-marker {
+  .action-option.is-checker-candidate .best-marker {
     align-self: center;
   }
 
