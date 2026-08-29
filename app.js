@@ -4,6 +4,7 @@ const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
+const MEMO_STORAGE_KEY = "yanagi-backgammon-position-memos-v1";
 const FILTER_MODE_VERSION = 3;
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -45,6 +46,8 @@ const state = {
   dataVersion: "",
   boardQueue: [],
   filters: { task: false, new: false },
+  memos: {},
+  editingMemoKey: "",
 };
 
 const elements = {
@@ -73,6 +76,11 @@ const elements = {
   totalWrong: document.getElementById("total-wrong"),
   todayCorrect: document.getElementById("today-correct"),
   todayWrong: document.getElementById("today-wrong"),
+  memoModal: document.getElementById("memo-modal"),
+  memoTextarea: document.getElementById("memo-textarea"),
+  memoCloseButton: document.getElementById("memo-close-button"),
+  memoCancelButton: document.getElementById("memo-cancel-button"),
+  memoSaveButton: document.getElementById("memo-save-button"),
 };
 
 function escapeHTML(value) {
@@ -528,6 +536,30 @@ function statLine(label, value, extraClass = "", valueClass = "") {
   return `<div class="stat-line ${extraClass}"><span class="stat-label">${escapeHTML(label)}</span><span class="stat-value ${valueClass}">${value}</span></div>`;
 }
 
+function memoKey(position) {
+  if (!position) return "";
+  return String(position.id || progressKey(position) || "");
+}
+
+function memoTextFor(position) {
+  const key = memoKey(position);
+  if (!key) return "";
+  const value = state.memos?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function memoButtonHTML(position) {
+  const hasMemo = Boolean(memoTextFor(position).trim());
+  const activeClass = hasMemo ? " is-active" : "";
+  const label = hasMemo ? "Open saved memo" : "Add memo";
+  return `<button type="button" class="memo-button${activeClass}" data-memo-button aria-label="${label}" title="${label}">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6 3.5h8.5L18 7v13.5H6z"></path>
+      <path d="M14.5 3.5V7H18M8.5 10h7M8.5 13.5h7M8.5 17h4.5"></path>
+    </svg>
+  </button>`;
+}
+
 function pipDisplayValues(pips) {
   const black = Number(pips?.black);
   const white = Number(pips?.white);
@@ -754,7 +786,7 @@ function summaryAnalysisHTML(position, checkerCandidate = null) {
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.black)}</span>`)}
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.white)}</span>`)}
 
-        <div aria-hidden="true"></div>
+        <div class="memo-cell">${memoButtonHTML(position)}</div>
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
 
@@ -807,7 +839,7 @@ function emptySummaryAnalysisHTML() {
         ${statLine("PIP", "")}
         ${statLine("PIP", "")}
 
-        <div aria-hidden="true"></div>
+        <div class="memo-cell" aria-hidden="true"></div>
         ${statLine("W", "")}
         ${statLine("W", "")}
 
@@ -1119,6 +1151,67 @@ function selectNext() {
   renderCurrent();
 }
 
+function refreshMemoButtonState() {
+  const hasMemo = Boolean(memoTextFor(state.current).trim());
+  elements.summaryAnalysis.querySelectorAll("[data-memo-button]").forEach((button) => {
+    button.classList.toggle("is-active", hasMemo);
+    const label = hasMemo ? "Open saved memo" : "Add memo";
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+  });
+}
+
+function openMemoModal() {
+  if (!state.current || !elements.memoModal || !elements.memoTextarea) return;
+  const key = memoKey(state.current);
+  if (!key) return;
+
+  state.editingMemoKey = key;
+  elements.memoTextarea.value = memoTextFor(state.current);
+  elements.memoModal.hidden = false;
+  elements.memoModal.setAttribute("aria-hidden", "false");
+  document.body?.classList.add("memo-open");
+  window.requestAnimationFrame?.(() => {
+    elements.memoTextarea.focus?.();
+    const end = elements.memoTextarea.value.length;
+    elements.memoTextarea.setSelectionRange?.(end, end);
+  });
+}
+
+function closeMemoModal() {
+  if (!elements.memoModal) return;
+  elements.memoModal.hidden = true;
+  elements.memoModal.setAttribute("aria-hidden", "true");
+  state.editingMemoKey = "";
+  document.body?.classList.remove("memo-open");
+}
+
+function saveMemo() {
+  const key = state.editingMemoKey;
+  if (!key || !elements.memoTextarea) {
+    closeMemoModal();
+    return;
+  }
+
+  const value = String(elements.memoTextarea.value || "").trim();
+  if (value) state.memos[key] = value;
+  else delete state.memos[key];
+  saveLocalJSON(MEMO_STORAGE_KEY, state.memos);
+  refreshMemoButtonState();
+  closeMemoModal();
+}
+
+function handleSummaryInteraction(event) {
+  const memoButton = event.target.closest?.("[data-memo-button]");
+  if (memoButton && elements.summaryAnalysis.contains(memoButton)) {
+    event.preventDefault();
+    event.stopPropagation();
+    openMemoModal();
+    return;
+  }
+  togglePreAnswerPip();
+}
+
 function togglePreAnswerPip() {
   if (!state.current || state.answered) return;
   state.pipRevealed = !state.pipRevealed;
@@ -1348,9 +1441,22 @@ function installEvents() {
   elements.correctButton.addEventListener("click", () => judge("correct"));
   elements.wrongButton.addEventListener("click", () => judge("wrong"));
   elements.nextButton.addEventListener("click", selectNext);
-  elements.summaryAnalysis.addEventListener("click", togglePreAnswerPip);
+  elements.summaryAnalysis.addEventListener("click", handleSummaryInteraction);
   elements.actionAnalysis.addEventListener("click", handleCheckerCandidateInteraction);
   elements.actionAnalysis.addEventListener("keydown", handleCheckerCandidateInteraction);
+  elements.memoCloseButton?.addEventListener("click", closeMemoModal);
+  elements.memoCancelButton?.addEventListener("click", closeMemoModal);
+  elements.memoSaveButton?.addEventListener("click", saveMemo);
+  elements.memoModal?.addEventListener("click", (event) => {
+    if (event.target === elements.memoModal) closeMemoModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.memoModal?.hidden) closeMemoModal();
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !elements.memoModal?.hidden) {
+      event.preventDefault();
+      saveMemo();
+    }
+  });
 }
 
 async function syncPositions({ initial = false } = {}) {
@@ -1386,6 +1492,8 @@ async function refreshPositionsSilently() {
 }
 
 async function start() {
+  const storedMemos = loadJSON(MEMO_STORAGE_KEY, {});
+  state.memos = storedMemos && !Array.isArray(storedMemos) ? storedMemos : {};
   state.progress = await loadProgress();
 
   const localDaily = loadJSON(DAILY_STORAGE_KEY, null);

@@ -31,7 +31,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   touch-action: manipulation;
 }
@@ -337,6 +338,48 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .best-marker { color: var(--good); font-weight: 800; letter-spacing: .05em; }
 
+.memo-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.memo-button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--gray);
+  background: transparent;
+  opacity: .62;
+  cursor: pointer;
+}
+
+.memo-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.memo-button.is-active {
+  color: var(--black);
+  background: var(--theme);
+  border-color: var(--theme);
+  opacity: 1;
+}
+
+.memo-button:hover,
+.memo-button:focus-visible { opacity: 1; }
+
 .stat-line {
   display: grid;
   grid-template-columns: 42px 1fr;
@@ -438,6 +481,99 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 .win-white-gammon,
 .win-white-backgammon {
   right: 0;
+}
+
+body.memo-open { overflow: hidden; }
+
+.memo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .78);
+}
+
+.memo-dialog {
+  width: min(520px, 100%);
+  max-height: min(680px, calc(100dvh - 40px));
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--theme);
+  border-radius: 14px;
+  background: #0c1013;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .55);
+}
+
+.memo-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memo-dialog-header h2 {
+  margin: 0;
+  color: var(--theme);
+  font-size: var(--font-md);
+  letter-spacing: .06em;
+}
+
+.memo-close-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  color: var(--gray);
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.memo-textarea {
+  width: 100%;
+  min-height: 190px;
+  max-height: 55dvh;
+  padding: 12px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  color: var(--white);
+  background: var(--black);
+  font-size: var(--font-sm);
+  line-height: 1.55;
+}
+
+.memo-textarea:focus { border-color: var(--theme); }
+
+.memo-dialog-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.memo-dialog-button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.memo-cancel-button {
+  color: var(--white);
+  background: transparent;
+}
+
+.memo-save-button {
+  color: var(--black);
+  background: var(--theme);
+  border-color: var(--theme);
 }
 
 .judge-area {
@@ -1038,6 +1174,21 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
   .summary-text-grid { grid-template-rows: repeat(5, 20px); column-gap: 4px; row-gap: 2.5px; }
 
   .summary-text-grid > .stat-line { height: 20px; min-height: 20px; }
+
+  .memo-button {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+
+  .memo-button svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .memo-modal { padding: 12px; }
+  .memo-dialog { max-height: calc(100dvh - 24px); padding: 14px; }
+  .memo-textarea { min-height: 170px; }
 }
 
 .stat-line.side-black .stat-label,
