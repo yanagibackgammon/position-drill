@@ -1221,18 +1221,18 @@ def render_board_svg(
     if is_unlimited:
         elements.append(
             f'<text x="{score_x:.1f}" y="{unlimited_y:.1f}" text-anchor="middle" '
-            f'fill="#ffffff" font-size="30" font-weight="700">U</text>'
+            f'fill="#ffffff" font-size="27" font-weight="700">U</text>'
         )
     else:
         opponent_score_label = int(row.get("onRollOpponentScore") or 0)
         on_roll_score_label = int(row.get("onRollScore") or 0)
         elements.extend([
             f'<text x="{score_x:.1f}" y="{score_top_y}" text-anchor="middle" '
-            f'fill="#000000" font-size="30" font-weight="700">{opponent_score_label}</text>',
+            f'fill="#000000" font-size="27" font-weight="700">{opponent_score_label}</text>',
             f'<text x="{score_x:.1f}" y="{unlimited_y:.1f}" text-anchor="middle" '
-            f'fill="#ffffff" font-size="30" font-weight="700">{match_length}</text>',
+            f'fill="#ffffff" font-size="27" font-weight="700">{match_length}</text>',
             f'<text x="{score_x:.1f}" y="{score_bottom_y}" text-anchor="middle" '
-            f'fill="#000000" font-size="30" font-weight="700">{on_roll_score_label}</text>',
+            f'fill="#000000" font-size="27" font-weight="700">{on_roll_score_label}</text>',
         ])
     if show_pip_counts:
         elements.extend([
