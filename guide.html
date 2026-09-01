@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>POSITION DRILL 利用ガイド</title>
+  <style>
+    :root {
+      --theme: #B7924B;
+      --active: #6F5424;
+      --black: #000000;
+      --white: #FFFFFF;
+      --gray: #CFCFCF;
+      --line: #657077;
+      --good: #7EC797;
+      --bad: #E38A8A;
+      --severe: #C58CFF;
+      --panel: #0d0d0d;
+      --panel-2: #151515;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      background: var(--black);
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: var(--white);
+      background: var(--black);
+      font-family: Inter, "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
+      line-height: 1.75;
+    }
+
+    a { color: inherit; }
+
+    .page-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--theme);
+      background: rgba(0, 0, 0, .94);
+      backdrop-filter: blur(10px);
+    }
+
+    .header-inner {
+      width: min(920px, calc(100% - 28px));
+      min-height: 60px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .brand strong {
+      color: var(--theme);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+
+    .brand span {
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .back-link {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--white);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .back-link:hover { border-color: var(--theme); }
+
+    main {
+      width: min(920px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 34px 0 64px;
+    }
+
+    .hero {
+      padding: 28px 0 34px;
+      border-bottom: 1px solid #222;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--theme);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 7vw, 48px);
+      line-height: 1.2;
+      letter-spacing: -.03em;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin: 16px 0 0;
+      color: var(--gray);
+      font-size: 15px;
+    }
+
+    .quick-nav {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-nav a {
+      padding: 7px 11px;
+      border: 1px solid #333;
+      border-radius: 999px;
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .quick-nav a:hover {
+      color: var(--white);
+      border-color: var(--theme);
+    }
+
+    section.guide-section {
+      padding: 34px 0;
+      border-bottom: 1px solid #222;
+    }
+
+    h2 {
+      margin: 0 0 18px;
+      color: var(--theme);
+      font-size: 23px;
+      line-height: 1.35;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    p { margin: 0; }
+
+    .muted { color: var(--gray); }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .step,
+    .info-card,
+    .term-card {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #303030;
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .step-no {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 10px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--black);
+      background: var(--theme);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .step p,
+    .info-card p,
+    .term-card p {
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .menu-demo {
+      margin: 20px 0 18px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 8px;
+    }
+
+    .menu-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .menu-cell {
+      min-height: 56px;
+      padding: 8px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border-right: 1px solid var(--line);
+      background: var(--black);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .menu-cell:last-child { border-right: 0; }
+    .menu-cell small { color: var(--gray); font-size: 10px; }
+    .menu-cell.active { background: var(--active); }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 10px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      margin-bottom: 8px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--active);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .tag.gold { color: var(--black); background: var(--theme); }
+    .tag.gray { color: var(--white); background: var(--line); }
+
+    .answer-demo {
+      margin-top: 16px;
+      border: 1px solid #303030;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .answer-row {
+      min-height: 45px;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid #303030;
+      font-size: 13px;
+    }
+
+    .answer-row:last-child { border-bottom: 0; }
+    .answer-row.best { background: var(--active); }
+    .best-mark { font-weight: 900; }
+    .loss-good { color: var(--good); }
+    .loss-bad { color: var(--bad); }
+
+    .button-row {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .fake-button {
+      min-height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--theme);
+      border-radius: 10px;
+      color: var(--white);
+      background: var(--black);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .fake-button.primary { background: var(--theme); color: var(--black); }
+
+    .judge-row {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .judge {
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .judge.correct { color: var(--good); border: 1px solid var(--good); }
+    .judge.wrong { color: var(--bad); border: 1px solid var(--bad); }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #303030;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .data-table th {
+      width: 90px;
+      color: var(--theme);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 13px 15px;
+      border-left: 3px solid var(--theme);
+      background: var(--panel-2);
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .record-demo {
+      margin-top: 16px;
+      padding: 12px;
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      white-space: nowrap;
+      border: 1px solid #303030;
+      border-radius: 10px;
+      scrollbar-width: thin;
+    }
+
+    .record-demo strong { color: var(--theme); }
+    .record-demo .ok { color: var(--good); }
+    .record-demo .ng { color: var(--bad); }
+
+    .footer {
+      padding-top: 28px;
+      color: var(--line);
+      text-align: center;
+      font-size: 11px;
+    }
+
+    @media (max-width: 760px) {
+      .header-inner,
+      main { width: min(100% - 20px, 920px); }
+
+      .brand strong { font-size: 21px; }
+      .brand span { display: none; }
+      .back-link { padding: 7px 9px; }
+
+      main { padding-top: 18px; }
+      .hero { padding-top: 18px; }
+
+      .steps,
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+
+      .menu-demo { grid-template-columns: 2fr 1fr; }
+      .menu-cell { min-height: 52px; font-size: 12px; }
+    }
+
+    @media (max-width: 520px) {
+      .steps,
+      .grid-2,
+      .grid-3 { grid-template-columns: 1fr; }
+
+      h2 { font-size: 20px; }
+      .menu-demo { gap: 6px; }
+      .menu-cell { padding: 6px 3px; font-size: 11px; }
+      .menu-cell small { font-size: 9px; }
+      .data-table th { width: 72px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-inner">
+      <div class="brand">
+        <strong>POSITION DRILL</strong>
+        <span>USER GUIDE</span>
+      </div>
+      <a class="back-link" href="./">DRILLへ戻る</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">HOW TO USE</p>
+      <h1>利用ガイド</h1>
+      <p class="lead">POSITION DRILLは、Extreme Gammonで解析したChecker Play・Double Action・Take/Passのポジションを反復練習するためのドリルです。条件を選び、答えを考え、CHECK後に自己採点して進めます。</p>
+      <nav class="quick-nav" aria-label="ページ内メニュー">
+        <a href="#flow">基本の流れ</a>
+        <a href="#menu">メニュー</a>
+        <a href="#checker">Checker</a>
+        <a href="#cube">Double / Take</a>
+        <a href="#info">ゲーム情報</a>
+        <a href="#record">記録</a>
+      </nav>
+    </section>
+
+    <section id="flow" class="guide-section">
+      <h2>基本の流れ</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-no">1</div>
+          <h3>条件を選ぶ</h3>
+          <p>Checker / Double / Take/Passと、マッチ形式を選択します。</p>
+        </div>
+        <div class="step">
+          <div class="step-no">2</div>
+          <h3>答えを考える</h3>
+          <p>盤面と公開されているゲーム情報を見て、自分の答えを決めます。</p>
+        </div>
+        <div class="step">
+          <div class="step-no">3</div>
+          <h3>CHECK</h3>
+          <p>CHECKを押すと解析結果が表示され、最善手が選択状態になります。</p>
+        </div>
+        <div class="step">
+          <div class="step-no">4</div>
+          <h3>○ / ×で記録</h3>
+          <p>自分の回答が正しければ○、間違っていれば×を押すと次の問題へ進みます。</p>
+        </div>
+      </div>
+      <div class="button-row" aria-hidden="true">
+        <div class="fake-button primary">CHECK</div>
+        <div class="fake-button">SKIP</div>
+      </div>
+      <div class="judge-row" aria-hidden="true">
+        <div class="judge correct">○</div>
+        <div class="judge wrong">×</div>
+      </div>
+      <div class="notice">SKIPは成績に記録せず、次のポジションへ進みます。</div>
+    </section>
+
+    <section id="menu" class="guide-section">
+      <h2>上部メニュー</h2>
+      <div class="menu-demo" aria-hidden="true">
+        <div class="menu-pair">
+          <div class="menu-cell">Checker Play<small>POSITION TYPE</small></div>
+          <div class="menu-cell">ALL<small>MATCH TYPE</small></div>
+        </div>
+        <div class="menu-pair">
+          <div class="menu-cell active">Task</div>
+          <div class="menu-cell">New</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="info-card">
+          <span class="tag gold">POSITION TYPE</span>
+          <h3>Checker / Double / Take/Pass</h3>
+          <p>タップで問題種別を切り替えます。スマホでは上下スワイプでも切り替えられます。</p>
+        </div>
+        <div class="info-card">
+          <span class="tag gold">MATCH TYPE</span>
+          <h3>ALL / Point Match / Unlimited / DMP</h3>
+          <p>Checkerでは4種類、Double / Take/PassではDMPを除く3種類から選択できます。</p>
+        </div>
+        <div class="info-card">
+          <span class="tag">Task</span>
+          <h3>要復習ポジション</h3>
+          <p>未正解、または正解数が不正解数を上回っていないポジションだけを表示します。</p>
+        </div>
+        <div class="info-card">
+          <span class="tag">New</span>
+          <h3>新着ポジション</h3>
+          <p>直近7日間に追加・更新されたポジションだけを表示します。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="checker" class="guide-section">
+      <h2>Checker Play</h2>
+      <div class="grid-2">
+        <div class="info-card">
+          <h3>CHECK前</h3>
+          <p>盤面には出目が表示されます。ゲーム情報は原則としてその出目を振る前の状態です。PIPはゲーム情報欄をタップすると確認できます。</p>
+        </div>
+        <div class="info-card">
+          <h3>CHECK後</h3>
+          <p>最善手が自動選択され、候補手とエラー値が表示されます。候補手をタップすると、その手を指した後の盤面・PIP・勝率等に切り替わります。</p>
+        </div>
+      </div>
+
+      <div class="answer-demo" aria-hidden="true">
+        <div class="answer-row best"><span>13/8 6/5</span><span class="best-mark">BEST</span></div>
+        <div class="answer-row"><span>24/18</span><span class="loss-good">-0.018</span></div>
+        <div class="answer-row"><span>8/2</span><span class="loss-bad">-0.072</span></div>
+      </div>
+      <div class="notice">候補手をもう一度タップすると選択を解除し、出目を振る前のゲーム情報に戻せます。</div>
+    </section>
+
+    <section id="cube" class="guide-section">
+      <h2>Double / Take/Pass</h2>
+      <div class="grid-2">
+        <div class="info-card">
+          <span class="tag gray">Double Action</span>
+          <h3>ダブルするかを判断</h3>
+          <p>No Double、Double/Take、Double/Pass、Too good系などを比較します。CHECK後は最善アクションが暗金帯で固定表示されます。</p>
+        </div>
+        <div class="info-card">
+          <span class="tag gray">Take / Pass</span>
+          <h3>ダブルを受けるかを判断</h3>
+          <p>TakeまたはPassを判断します。CHECK後は最善アクションが暗金帯で固定表示されます。</p>
+        </div>
+      </div>
+
+      <div class="answer-demo" aria-hidden="true">
+        <div class="answer-row best"><span>Double/Take</span><span class="best-mark">BEST</span></div>
+        <div class="answer-row"><span>No Double</span><span>-0.041</span></div>
+        <div class="answer-row"><span>Double/Pass</span><span>-0.118</span></div>
+      </div>
+
+      <div class="notice">Double / Take/Passでは、CHECK後もポジション図とゲーム情報は<strong>キューブを打つ前の状態</strong>で固定されます。候補をタップしても盤面・勝率等は変化しません。</div>
+    </section>
+
+    <section id="info" class="guide-section">
+      <h2>ゲーム情報の見方</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>ML</th><td>Match Length。マッチのポイント数です。</td></tr>
+          <tr><th>CB</th><td>Cube。現在のキューブ値・状態を示します。</td></tr>
+          <tr><th>BK / WH</th><td>黒側・白側の現在スコア。括弧内は残りポイント（away）です。</td></tr>
+          <tr><th>PIP</th><td>黒側・白側のPIPカウントです。</td></tr>
+          <tr><th>W</th><td>Win。各側の勝率です。</td></tr>
+          <tr><th>GW</th><td>Gammon Win。ギャモン勝ちを含む確率表示です。</td></tr>
+          <tr><th>BG</th><td>Backgammon Win。バックギャモン勝ちの確率です。</td></tr>
+        </tbody>
+      </table>
+      <div class="notice">Double / Take/Passのゲーム情報は一律で、キューブを打つ前のNo Double状態を基準に表示します。</div>
+    </section>
+
+    <section id="record" class="guide-section">
+      <h2>成績・出典</h2>
+      <div class="grid-3">
+        <div class="term-card">
+          <h3>Total</h3>
+          <p>これまでの全体成績です。</p>
+        </div>
+        <div class="term-card">
+          <h3>Today</h3>
+          <p>当日の○・×の成績です。</p>
+        </div>
+        <div class="term-card">
+          <h3>Now</h3>
+          <p>現在表示しているポジションの○・×の回数です。</p>
+        </div>
+      </div>
+
+      <div class="record-demo" aria-hidden="true">
+        <span><strong>Total</strong> <span class="ok">12</span> / <span class="ng">5</span></span>
+        <span><strong>Today</strong> <span class="ok">4</span> / <span class="ng">2</span></span>
+        <span><strong>Now</strong> <span class="ok">1</span> / <span class="ng">1</span></span>
+        <span>source-file.xgp</span>
+      </div>
+      <div class="notice">スマホでは最終行全体を左右にスクロールできます。長い出典ファイル名も横スクロールして確認できます。</div>
+    </section>
+
+    <section class="guide-section">
+      <h2>データの保存</h2>
+      <p class="muted">○・×の進捗と表示設定はブラウザ内に保存されます。ブラウザや端末を変更した場合、またはサイトデータを削除した場合は、別の記録として扱われることがあります。</p>
+    </section>
+
+    <div class="footer">POSITION DRILL · YANAGI Backgammon</div>
+  </main>
+</body>
+</html>
