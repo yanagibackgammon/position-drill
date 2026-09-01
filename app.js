@@ -4,7 +4,8 @@ const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
-const FILTER_MODE_VERSION = 3;
+const FILTER_MODE_VERSION = 4;
+const ROOT_FOLDER_FILTER = "__root__";
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const BOARD_PRELOAD_COUNT = 3;
@@ -46,6 +47,7 @@ const state = {
   dataVersion: "",
   boardQueue: [],
   filters: { task: false, new: false },
+  folderFilter: "",
 };
 
 const elements = {
@@ -58,6 +60,10 @@ const elements = {
   matchSelectorSlot: document.getElementById("match-selector-slot"),
   matchCount: document.getElementById("match-count"),
   filterButtons: [...document.querySelectorAll("[data-filter]")],
+  pageTitle: document.getElementById("page-title"),
+  folderModal: document.getElementById("folder-modal"),
+  folderModalList: document.getElementById("folder-modal-list"),
+  folderModalClose: document.getElementById("folder-modal-close"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -193,6 +199,7 @@ function saveSettings() {
     matchType: state.matchType,
     taskOnly: state.filters.task,
     newOnly: state.filters.new,
+    sourceFolder: state.folderFilter,
     filterModeVersion: FILTER_MODE_VERSION,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
@@ -207,7 +214,7 @@ function progressKey(position) {
     return `xgid:${kind}:${position.xgid}`;
   }
 
-  const source = position.sourceFile || "";
+  const source = position.sourcePath || position.sourceFile || "";
   const game = position.gameNumber ?? "";
   const move = position.moveNumber ?? "";
   if (source || game !== "" || move !== "") {
@@ -349,8 +356,51 @@ function positionsForMatchType(matchType) {
   return state.positions.filter((position) => positionMatchType(position) === matchType);
 }
 
+function normalizedSourceFolder(position) {
+  const explicit = String(position?.sourceFolder || "").replace(/^\/+|\/+$/g, "");
+  if (explicit) return explicit;
+
+  const path = String(position?.sourcePath || "").replace(/^\/+|\/+$/g, "");
+  const slash = path.lastIndexOf("/");
+  return slash >= 0 ? path.slice(0, slash) : "";
+}
+
+function folderFilterMatches(position, filter = state.folderFilter) {
+  const selected = String(filter || "");
+  const folder = normalizedSourceFolder(position);
+  if (!selected) return true;
+  if (selected === ROOT_FOLDER_FILTER) return folder === "";
+  return folder === selected || folder.startsWith(`${selected}/`);
+}
+
+function availableFolderFilters() {
+  const folders = new Set();
+  let hasRoot = false;
+
+  state.positions.forEach((position) => {
+    const folder = normalizedSourceFolder(position);
+    if (!folder) {
+      hasRoot = true;
+      return;
+    }
+
+    const parts = folder.split("/").filter(Boolean);
+    for (let index = 1; index <= parts.length; index += 1) {
+      folders.add(parts.slice(0, index).join("/"));
+    }
+  });
+
+  return [
+    ...(hasRoot ? [ROOT_FOLDER_FILTER] : []),
+    ...Array.from(folders).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+  ];
+}
+
 function filteredPositionsForKind(kind) {
   let pool = positionsForKind(kind);
+  if (state.folderFilter) {
+    pool = pool.filter((position) => folderFilterMatches(position));
+  }
   if (state.matchType !== "all") {
     pool = pool.filter((position) => positionMatchType(position) === state.matchType);
   }
@@ -993,7 +1043,8 @@ function updateTotals() {
 function updateCounts() {
   // 1st menu: total positions for the selected decision kind, independent of
   // match type / Task / New filters.
-  const kindTotal = positionsForKind(state.currentKind).length;
+  const kindTotal = positionsForKind(state.currentKind)
+    .filter((position) => folderFilterMatches(position)).length;
 
   // 2nd menu: positions remaining after every active filter is applied.
   const filteredCount = filteredPositionsForKind(state.currentKind).length;
@@ -1421,6 +1472,66 @@ function toggleFilter(filter) {
   renderCurrent();
 }
 
+function folderFilterDisplayLabel(filter) {
+  if (!filter) return "ALL";
+  if (filter === ROOT_FOLDER_FILTER) return "imports直下";
+  const parts = String(filter).split("/");
+  return parts[parts.length - 1] || filter;
+}
+
+function folderFilterCount(filter) {
+  return state.positions.filter((position) => folderFilterMatches(position, filter)).length;
+}
+
+function renderFolderModal() {
+  if (!elements.folderModalList) return;
+
+  const filters = ["", ...availableFolderFilters()];
+  elements.folderModalList.innerHTML = filters.map((filter) => {
+    const selected = filter === state.folderFilter;
+    const depth = !filter || filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
+    const fullLabel = !filter ? "ALL" : (filter === ROOT_FOLDER_FILTER ? "imports直下" : filter);
+    const label = folderFilterDisplayLabel(filter);
+    return `
+      <button type="button" class="folder-option ${selected ? "is-selected" : ""}"
+        data-folder-filter="${escapeHTML(filter)}" role="option" aria-selected="${selected}"
+        title="${escapeHTML(fullLabel)}" style="--folder-depth:${depth}">
+        <span class="folder-option-mark" aria-hidden="true">${selected ? "✓" : ""}</span>
+        <span class="folder-option-label">${escapeHTML(label)}</span>
+        <span class="folder-option-count">${folderFilterCount(filter)}</span>
+      </button>`;
+  }).join("");
+}
+
+function openFolderModal() {
+  if (!elements.folderModal) return;
+  renderFolderModal();
+  elements.folderModal.hidden = false;
+  document.body.classList.add("folder-modal-open");
+  window.setTimeout(() => {
+    elements.folderModalList?.querySelector('[aria-selected="true"]')?.focus?.();
+  }, 0);
+}
+
+function closeFolderModal() {
+  if (!elements.folderModal || elements.folderModal.hidden) return;
+  elements.folderModal.hidden = true;
+  document.body.classList.remove("folder-modal-open");
+  elements.pageTitle?.focus?.({ preventScroll: true });
+}
+
+function setFolderFilter(filter) {
+  const next = String(filter || "");
+  const valid = next === "" || availableFolderFilters().includes(next);
+  if (!valid) return;
+  state.folderFilter = next;
+  state.current = null;
+  resetBoardQueue();
+  saveSettings();
+  renderCurrent();
+  closeFolderModal();
+}
+
 function installSmartphoneZoomGuard() {
   const smartphone = window.matchMedia("(max-width: 790px)");
   const preventGesture = (event) => {
@@ -1451,6 +1562,27 @@ function installSmartphoneZoomGuard() {
 }
 
 function installEvents() {
+  elements.pageTitle?.addEventListener("click", openFolderModal);
+  elements.pageTitle?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openFolderModal();
+  });
+  elements.folderModalClose?.addEventListener("click", closeFolderModal);
+  elements.folderModal?.addEventListener("click", (event) => {
+    if (event.target === elements.folderModal) closeFolderModal();
+  });
+  elements.folderModalList?.addEventListener("click", (event) => {
+    const option = event.target.closest?.("[data-folder-filter]");
+    if (!option) return;
+    setFolderFilter(option.dataset.folderFilter || "");
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && elements.folderModal && !elements.folderModal.hidden) {
+      closeFolderModal();
+    }
+  });
+
   elements.kindSelector.addEventListener("click", () => cycleKind(1));
   elements.matchSelector.addEventListener("click", () => cycleMatchType(1));
 
@@ -1512,6 +1644,10 @@ async function syncPositions({ initial = false } = {}) {
 
   const previousId = state.current?.id || null;
   state.positions = (payload.positions || []).filter((position) => decisionKind(position));
+  if (state.folderFilter && !availableFolderFilters().includes(state.folderFilter)) {
+    state.folderFilter = "";
+    saveSettings();
+  }
   migrateProgressKeys();
   if (state.dataVersion !== nextVersion) resetBoardQueue({ clearCache: true });
   state.dataVersion = nextVersion;
@@ -1557,6 +1693,7 @@ async function start() {
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);
+    state.folderFilter = typeof settings.sourceFolder === "string" ? settings.sourceFolder : "";
   } else {
     state.filters.task = false;
     state.filters.new = false;

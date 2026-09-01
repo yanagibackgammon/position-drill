@@ -56,6 +56,28 @@ def is_xgp_source(source: Path) -> bool:
     return source.suffix.casefold() == ".xgp"
 
 
+def source_location_fields(source: Path) -> dict[str, str]:
+    """Return stable import-relative source location metadata.
+
+    Position Drill accepts XG/XGP files recursively below imports/.  Keep both
+    the basename and relative folder/path so the browser can filter questions
+    by source folder without exposing repository-internal absolute paths.
+    """
+    try:
+        relative = source.relative_to(IMPORTS_DIR)
+    except ValueError:
+        relative = Path(source.name)
+
+    folder = relative.parent.as_posix()
+    if folder == ".":
+        folder = ""
+    return {
+        "sourceFile": relative.name,
+        "sourceFolder": folder,
+        "sourcePath": relative.as_posix(),
+    }
+
+
 def primary_decisions(source: Path, match: Any) -> list[Any]:
     """Return drill decisions for one source.
 
@@ -1757,6 +1779,7 @@ def build() -> None:
             seen_matches[source_identity] = source.name
 
         uploaded_at = source_uploaded_at(source)
+        source_location = source_location_fields(source)
         is_new_source = source_is_new(uploaded_at)
         games_by_number = {game.header.game_number: game for game in match.games}
         crawford_game_numbers = {
@@ -1813,7 +1836,7 @@ def build() -> None:
                     crawford_game_number is not None
                     and decision.game_number > crawford_game_number
                 )
-                row["sourceFile"] = source.name
+                row.update(source_location)
                 row["sourceUploadedAt"] = uploaded_at
                 # Backward-compatible alias: older cached app.js versions
                 # used sourceAddedAt. Keep both fields identical so a mixed
@@ -1892,7 +1915,7 @@ def build() -> None:
 
         match_summaries.append(
             {
-                "sourceFile": source.name,
+                **source_location,
                 "sourceUploadedAt": uploaded_at,
                 "sourceAddedAt": uploaded_at,
                 "sourceUploadedAtMs": int(

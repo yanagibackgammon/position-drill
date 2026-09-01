@@ -11,6 +11,20 @@ from vendor.xgread._notation import _collapse_unambiguous_hops
 
 
 class BuildLogicTests(unittest.TestCase):
+    def test_source_location_fields_preserve_import_subfolders(self) -> None:
+        nested = build.IMPORTS_DIR / "MATCH" / "2026" / "sample.xgp"
+        root_file = build.IMPORTS_DIR / "root.xgp"
+        self.assertEqual(
+            build.source_location_fields(nested),
+            {
+                "sourceFile": "sample.xgp",
+                "sourceFolder": "MATCH/2026",
+                "sourcePath": "MATCH/2026/sample.xgp",
+            },
+        )
+        self.assertEqual(build.source_location_fields(root_file)["sourceFolder"], "")
+        self.assertEqual(build.source_location_fields(root_file)["sourcePath"], "root.xgp")
+
     def test_terminal_probability_fields_are_single_game_results(self) -> None:
         winner = build.terminal_probability_fields(win=True)
         loser = build.terminal_probability_fields(win=False)

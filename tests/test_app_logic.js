@@ -162,6 +162,35 @@ run("Task + New filters intersect and counts are per decision kind", () => {
   );
 });
 
+
+run("Folder filter includes descendants and can isolate imports root", () => {
+  evaluate(`
+    state.positions = [
+      {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7,isNew:true},
+      {id:"A",decisionKind:"checker",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp",matchLength:7,isNew:true},
+      {id:"B",decisionKind:"checker",sourceFolder:"MATCH/2026",sourcePath:"MATCH/2026/b.xgp",matchLength:7,isNew:true},
+      {id:"C",decisionKind:"checker",sourceFolder:"CUBE",sourcePath:"CUBE/c.xgp",matchLength:7,isNew:true}
+    ];
+    state.progress = {};
+    state.matchType = "all";
+    state.filters = {task:false,new:false};
+    state.folderFilter = "MATCH";
+  `);
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["A", "B"],
+  );
+  evaluate('state.folderFilter = ROOT_FOLDER_FILTER');
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["R"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('availableFolderFilters()')),
+    ["__root__", "CUBE", "MATCH", "MATCH/2026"],
+  );
+});
+
 run("Take/Pass game info always uses pre-offer No Double state", () => {
   context.takePosition = {
     decisionKind: "take",
