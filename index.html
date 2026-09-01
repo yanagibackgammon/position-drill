@@ -1,122 +1,69 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja" id="top">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#0c1013">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>POSITION DRILL</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-  <link rel="shortcut icon" href="favicon.ico">
-  <script>
-    window.__quizAssetVersion = Date.now().toString();
-    const quizStylesheet = document.createElement("link");
-    quizStylesheet.rel = "stylesheet";
-    quizStylesheet.href = `styles.css?v=${window.__quizAssetVersion}`;
-    document.head.appendChild(quizStylesheet);
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4d966b">
+  <meta name="description" content="YANAGI Backgammon - Position Drill への入口となるトップページ。">
+  <title>YANAGI Backgammon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-  <header class="page-header">
-    <div class="title-group">
-      <h1 id="page-title">POSITION DRILL</h1>
-      <a class="creator" href="https://www.youtube.com/@YANAGIBackgammon" target="_blank" rel="noopener noreferrer"><span class="creator-prefix">Created by</span><span class="creator-name">YANAGI Backgammon</span></a>
+  <div class="site-shell">
+    <div class="bg-art" aria-hidden="true">
+      <span class="shape circle circle-a"></span>
+      <span class="shape circle circle-b"></span>
+      <span class="shape circle circle-c"></span>
+      <span class="shape triangle triangle-a"></span>
+      <span class="shape triangle triangle-b"></span>
+      <span class="shape triangle triangle-c"></span>
+      <span class="shape square square-a"></span>
+      <span class="shape square square-b"></span>
+      <span class="shape square square-c"></span>
+      <span class="shape square square-d"></span>
     </div>
-  </header>
 
-  <main>
-    <section class="controls" aria-label="Drill settings">
-      <div class="menu-grid">
-        <div class="menu-group menu-group-primary">
-          <div id="kind-selector-slot" class="menu-slot selector-slot" data-selector="kind">
-            <button id="kind-selector" type="button" class="menu-selector" aria-label="Position type">
-              <span class="selector-label-full">Checker Play</span>
-              <span class="selector-label-short">Checker</span>
-              <span id="kind-count" class="selector-count">0</span>
-            </button>
-          </div>
-
-          <div id="match-selector-slot" class="menu-slot selector-slot" data-selector="match">
-            <button id="match-selector" type="button" class="menu-selector" aria-label="Match type">
-              <span class="selector-label-full">ALL</span>
-              <span class="selector-label-short">ALL</span>
-              <span id="match-count" class="selector-count">0</span>
-            </button>
-          </div>
+    <header class="site-header">
+      <div class="brand" aria-label="YANAGI Backgammon">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
         </div>
-
-        <div class="menu-group menu-group-filters">
-          <button type="button" class="menu-slot filter-tab" data-filter="task" aria-pressed="false" aria-label="Task filter: off"><span class="filter-label">Task</span><span class="filter-check" aria-hidden="true"></span></button>
-          <button type="button" class="menu-slot filter-tab" data-filter="new" aria-pressed="false" aria-label="New filter: off"><span class="filter-label">New</span><span class="filter-check" aria-hidden="true"></span></button>
+        <div class="brand-copy">
+          <p class="brand-sub">PLAY / STUDY / REPEAT</p>
+          <h1>YANAGI Backgammon</h1>
         </div>
       </div>
-    </section>
+    </header>
 
-    <section id="quiz-card" class="quiz-card" aria-live="polite">
-      <div class="quiz-layout">
-        <div class="position-column">
-          <div class="board-wrap">
-            <img id="board-image" alt="Backgammon drill position" loading="eager" decoding="async" fetchpriority="high">
-          </div>
+    <main class="hero">
+      <section class="hero-panel">
+        <p class="eyebrow">POSITION TRAINING TOOL</p>
+        <h2>Every position builds better judgment.</h2>
+        <p class="hero-text">
+          バックギャモンを、もっと深く、もっと日常的に。<br>
+          YANAGI Backgammon の学習ツール <strong>Position Drill</strong> へ進めるトップページです。
+        </p>
 
+        <div class="feature-row" aria-hidden="true">
+          <div class="feature-chip">CIRCLE</div>
+          <div class="feature-chip">TRIANGLE</div>
+          <div class="feature-chip">SQUARE</div>
         </div>
 
-        <div class="answer-column">
-          <section id="answer-panel" class="answer-panel">
-            <div class="analysis-section">
-              <div class="analysis-grid">
-                <div id="action-analysis" class="action-analysis"></div>
-                <div id="summary-analysis" class="summary-analysis"></div>
-              </div>
-            </div>
-
-            <div class="judge-area">
-              <button id="answer-button" class="primary-button answer-button" type="button">CHECK</button>
-              <div id="judge-buttons" class="judge-buttons" hidden>
-                <button id="correct-button" class="judge-button correct-button" type="button" aria-label="Correct" aria-pressed="false">○</button>
-                <button id="wrong-button" class="judge-button wrong-button" type="button" aria-label="Incorrect" aria-pressed="false">×</button>
-              </div>
-              <button id="next-button" class="primary-button next-button" type="button">SKIP</button>
-            </div>
-
-          </section>
-        </div>
-      </div>
-    </section>
-
-    <section id="empty-state" class="empty-state" hidden></section>
-
-    <div class="record-source-row">
-      <section class="records-row" aria-label="Drill records">
-        <div class="record-group" aria-label="Total record">
-          <span class="record-label">Total</span>
-          <strong id="total-correct" class="record-number record-correct" aria-label="Correct">0</strong>
-          <strong id="total-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
-        </div>
-        <div class="record-group" aria-label="Today record">
-          <span class="record-label">Today</span>
-          <strong id="today-correct" class="record-number record-correct" aria-label="Correct">0</strong>
-          <strong id="today-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
-        </div>
-        <div id="position-record" class="record-group" aria-label="Now record">
-          <span class="record-label">Now</span>
-          <strong id="position-correct" class="record-number record-correct" aria-label="Correct">0</strong>
-          <strong id="position-wrong" class="record-number record-wrong" aria-label="Incorrect">0</strong>
-        </div>
+        <a class="cta-button" href="/position-drill/">Position Drill へ</a>
       </section>
-      <div id="source-file" class="source-file"></div>
-    </div>
-  </main>
+    </main>
+
+    <footer class="site-footer">
+      <p>© <span id="year"></span> YANAGI Backgammon</p>
+    </footer>
+  </div>
 
   <script>
-    const quizAppScript = document.createElement("script");
-    quizAppScript.src = `app.js?v=${window.__quizAssetVersion || Date.now()}`;
-    document.body.appendChild(quizAppScript);
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
