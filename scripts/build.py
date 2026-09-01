@@ -291,6 +291,55 @@ def probability_fields(evaluation: Evaluation | None, invert: bool = False) -> d
     }
 
 
+def played_move_evaluation(move: Move) -> Evaluation | None:
+    """Return the analysed evaluation for the move that was actually played.
+
+    XG usually lets ``Move.played_index`` identify the played candidate directly.
+    Some exports omit that match in two recoverable situations:
+
+    * dances / no-move turns, where XG stores a dummy candidate move sequence;
+    * rare records where the played checker sequence itself is absent from the
+      ranked list, but ``ErrMove`` still identifies its evaluation equity.
+
+    Recover both so every non-opening checker turn can reuse the preceding
+    move's after-move evaluation as the next player's exact pre-roll baseline.
+    """
+    played_index = move.played_index
+    if played_index is not None and 0 <= played_index < len(move.candidates):
+        evaluation = move.candidates[played_index].evaluation
+        if valid_probability_evaluation(evaluation):
+            return evaluation
+
+    valid_candidates = [
+        candidate for candidate in move.candidates
+        if valid_probability_evaluation(candidate.evaluation)
+    ]
+    if not valid_candidates:
+        return None
+
+    # XG dances are encoded with no played checker hops, while the sole engine
+    # candidate may contain dummy 0/0 hops.  There is still only one analysed
+    # result, so it is unambiguous.
+    if not move.moves and len(valid_candidates) == 1:
+        return valid_candidates[0].evaluation
+
+    # In a handful of XG records the played sequence is missing from the
+    # candidate list even though ErrMove is present.  ErrMove is the equity loss
+    # from the engine's best candidate, so it pins down the played evaluation's
+    # equity.  Match that inferred equity back to the stored probability vector.
+    if move.is_analysed and math.isfinite(float(move.error)):
+        best_equity = max(float(candidate.evaluation.equity) for candidate in valid_candidates)
+        target_equity = best_equity - abs(float(move.error))
+        closest = min(
+            valid_candidates,
+            key=lambda candidate: abs(float(candidate.evaluation.equity) - target_equity),
+        )
+        if abs(float(closest.evaluation.equity) - target_equity) <= 1e-5:
+            return closest.evaluation
+
+    return None
+
+
 def checker_pre_roll_probability_fields(decisions: list[Any], index: int) -> dict[str, float | None]:
     """Return Checker Play probabilities for the position before the dice roll.
 
@@ -346,12 +395,7 @@ def checker_pre_roll_probability_fields(decisions: list[Any], index: int) -> dic
             continue
         if prior_event.player == move.player:
             break
-        played_index = prior_event.played_index
-        evaluation = (
-            prior_event.candidates[played_index].evaluation
-            if played_index is not None and 0 <= played_index < len(prior_event.candidates)
-            else None
-        )
+        evaluation = played_move_evaluation(prior_event)
         if valid_probability_evaluation(evaluation):
             return probability_fields(evaluation, invert=True)
         break
