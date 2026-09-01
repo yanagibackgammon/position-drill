@@ -1693,6 +1693,7 @@ def build() -> None:
     # public UI files into the Pages artifact; source XG/build files stay out.
     public_files = (
         "index.html",
+        "guide.html",
         "app.js",
         "styles.css",
         "favicon.ico",
