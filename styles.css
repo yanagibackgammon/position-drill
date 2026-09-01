@@ -662,21 +662,29 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
     gap: 12px;
     min-width: 0;
     white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+
+  .record-source-row::-webkit-scrollbar { display: none; }
 
   .records-row { flex: 0 0 auto; margin: 0; justify-content: flex-start; font-size: var(--font-xs); }
 
   .record-number { font-size: var(--font-sm); }
 
   .source-file {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: max-content;
     min-height: 0;
     margin: 0;
     padding: 0;
     text-align: left;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: clip;
     overflow-wrap: normal;
     font-size: var(--font-xs);
@@ -901,7 +909,8 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
     min-height: 19px;
     max-height: 19px;
     margin: 3px 8px 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 }
 
