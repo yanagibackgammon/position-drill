@@ -316,7 +316,7 @@ run("Checker candidate selection switches only W/GW/BG rates and graph", () => {
   assert.match(summary, /left:55\.000%/);
 });
 
-run("Cube actions expose selectable rows without checker-only attributes", () => {
+run("Double actions expose selectable rows and do not repeat the best action", () => {
   context.cubePosition = {
     decisionKind: "double",
     decisionType: "cube",
@@ -332,6 +332,8 @@ run("Cube actions expose selectable rows without checker-only attributes", () =>
   assert.match(html, /data-cube-candidate-index=/);
   assert.match(html, /is-cube-candidate/);
   assert.doesNotMatch(html, /data-checker-candidate-index/);
+  assert.equal((html.match(/>No Double<\/span>/g) || []).length, 1);
+  assert.equal((html.match(/>Double\/Take<\/span>/g) || []).length, 1);
 });
 
 
@@ -702,7 +704,7 @@ run("Checker pre-roll rates stay blank when XG has no exact pre-roll evaluation"
   assert.match(html, />—<\/span>/);
 });
 
-run("CHECK auto-selects the best Double action and deselect restores pre-action state", () => {
+run("CHECK auto-selects the best Double action while board and game info stay pre-action", () => {
   context.autoDoublePosition = {
     id: "AUTO-D",
     decisionKind: "double",
@@ -759,12 +761,21 @@ run("CHECK auto-selects the best Double action and deselect restores pre-action 
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-actions/AUTO-D-2.svg",
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
-  evaluate("selectCubeCandidate(1)");
+  evaluate("selectCubeCandidate(0)");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
+
+  evaluate("selectCubeCandidate(0)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
   assert.equal(
     evaluate("elements.board.src"),

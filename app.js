@@ -648,18 +648,22 @@ function actionAnalysisHTML(position) {
     const outcomes = (Array.isArray(position.candidates) ? position.candidates : [])
       .filter((candidate) => candidate && candidate.action)
       .slice(0, 3);
-    const hasPlayedOutcome = outcomes.some((candidate) => isPlayed(candidate.action));
     const bestAction = position.bestAction || "—";
     const bestIndex = bestCubeCandidateIndex(position);
+    const bestWasPlayed = isPlayed(bestAction)
+      || (bestIndex != null && isPlayed(outcomes[bestIndex]?.action));
     const rows = [
-      `<div class="action-option is-best is-action-candidate is-cube-candidate"${bestIndex != null ? ` data-cube-candidate-index="${bestIndex}" role="button" tabindex="0"` : ""}><span class="action-text ${!hasPlayedOutcome && isPlayed(bestAction) ? "is-played" : ""}">${escapeHTML(bestAction)}</span><span class="action-error best-marker">BEST</span></div>`,
-      ...outcomes.map((candidate, index) => {
+      `<div class="action-option is-best is-action-candidate is-cube-candidate"${bestIndex != null ? ` data-cube-candidate-index="${bestIndex}" role="button" tabindex="0"` : ""}><span class="action-text ${bestWasPlayed ? "is-played" : ""}">${escapeHTML(bestAction)}</span><span class="action-error best-marker">BEST</span></div>`,
+      ...outcomes.flatMap((candidate, index) => {
+        // The first row already represents the best Double action. Do not
+        // repeat that same underlying candidate again in the rows below.
+        if (index === bestIndex) return [];
         const tone = errorToneClass(candidate.equityDifference);
-        return `
+        return [`
         <div class="action-option is-action-candidate is-cube-candidate" data-cube-candidate-index="${index}" role="button" tabindex="0">
           <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
           <span class="action-error ${tone}">${escapeHTML(formatSignedEquity(candidate.equityDifference))}</span>
-        </div>`;
+        </div>`];
       }),
     ];
     return `<div class="action-list">${rows.join("")}</div>`;
@@ -1083,6 +1087,19 @@ function selectCubeCandidate(index) {
     `[data-cube-candidate-index="${numericIndex}"]`,
   );
   if (selected) selected.classList.add("is-selected");
+
+  // Double Action is a choice drill only: selecting a row must not mutate
+  // the position diagram or the game information. Both stay fixed at the
+  // pre-action (No Double) state. Take/Pass keeps its existing post-choice
+  // preview behaviour.
+  if (state.current.decisionKind === "double") {
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+    elements.summaryAnalysis.scrollTop = 0;
+    resetSummaryTextScroll();
+    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.alt = `${KIND_LABELS.double} quiz position`;
+    return;
+  }
 
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, candidate);
   elements.summaryAnalysis.scrollTop = 0;
