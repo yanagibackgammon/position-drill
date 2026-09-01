@@ -705,36 +705,40 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
     : pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
   const isTake = position.decisionKind === "take";
-  // Take/Pass game information always represents Double/Take, regardless of
-  // whether Take or Pass is selected.  Pass is terminal and has no meaningful
-  // probability vector, while the Double/Take analysis describes the live game.
-  const takeInfoCandidate = isTake
-    ? cubeActionCandidates(position).find((candidate) => {
+  const isCubeDecision = position.decisionKind === "double" || isTake;
+
+  // Double and Take/Pass game information always represents the state before
+  // the cube offer (No Double). Candidate selection only changes the answer
+  // highlight; it must not change W/GW/BG or the displayed cube value.
+  const noDoubleCandidate = isCubeDecision && Array.isArray(position.candidates)
+    ? position.candidates.find((candidate) => {
         const action = String(candidate?.action || "").trim().toLowerCase();
-        return action === "take" || action.endsWith("/take");
-      }) || null
+        return action === "no double" || action === "no redouble";
+      }) || position.candidates[0] || null
     : null;
-  const gameInfoCandidate = isTake ? takeInfoCandidate : selectedCandidate;
+  const noDoubleRates = noDoubleCandidate && candidateHasRates(noDoubleCandidate)
+    ? (isTake
+      ? {
+          winRate: noDoubleCandidate.loseRate,
+          loseRate: noDoubleCandidate.winRate,
+          gammonWinRate: noDoubleCandidate.gammonLoseRate,
+          gammonLoseRate: noDoubleCandidate.gammonWinRate,
+          backgammonWinRate: noDoubleCandidate.backgammonLoseRate,
+          backgammonLoseRate: noDoubleCandidate.backgammonWinRate,
+        }
+      : noDoubleCandidate)
+    : null;
 
   // Black/bottom is always the drill owner. In Take Action the drill owner is
-  // the receiver/taker, so use the responder-perspective score and D/T rates.
+  // the receiver/taker, so retain the responder-perspective scores while using
+  // the pre-offer (No Double) probability vector above.
   const rawPlayerScore = isTake && position.quizPlayerScore != null
     ? position.quizPlayerScore
     : position.playerScore;
   const rawOpponentScore = isTake && position.quizOpponentScore != null
     ? position.quizOpponentScore
     : position.opponentScore;
-  const rawCubeValue = gameInfoCandidate?.cubeValue
-    ?? (isTake ? position.quizCubeValue : null)
-    ?? position.cubeValue;
-  const selectedRateSource = gameInfoCandidate && candidateHasRates(gameInfoCandidate)
-    ? gameInfoCandidate
-    : null;
-  const gameInfoSourceLabel = isTake
-    ? "D/T"
-    : position.decisionKind === "double"
-      ? (selectedRateSource ? "D/T" : "ND")
-      : "";
+  const rawCubeValue = position.cubeValue;
   const checkerRateSource = checkerCandidate && checkerCandidateHasRates(checkerCandidate)
     ? checkerCandidate
     : position;
@@ -755,24 +759,13 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
         backgammonLoseRate: position.preRollBackgammonLoseRate,
       }
     : checkerRateSource;
-  const winRate = selectedRateSource?.winRate ?? (isTake && position.quizWinRate != null
-    ? position.quizWinRate
-    : checkerBaseRates.winRate);
-  const loseRate = selectedRateSource?.loseRate ?? (isTake && position.quizLoseRate != null
-    ? position.quizLoseRate
-    : checkerBaseRates.loseRate);
-  const gammonWinRate = selectedRateSource?.gammonWinRate ?? (isTake && position.quizGammonWinRate != null
-    ? position.quizGammonWinRate
-    : checkerBaseRates.gammonWinRate);
-  const gammonLoseRate = selectedRateSource?.gammonLoseRate ?? (isTake && position.quizGammonLoseRate != null
-    ? position.quizGammonLoseRate
-    : checkerBaseRates.gammonLoseRate);
-  const backgammonWinRate = selectedRateSource?.backgammonWinRate ?? (isTake && position.quizBackgammonWinRate != null
-    ? position.quizBackgammonWinRate
-    : checkerBaseRates.backgammonWinRate);
-  const backgammonLoseRate = selectedRateSource?.backgammonLoseRate ?? (isTake && position.quizBackgammonLoseRate != null
-    ? position.quizBackgammonLoseRate
-    : checkerBaseRates.backgammonLoseRate);
+  const gameInfoRates = noDoubleRates || checkerBaseRates;
+  const winRate = gameInfoRates.winRate;
+  const loseRate = gameInfoRates.loseRate;
+  const gammonWinRate = gameInfoRates.gammonWinRate;
+  const gammonLoseRate = gameInfoRates.gammonLoseRate;
+  const backgammonWinRate = gameInfoRates.backgammonWinRate;
+  const backgammonLoseRate = gameInfoRates.backgammonLoseRate;
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;
@@ -831,7 +824,7 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.black)}</span>`)}
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.white)}</span>`)}
 
-        ${gameInfoSourceLabel ? statLine(gameInfoSourceLabel, "") : '<div aria-hidden="true"></div>'}
+        <div aria-hidden="true"></div>
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
 
@@ -1104,13 +1097,10 @@ function selectCubeCandidate(index) {
   );
   if (selected) selected.classList.add("is-selected");
 
-  // Double Action keeps the position diagram fixed at the pre-action state.
-  // Game information also stays pre-action except for Double/Take, where the
-  // post-take rates/cube value are useful and are shown while that row is selected.
+  // Double Action keeps both the position diagram and game information fixed
+  // at the pre-action (No Double) state. Selection changes only the highlight.
   if (state.current.decisionKind === "double") {
-    const action = String(candidate.action || "").trim().toLowerCase();
-    const summaryCandidate = action === "double/take" ? candidate : null;
-    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, summaryCandidate);
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
     elements.board.src = absoluteBoardUrl(state.current);

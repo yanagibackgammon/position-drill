@@ -162,7 +162,7 @@ run("Task + New filters intersect and counts are per decision kind", () => {
   );
 });
 
-run("Take/Pass game info always uses Double/Take state", () => {
+run("Take/Pass game info always uses pre-offer No Double state", () => {
   context.takePosition = {
     decisionKind: "take",
     position: Array(26).fill(0),
@@ -188,18 +188,43 @@ run("Take/Pass game info always uses Double/Take state", () => {
     quizGammonLoseRate: 0.10,
     quizBackgammonWinRate: 0.03,
     quizBackgammonLoseRate: 0.01,
+    decisionType: "cube",
+    candidates: [
+      {
+        rank: 1,
+        action: "No Double",
+        cubeValue: 2,
+        winRate: 0.45,
+        loseRate: 0.55,
+        gammonWinRate: 0.11,
+        gammonLoseRate: 0.18,
+        backgammonWinRate: 0.01,
+        backgammonLoseRate: 0.02,
+      },
+      {
+        rank: 2,
+        action: "Double/Take",
+        cubeValue: 4,
+        winRate: 0.39,
+        loseRate: 0.61,
+        gammonWinRate: 0.10,
+        gammonLoseRate: 0.20,
+        backgammonWinRate: 0.01,
+        backgammonLoseRate: 0.03,
+      },
+    ],
   };
 
   const html = evaluate("summaryAnalysisHTML(takePosition)");
   assert.match(
     html,
-    /<span class="stat-label">CB<\/span><span class="stat-value ">4<\/span>/,
+    /<span class="stat-label">CB<\/span><span class="stat-value ">2<\/span>/,
   );
-  assert.match(html, />61\.0%<\/span>/);
+  assert.match(html, />55\.0%<\/span>/);
 });
 
 
-run("Double and Take/Pass identify ND vs D/T game-info source", () => {
+run("Cube game info stays No Double and source marker is hidden", () => {
   context.sourceDoublePosition = {
     decisionKind: "double",
     decisionType: "cube",
@@ -216,6 +241,28 @@ run("Double and Take/Pass identify ND vs D/T game-info source", () => {
     gammonLoseRate: 0.10,
     backgammonWinRate: 0.01,
     backgammonLoseRate: 0.01,
+    candidates: [
+      {
+        action: "No Double",
+        cubeValue: 1,
+        winRate: 0.52,
+        loseRate: 0.48,
+        gammonWinRate: 0.11,
+        gammonLoseRate: 0.09,
+        backgammonWinRate: 0.01,
+        backgammonLoseRate: 0.01,
+      },
+      {
+        action: "Double/Take",
+        cubeValue: 2,
+        winRate: 0.61,
+        loseRate: 0.39,
+        gammonWinRate: 0.17,
+        gammonLoseRate: 0.07,
+        backgammonWinRate: 0.02,
+        backgammonLoseRate: 0.01,
+      },
+    ],
   };
   context.sourceDtCandidate = {
     action: "Double/Take",
@@ -229,15 +276,17 @@ run("Double and Take/Pass identify ND vs D/T game-info source", () => {
   };
 
   const ndHtml = evaluate("summaryAnalysisHTML(sourceDoublePosition)");
-  assert.match(ndHtml, /<span class="stat-label">ND<\/span>/);
-  assert.doesNotMatch(ndHtml, /<span class="stat-label">D\/T<\/span>/);
+  assert.match(ndHtml, />52\.0%<\/span>/);
+  assert.doesNotMatch(ndHtml, /<span class="stat-label">(?:ND|D\/T)<\/span>/);
 
   const dtHtml = evaluate("summaryAnalysisHTML(sourceDoublePosition, sourceDtCandidate)");
-  assert.match(dtHtml, /<span class="stat-label">D\/T<\/span>/);
-  assert.doesNotMatch(dtHtml, /<span class="stat-label">ND<\/span>/);
+  assert.match(dtHtml, />52\.0%<\/span>/);
+  assert.doesNotMatch(dtHtml, />61\.0%<\/span>/);
+  assert.doesNotMatch(dtHtml, /<span class="stat-label">(?:ND|D\/T)<\/span>/);
 
   const takeHtml = evaluate("summaryAnalysisHTML(takePosition)");
-  assert.match(takeHtml, /<span class="stat-label">D\/T<\/span>/);
+  assert.match(takeHtml, />55\.0%<\/span>/);
+  assert.doesNotMatch(takeHtml, /<span class="stat-label">(?:ND|D\/T)<\/span>/);
 });
 
 run("DMP and Unlimited game-info conventions stay fixed", () => {
@@ -746,7 +795,7 @@ run("Checker pre-roll rates stay blank when XG has no exact pre-roll evaluation"
   assert.match(html, />—<\/span>/);
 });
 
-run("Double/Take alone shows its game info while the Double board stays pre-action", () => {
+run("Double selection keeps No Double game info and the pre-action board", () => {
   context.autoDoublePosition = {
     id: "AUTO-D",
     decisionKind: "double",
@@ -805,8 +854,8 @@ run("Double/Take alone shows its game info while the Double board stays pre-acti
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(0)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
@@ -814,13 +863,13 @@ run("Double/Take alone shows its game info while the Double board stays pre-acti
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
@@ -832,7 +881,7 @@ run("Double/Take alone shows its game info while the Double board stays pre-acti
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 });
 
@@ -858,6 +907,32 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
     quizBackgammonWinRate: 0.01,
     quizBackgammonLoseRate: 0.02,
     quizBoardImage: "assets/boards-quiz/AUTO-T.svg",
+    candidates: [
+      {
+        rank: 1,
+        action: "No Double",
+        cubeValue: 1,
+        cubeOwner: "center",
+        winRate: 0.57,
+        loseRate: 0.43,
+        gammonWinRate: 0.13,
+        gammonLoseRate: 0.08,
+        backgammonWinRate: 0.02,
+        backgammonLoseRate: 0.01,
+      },
+      {
+        rank: 2,
+        action: "Double/Take",
+        cubeValue: 2,
+        cubeOwner: "opponent",
+        winRate: 0.56,
+        loseRate: 0.44,
+        gammonWinRate: 0.13,
+        gammonLoseRate: 0.08,
+        backgammonWinRate: 0.02,
+        backgammonLoseRate: 0.01,
+      },
+    ],
     quizCandidates: [
       {
         rank: 1,
@@ -897,8 +972,8 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-actions/AUTO-T-1.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
@@ -906,8 +981,8 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-actions/AUTO-T-2.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
@@ -915,8 +990,8 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 });
 
 console.log("All app regression tests passed.");
