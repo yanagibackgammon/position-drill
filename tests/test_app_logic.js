@@ -162,7 +162,7 @@ run("Task + New filters intersect and counts are per decision kind", () => {
   );
 });
 
-run("Take game info uses receiver perspective but PRE-OFFER cube", () => {
+run("Take/Pass game info always uses Double/Take state", () => {
   context.takePosition = {
     decisionKind: "take",
     position: Array(26).fill(0),
@@ -193,7 +193,7 @@ run("Take game info uses receiver perspective but PRE-OFFER cube", () => {
   const html = evaluate("summaryAnalysisHTML(takePosition)");
   assert.match(
     html,
-    /<span class="stat-label">CB<\/span><span class="stat-value ">2<\/span>/,
+    /<span class="stat-label">CB<\/span><span class="stat-value ">4<\/span>/,
   );
   assert.match(html, />61\.0%<\/span>/);
 });
@@ -855,17 +855,26 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-actions/AUTO-T-1.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />0\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
 
-  evaluate("selectCubeCandidate(0)");
+  evaluate("selectCubeCandidate(1)");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-actions/AUTO-T-2.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+
+  evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />44\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />42\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
 });
 
 console.log("All app regression tests passed.");

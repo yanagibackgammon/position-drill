@@ -705,19 +705,30 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
     : pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
   const isTake = position.decisionKind === "take";
+  // Take/Pass game information always represents Double/Take, regardless of
+  // whether Take or Pass is selected.  Pass is terminal and has no meaningful
+  // probability vector, while the Double/Take analysis describes the live game.
+  const takeInfoCandidate = isTake
+    ? cubeActionCandidates(position).find((candidate) => {
+        const action = String(candidate?.action || "").trim().toLowerCase();
+        return action === "take" || action.endsWith("/take");
+      }) || null
+    : null;
+  const gameInfoCandidate = isTake ? takeInfoCandidate : selectedCandidate;
 
-  // Both cube modes show the PRE-OFFER state, but black/bottom is always the
-  // drill owner.  In Take Action the drill owner is the receiver/taker, so use
-  // the responder-perspective score and rates while keeping the PRE-OFFER cube.
+  // Black/bottom is always the drill owner. In Take Action the drill owner is
+  // the receiver/taker, so use the responder-perspective score and D/T rates.
   const rawPlayerScore = isTake && position.quizPlayerScore != null
     ? position.quizPlayerScore
     : position.playerScore;
   const rawOpponentScore = isTake && position.quizOpponentScore != null
     ? position.quizOpponentScore
     : position.opponentScore;
-  const rawCubeValue = selectedCandidate?.cubeValue ?? position.cubeValue;
-  const selectedRateSource = selectedCandidate && candidateHasRates(selectedCandidate)
-    ? selectedCandidate
+  const rawCubeValue = gameInfoCandidate?.cubeValue
+    ?? (isTake ? position.quizCubeValue : null)
+    ?? position.cubeValue;
+  const selectedRateSource = gameInfoCandidate && candidateHasRates(gameInfoCandidate)
+    ? gameInfoCandidate
     : null;
   const checkerRateSource = checkerCandidate && checkerCandidateHasRates(checkerCandidate)
     ? checkerCandidate
