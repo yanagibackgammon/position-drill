@@ -885,7 +885,7 @@ run("Double selection keeps No Double game info and the pre-action board", () =>
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 });
 
-run("CHECK auto-selects the best Take/Pass response and deselect restores pre-offer state", () => {
+run("Take/Pass selection always keeps the pre-offer board fixed", () => {
   context.autoTakePosition = {
     id: "AUTO-T",
     decisionKind: "take",
@@ -970,7 +970,7 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-actions/AUTO-T-1.svg",
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -979,7 +979,7 @@ run("CHECK auto-selects the best Take/Pass response and deselect restores pre-of
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-actions/AUTO-T-2.svg",
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);

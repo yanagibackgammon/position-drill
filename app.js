@@ -1097,14 +1097,15 @@ function selectCubeCandidate(index) {
   );
   if (selected) selected.classList.add("is-selected");
 
-  // Double Action keeps both the position diagram and game information fixed
-  // at the pre-action (No Double) state. Selection changes only the highlight.
-  if (state.current.decisionKind === "double") {
+  // Double and Take/Pass keep both the position diagram and game information
+  // fixed at the state before the cube offer (No Double). Selection changes
+  // only the answer highlight; the displayed cube must not move or double.
+  if (state.current.decisionKind === "double" || state.current.decisionKind === "take") {
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
     elements.board.src = absoluteBoardUrl(state.current);
-    elements.board.alt = `${KIND_LABELS.double} quiz position`;
+    elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
     return;
   }
 
