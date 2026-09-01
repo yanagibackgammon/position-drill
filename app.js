@@ -1088,12 +1088,13 @@ function selectCubeCandidate(index) {
   );
   if (selected) selected.classList.add("is-selected");
 
-  // Double Action is a choice drill only: selecting a row must not mutate
-  // the position diagram or the game information. Both stay fixed at the
-  // pre-action (No Double) state. Take/Pass keeps its existing post-choice
-  // preview behaviour.
+  // Double Action keeps the position diagram fixed at the pre-action state.
+  // Game information also stays pre-action except for Double/Take, where the
+  // post-take rates/cube value are useful and are shown while that row is selected.
   if (state.current.decisionKind === "double") {
-    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+    const action = String(candidate.action || "").trim().toLowerCase();
+    const summaryCandidate = action === "double/take" ? candidate : null;
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, summaryCandidate);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
     elements.board.src = absoluteBoardUrl(state.current);

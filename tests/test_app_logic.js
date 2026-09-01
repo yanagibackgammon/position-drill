@@ -704,7 +704,7 @@ run("Checker pre-roll rates stay blank when XG has no exact pre-roll evaluation"
   assert.match(html, />—<\/span>/);
 });
 
-run("CHECK auto-selects the best Double action while board and game info stay pre-action", () => {
+run("Double/Take alone shows its game info while the Double board stays pre-action", () => {
   context.autoDoublePosition = {
     id: "AUTO-D",
     decisionKind: "double",
@@ -763,8 +763,8 @@ run("CHECK auto-selects the best Double action while board and game info stay pr
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
 
   evaluate("selectCubeCandidate(0)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
@@ -775,7 +775,16 @@ run("CHECK auto-selects the best Double action while board and game info stay pr
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
-  evaluate("selectCubeCandidate(0)");
+  evaluate("selectCubeCandidate(1)");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+  );
+
+  evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
   assert.equal(
     evaluate("elements.board.src"),
