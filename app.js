@@ -1081,6 +1081,25 @@ function selectCubeCandidate(index) {
     .querySelectorAll(".action-option.is-selected")
     .forEach((row) => row.classList.remove("is-selected"));
 
+  // Double and Take/Pass keep both the position diagram and game information
+  // fixed at the state before the cube offer (No Double). Because candidate
+  // selection no longer changes either display, keep the dark-gold answer band
+  // fixed on the best action even if another action row is pressed.
+  if (state.current.decisionKind === "double" || state.current.decisionKind === "take") {
+    const bestIndex = bestCubeCandidateIndex(state.current);
+    state.selectedCubeCandidateIndex = bestIndex;
+    const selected = bestIndex == null ? null : elements.actionAnalysis.querySelector(
+      `[data-cube-candidate-index="${bestIndex}"]`,
+    );
+    if (selected) selected.classList.add("is-selected");
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+    elements.summaryAnalysis.scrollTop = 0;
+    resetSummaryTextScroll();
+    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
+    return;
+  }
+
   if (state.selectedCubeCandidateIndex === numericIndex) {
     state.selectedCubeCandidateIndex = null;
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
@@ -1096,18 +1115,6 @@ function selectCubeCandidate(index) {
     `[data-cube-candidate-index="${numericIndex}"]`,
   );
   if (selected) selected.classList.add("is-selected");
-
-  // Double and Take/Pass keep both the position diagram and game information
-  // fixed at the state before the cube offer (No Double). Selection changes
-  // only the answer highlight; the displayed cube must not move or double.
-  if (state.current.decisionKind === "double" || state.current.decisionKind === "take") {
-    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
-    elements.summaryAnalysis.scrollTop = 0;
-    resetSummaryTextScroll();
-    elements.board.src = absoluteBoardUrl(state.current);
-    elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
-    return;
-  }
 
   elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, candidate);
   elements.summaryAnalysis.scrollTop = 0;

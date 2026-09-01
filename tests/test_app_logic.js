@@ -795,7 +795,7 @@ run("Checker pre-roll rates stay blank when XG has no exact pre-roll evaluation"
   assert.match(html, />—<\/span>/);
 });
 
-run("Double selection keeps No Double game info and the pre-action board", () => {
+run("Double keeps the best-action band fixed with No Double game info and pre-action board", () => {
   context.autoDoublePosition = {
     id: "AUTO-D",
     decisionKind: "double",
@@ -858,7 +858,7 @@ run("Double selection keeps No Double game info and the pre-action board", () =>
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(0)");
-  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
@@ -876,7 +876,7 @@ run("Double selection keeps No Double game info and the pre-action board", () =>
   );
 
   evaluate("selectCubeCandidate(1)");
-  assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
@@ -885,7 +885,7 @@ run("Double selection keeps No Double game info and the pre-action board", () =>
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 });
 
-run("Take/Pass selection always keeps the pre-offer board fixed", () => {
+run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
   context.autoTakePosition = {
     id: "AUTO-T",
     decisionKind: "take",
@@ -976,7 +976,7 @@ run("Take/Pass selection always keeps the pre-offer board fixed", () => {
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(1)");
-  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
@@ -985,7 +985,7 @@ run("Take/Pass selection always keeps the pre-offer board fixed", () => {
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 
   evaluate("selectCubeCandidate(1)");
-  assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
