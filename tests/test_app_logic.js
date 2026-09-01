@@ -198,6 +198,48 @@ run("Take/Pass game info always uses Double/Take state", () => {
   assert.match(html, />61\.0%<\/span>/);
 });
 
+
+run("Double and Take/Pass identify ND vs D/T game-info source", () => {
+  context.sourceDoublePosition = {
+    decisionKind: "double",
+    decisionType: "cube",
+    position: Array(26).fill(0),
+    playerScore: 1,
+    opponentScore: 2,
+    cubeValue: 1,
+    matchLength: 7,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.50,
+    loseRate: 0.50,
+    gammonWinRate: 0.10,
+    gammonLoseRate: 0.10,
+    backgammonWinRate: 0.01,
+    backgammonLoseRate: 0.01,
+  };
+  context.sourceDtCandidate = {
+    action: "Double/Take",
+    cubeValue: 2,
+    winRate: 0.61,
+    loseRate: 0.39,
+    gammonWinRate: 0.17,
+    gammonLoseRate: 0.07,
+    backgammonWinRate: 0.02,
+    backgammonLoseRate: 0.01,
+  };
+
+  const ndHtml = evaluate("summaryAnalysisHTML(sourceDoublePosition)");
+  assert.match(ndHtml, /<span class="stat-label">ND<\/span>/);
+  assert.doesNotMatch(ndHtml, /<span class="stat-label">D\/T<\/span>/);
+
+  const dtHtml = evaluate("summaryAnalysisHTML(sourceDoublePosition, sourceDtCandidate)");
+  assert.match(dtHtml, /<span class="stat-label">D\/T<\/span>/);
+  assert.doesNotMatch(dtHtml, /<span class="stat-label">ND<\/span>/);
+
+  const takeHtml = evaluate("summaryAnalysisHTML(takePosition)");
+  assert.match(takeHtml, /<span class="stat-label">D\/T<\/span>/);
+});
+
 run("DMP and Unlimited game-info conventions stay fixed", () => {
   context.basePosition = {
     decisionKind: "double",

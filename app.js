@@ -730,6 +730,11 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
   const selectedRateSource = gameInfoCandidate && candidateHasRates(gameInfoCandidate)
     ? gameInfoCandidate
     : null;
+  const gameInfoSourceLabel = isTake
+    ? "D/T"
+    : position.decisionKind === "double"
+      ? (selectedRateSource ? "D/T" : "ND")
+      : "";
   const checkerRateSource = checkerCandidate && checkerCandidateHasRates(checkerCandidate)
     ? checkerCandidate
     : position;
@@ -826,7 +831,7 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.black)}</span>`)}
         ${statLine("PIP", `<span class="pip-placeholder">--</span><span class="pip-real">${escapeHTML(pipDisplay.white)}</span>`)}
 
-        <div aria-hidden="true"></div>
+        ${gameInfoSourceLabel ? statLine(gameInfoSourceLabel, "") : '<div aria-hidden="true"></div>'}
         ${statLine("W", escapeHTML(formatPercent(winRate)), "", "answer-only-value")}
         ${statLine("W", escapeHTML(formatPercent(loseRate)), "", "answer-only-value")}
 
