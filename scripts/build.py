@@ -291,6 +291,74 @@ def probability_fields(evaluation: Evaluation | None, invert: bool = False) -> d
     }
 
 
+def checker_pre_roll_probability_fields(decisions: list[Any], index: int) -> dict[str, float | None]:
+    """Return Checker Play probabilities for the position before the dice roll.
+
+    XG normally stores a CubeAction record immediately before every checker
+    move. Its No Double (or accepted Double/Take) analysis evaluates the same
+    board before the dice are rolled, so prefer that vector. If that cube
+    analysis is unavailable and no cube was turned, the previous played checker
+    move ends at the same board; invert that mover's evaluation into the current
+    player's perspective.
+
+    Never substitute the current played move's after-move evaluation. When an
+    exact pre-roll vector is unavailable, publish nulls so the UI displays an
+    em dash rather than misleading post-move percentages.
+    """
+    empty = probability_fields(None)
+    if index < 0 or index >= len(decisions):
+        return empty
+
+    decision = decisions[index]
+    move = getattr(decision, "event", None)
+    if not isinstance(move, Move):
+        return empty
+
+    if index > 0:
+        previous = decisions[index - 1]
+        if previous.game_number == decision.game_number and isinstance(previous.event, CubeAction):
+            previous_cube = previous.event
+            if previous_cube.player == move.player:
+                evaluation = (
+                    previous_cube.double_take_analysis
+                    if previous_cube.doubled and previous_cube.took
+                    else previous_cube.no_double_analysis
+                )
+                if valid_probability_evaluation(evaluation):
+                    return probability_fields(evaluation)
+
+            # Once the cube was actually turned, an earlier checker evaluation
+            # belongs to the old cube state and is not a valid fallback.
+            if previous_cube.doubled:
+                return empty
+
+    # Normal no-double turn with missing cube analysis: use the preceding
+    # opponent move's analysed played result, which is the same board before
+    # this roll. XG stores it from that opponent's perspective.
+    for prior_index in range(index - 1, -1, -1):
+        prior = decisions[prior_index]
+        if prior.game_number != decision.game_number:
+            break
+        prior_event = prior.event
+        if isinstance(prior_event, CubeAction):
+            continue
+        if not isinstance(prior_event, Move):
+            continue
+        if prior_event.player == move.player:
+            break
+        played_index = prior_event.played_index
+        evaluation = (
+            prior_event.candidates[played_index].evaluation
+            if played_index is not None and 0 <= played_index < len(prior_event.candidates)
+            else None
+        )
+        if valid_probability_evaluation(evaluation):
+            return probability_fields(evaluation, invert=True)
+        break
+
+    return empty
+
+
 def terminal_probability_fields(*, win: bool) -> dict[str, float]:
     """Return a terminal single-game result for an accepted Pass/Drop.
 
@@ -770,6 +838,7 @@ def make_checker_row(
     *,
     standalone: bool = False,
     source_identity: str | None = None,
+    pre_roll_rates: dict[str, float | None] | None = None,
 ) -> dict[str, Any] | None:
     actor = player_name(match, move.player)
     if not cfg["includeCheckerErrors"]:
@@ -806,6 +875,16 @@ def make_checker_row(
     opponent = player_name(match, -move.player)
     identity = source_identity or match.identity_hash
     row_id = event_id(identity, decision.game_number, decision.move_number, "checker", actor)
+    pre_roll = pre_roll_rates if pre_roll_rates is not None else probability_fields(None)
+    pre_roll_fields = {
+        "preRollWinRate": pre_roll.get("winRate"),
+        "preRollGammonWinRate": pre_roll.get("gammonWinRate"),
+        "preRollBackgammonWinRate": pre_roll.get("backgammonWinRate"),
+        "preRollLoseRate": pre_roll.get("loseRate"),
+        "preRollGammonLoseRate": pre_roll.get("gammonLoseRate"),
+        "preRollBackgammonLoseRate": pre_roll.get("backgammonLoseRate"),
+        "preRollEquity": pre_roll.get("equity"),
+    }
 
     return {
         "id": row_id,
@@ -837,6 +916,7 @@ def make_checker_row(
         "position": position_for_view(move.position_before.points, move.player),
         "candidates": checker_candidates,
         **probability_fields(actual_evaluation),
+        **pre_roll_fields,
         "matchDate": match.header.date.date().isoformat() if match.header.date else None,
     }
 
@@ -1597,7 +1677,12 @@ def build() -> None:
     for source in imported_files:
         match = xgread.read(source)
         standalone = is_xgp_source(source)
+        all_decisions = list(match.decisions())
         decisions = primary_decisions(source, match)
+        decision_indexes = {
+            (item.game_number, item.move_number): index
+            for index, item in enumerate(all_decisions)
+        }
         source_identity = xgp_identity(decisions) if standalone else match.identity_hash
 
         if standalone:
@@ -1644,6 +1729,10 @@ def build() -> None:
                     make_checker_row(
                         match, decision, event, cfg,
                         standalone=standalone, source_identity=source_identity,
+                        pre_roll_rates=checker_pre_roll_probability_fields(
+                            all_decisions,
+                            decision_indexes.get((decision.game_number, decision.move_number), -1),
+                        ),
                     )
                 ]
             elif isinstance(event, CubeAction):

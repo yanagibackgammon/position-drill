@@ -572,6 +572,12 @@ run("Checker candidate can be selected and deselected by pressing the same move"
     gammonLoseRate: 0.10,
     backgammonWinRate: 0.01,
     backgammonLoseRate: 0.01,
+    preRollWinRate: 0.44,
+    preRollLoseRate: 0.56,
+    preRollGammonWinRate: 0.08,
+    preRollGammonLoseRate: 0.12,
+    preRollBackgammonWinRate: 0.01,
+    preRollBackgammonLoseRate: 0.02,
     quizBoardImage: "assets/boards-quiz/CHK1.svg",
     candidates: [{
       rank: 1,
@@ -600,7 +606,8 @@ run("Checker candidate can be selected and deselected by pressing the same move"
 
   evaluate("selectCheckerCandidate(0)");
   assert.equal(evaluate("state.selectedCheckerCandidateIndex"), null);
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />44\.0%<\/span>/);
+  assert.doesNotMatch(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
   assert.equal(
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/CHK1.svg",
@@ -625,6 +632,12 @@ run("CHECK auto-selects the best Checker move and deselect restores pre-roll sta
     gammonLoseRate: 0.10,
     backgammonWinRate: 0.01,
     backgammonLoseRate: 0.01,
+    preRollWinRate: 0.47,
+    preRollLoseRate: 0.53,
+    preRollGammonWinRate: 0.09,
+    preRollGammonLoseRate: 0.11,
+    preRollBackgammonWinRate: 0.01,
+    preRollBackgammonLoseRate: 0.02,
     quizBoardImage: "assets/boards-quiz/AUTO-C.svg",
     candidates: [{
       rank: 1,
@@ -658,7 +671,35 @@ run("CHECK auto-selects the best Checker move and deselect restores pre-roll sta
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/AUTO-C.svg",
   );
-  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />47\.0%<\/span>/);
+  assert.doesNotMatch(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+});
+
+
+run("Checker pre-roll rates stay blank when XG has no exact pre-roll evaluation", () => {
+  context.noPreRollPosition = {
+    decisionKind: "checker",
+    position: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 0,
+    opponentScore: 0,
+    cubeValue: 1,
+    winRate: 0.71,
+    loseRate: 0.29,
+    gammonWinRate: 0.20,
+    gammonLoseRate: 0.05,
+    backgammonWinRate: 0.03,
+    backgammonLoseRate: 0.01,
+    preRollWinRate: null,
+    preRollLoseRate: null,
+    preRollGammonWinRate: null,
+    preRollGammonLoseRate: null,
+    preRollBackgammonWinRate: null,
+    preRollBackgammonLoseRate: null,
+  };
+  const html = evaluate("summaryAnalysisHTML(noPreRollPosition)");
+  assert.doesNotMatch(html, />71\.0%<\/span>/);
+  assert.match(html, />—<\/span>/);
 });
 
 run("CHECK auto-selects the best Double action and deselect restores pre-action state", () => {

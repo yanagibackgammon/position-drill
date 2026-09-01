@@ -718,24 +718,41 @@ function summaryAnalysisHTML(position, selectedCandidate = null) {
   const checkerRateSource = checkerCandidate && checkerCandidateHasRates(checkerCandidate)
     ? checkerCandidate
     : position;
+  // With no Checker move selected, show the position BEFORE the dice roll,
+  // rather than the move that happened in the recorded match. New builds
+  // publish explicit preRoll* fields for this state. The property check keeps
+  // backward compatibility with older cached JSON that lacks those fields.
+  const hasCheckerPreRollRates = position.decisionKind === "checker"
+    && !checkerCandidate
+    && Object.prototype.hasOwnProperty.call(position, "preRollWinRate");
+  const checkerBaseRates = hasCheckerPreRollRates
+    ? {
+        winRate: position.preRollWinRate,
+        loseRate: position.preRollLoseRate,
+        gammonWinRate: position.preRollGammonWinRate,
+        gammonLoseRate: position.preRollGammonLoseRate,
+        backgammonWinRate: position.preRollBackgammonWinRate,
+        backgammonLoseRate: position.preRollBackgammonLoseRate,
+      }
+    : checkerRateSource;
   const winRate = selectedRateSource?.winRate ?? (isTake && position.quizWinRate != null
     ? position.quizWinRate
-    : checkerRateSource.winRate);
+    : checkerBaseRates.winRate);
   const loseRate = selectedRateSource?.loseRate ?? (isTake && position.quizLoseRate != null
     ? position.quizLoseRate
-    : checkerRateSource.loseRate);
+    : checkerBaseRates.loseRate);
   const gammonWinRate = selectedRateSource?.gammonWinRate ?? (isTake && position.quizGammonWinRate != null
     ? position.quizGammonWinRate
-    : checkerRateSource.gammonWinRate);
+    : checkerBaseRates.gammonWinRate);
   const gammonLoseRate = selectedRateSource?.gammonLoseRate ?? (isTake && position.quizGammonLoseRate != null
     ? position.quizGammonLoseRate
-    : checkerRateSource.gammonLoseRate);
+    : checkerBaseRates.gammonLoseRate);
   const backgammonWinRate = selectedRateSource?.backgammonWinRate ?? (isTake && position.quizBackgammonWinRate != null
     ? position.quizBackgammonWinRate
-    : checkerRateSource.backgammonWinRate);
+    : checkerBaseRates.backgammonWinRate);
   const backgammonLoseRate = selectedRateSource?.backgammonLoseRate ?? (isTake && position.quizBackgammonLoseRate != null
     ? position.quizBackgammonLoseRate
-    : checkerRateSource.backgammonLoseRate);
+    : checkerBaseRates.backgammonLoseRate);
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;

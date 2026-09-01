@@ -19,6 +19,56 @@ class BuildLogicTests(unittest.TestCase):
         self.assertEqual(winner["gammonWinRate"], 0.0)
         self.assertEqual(loser["backgammonLoseRate"], 0.0)
 
+    def test_checker_pre_roll_rates_use_preceding_cube_analysis(self) -> None:
+        evaluation = build.Evaluation(
+            lose_bg=0.02,
+            lose_gammon=0.12,
+            lose_single=0.44,
+            win_single=0.56,
+            win_gammon=0.18,
+            win_bg=0.03,
+            equity=0.22,
+        )
+        position = build.xgread.Position(tuple([0] * 26))
+        cube = build.CubeAction(
+            player=1,
+            doubled=False,
+            took=None,
+            beavered=False,
+            cube_value=0,
+            position=position,
+            error_double=0.0,
+            error_take=build.xgread.NOT_ANALYSED,
+            no_double_equity=0.22,
+            double_take_equity=0.20,
+            double_drop_equity=1.0,
+            no_double_analysis=evaluation,
+            double_take_analysis=evaluation,
+            flagged=False,
+            comment_index=-1,
+        )
+        move = build.Move(
+            player=1,
+            position_before=position,
+            position_after=position,
+            dice=(3, 1),
+            moves=(),
+            cube_value=0,
+            error=0.0,
+            luck=0.0,
+            candidates=(),
+            flagged=False,
+            comment_index=-1,
+        )
+        decisions = [
+            SimpleNamespace(game_number=1, event=cube),
+            SimpleNamespace(game_number=1, event=move),
+        ]
+        rates = build.checker_pre_roll_probability_fields(decisions, 1)
+        self.assertAlmostEqual(rates["winRate"], 0.56)
+        self.assertAlmostEqual(rates["gammonWinRate"], 0.18)
+        self.assertAlmostEqual(rates["loseRate"], 0.44)
+
     def test_cube_action_render_state_applies_selected_cube_to_take_view(self) -> None:
         row = {
             "decisionKind": "take",
