@@ -29,6 +29,7 @@ function dummyElement() {
     querySelector() { return dummyElement(); },
     querySelectorAll() { return []; },
     contains() { return true; },
+    scrollIntoView() {},
   };
 }
 
@@ -315,7 +316,7 @@ run("Checker candidate selection switches only W/GW/BG rates and graph", () => {
   assert.match(summary, /left:55\.000%/);
 });
 
-run("Cube actions remain non-selectable", () => {
+run("Cube actions expose selectable rows without checker-only attributes", () => {
   context.cubePosition = {
     decisionKind: "double",
     decisionType: "cube",
@@ -328,8 +329,9 @@ run("Cube actions remain non-selectable", () => {
   };
 
   const html = evaluate("actionAnalysisHTML(cubePosition)");
+  assert.match(html, /data-cube-candidate-index=/);
+  assert.match(html, /is-cube-candidate/);
   assert.doesNotMatch(html, /data-checker-candidate-index/);
-  assert.doesNotMatch(html, /is-checker-candidate/);
 });
 
 
@@ -603,6 +605,206 @@ run("Checker candidate can be selected and deselected by pressing the same move"
     evaluate("elements.board.src"),
     "https://example.test/position-drill/assets/boards-quiz/CHK1.svg",
   );
+});
+
+run("CHECK auto-selects the best Checker move and deselect restores pre-roll state", () => {
+  context.autoCheckerPosition = {
+    id: "AUTO-C",
+    decisionKind: "checker",
+    decisionType: "checker",
+    position: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 0,
+    opponentScore: 0,
+    cubeValue: 1,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.50,
+    loseRate: 0.50,
+    gammonWinRate: 0.10,
+    gammonLoseRate: 0.10,
+    backgammonWinRate: 0.01,
+    backgammonLoseRate: 0.01,
+    quizBoardImage: "assets/boards-quiz/AUTO-C.svg",
+    candidates: [{
+      rank: 1,
+      action: "13/8 6/5",
+      moveBoardImage: "assets/boards-moves/AUTO-C-1.svg",
+      equityLoss: 0,
+      pipBlack: 38,
+      pipWhite: 41,
+      winRate: 0.63,
+      loseRate: 0.37,
+      gammonWinRate: 0.15,
+      gammonLoseRate: 0.07,
+      backgammonWinRate: 0.02,
+      backgammonLoseRate: 0.01,
+    }],
+  };
+
+  evaluate("state.current = autoCheckerPosition; state.answered = false; state.selectedCheckerCandidateIndex = null");
+  evaluate("showAnswer()");
+  assert.equal(evaluate("state.selectedCheckerCandidateIndex"), 0);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-moves/AUTO-C-1.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />63\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), /class="pip-real">38(?: [^<]+)?<\/span>/);
+
+  evaluate("selectCheckerCandidate(0)");
+  assert.equal(evaluate("state.selectedCheckerCandidateIndex"), null);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-C.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+});
+
+run("CHECK auto-selects the best Double action and deselect restores pre-action state", () => {
+  context.autoDoublePosition = {
+    id: "AUTO-D",
+    decisionKind: "double",
+    decisionType: "cube",
+    position: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 1,
+    opponentScore: 2,
+    cubeValue: 1,
+    isCrawford: false,
+    isPostCrawford: false,
+    winRate: 0.50,
+    loseRate: 0.50,
+    gammonWinRate: 0.10,
+    gammonLoseRate: 0.10,
+    backgammonWinRate: 0.01,
+    backgammonLoseRate: 0.01,
+    quizBoardImage: "assets/boards-quiz/AUTO-D.svg",
+    bestAction: "Double/Take",
+    candidates: [
+      {
+        rank: 1,
+        action: "No Double",
+        equityDifference: -0.04,
+        cubeValue: 1,
+        cubeOwner: "center",
+        actionBoardImage: "assets/boards-actions/AUTO-D-1.svg",
+        winRate: 0.51,
+        loseRate: 0.49,
+        gammonWinRate: 0.10,
+        gammonLoseRate: 0.09,
+        backgammonWinRate: 0.01,
+        backgammonLoseRate: 0.01,
+      },
+      {
+        rank: 2,
+        action: "Double/Take",
+        equityDifference: null,
+        cubeValue: 2,
+        cubeOwner: "opponent",
+        actionBoardImage: "assets/boards-actions/AUTO-D-2.svg",
+        winRate: 0.61,
+        loseRate: 0.39,
+        gammonWinRate: 0.17,
+        gammonLoseRate: 0.07,
+        backgammonWinRate: 0.02,
+        backgammonLoseRate: 0.01,
+      },
+    ],
+  };
+
+  evaluate("state.current = autoDoublePosition; state.answered = false; state.selectedCubeCandidateIndex = null");
+  evaluate("showAnswer()");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-actions/AUTO-D-2.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />61\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+
+  evaluate("selectCubeCandidate(1)");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
+});
+
+run("CHECK auto-selects the best Take/Pass response and deselect restores pre-offer state", () => {
+  context.autoTakePosition = {
+    id: "AUTO-T",
+    decisionKind: "take",
+    decisionType: "cube",
+    position: Array(26).fill(0),
+    quizPosition: Array(26).fill(0),
+    matchLength: 7,
+    playerScore: 2,
+    opponentScore: 1,
+    quizPlayerScore: 1,
+    quizOpponentScore: 2,
+    cubeValue: 1,
+    isCrawford: false,
+    isPostCrawford: false,
+    quizWinRate: 0.44,
+    quizLoseRate: 0.56,
+    quizGammonWinRate: 0.08,
+    quizGammonLoseRate: 0.13,
+    quizBackgammonWinRate: 0.01,
+    quizBackgammonLoseRate: 0.02,
+    quizBoardImage: "assets/boards-quiz/AUTO-T.svg",
+    quizCandidates: [
+      {
+        rank: 1,
+        action: "Pass",
+        equityDifference: null,
+        cubeValue: 2,
+        cubeOwner: "onRoll",
+        actionBoardImage: "assets/boards-actions/AUTO-T-1.svg",
+        winRate: 0,
+        loseRate: 1,
+        gammonWinRate: 0,
+        gammonLoseRate: 0,
+        backgammonWinRate: 0,
+        backgammonLoseRate: 0,
+      },
+      {
+        rank: 2,
+        action: "Take",
+        equityDifference: -0.05,
+        cubeValue: 2,
+        cubeOwner: "onRoll",
+        actionBoardImage: "assets/boards-actions/AUTO-T-2.svg",
+        winRate: 0.42,
+        loseRate: 0.58,
+        gammonWinRate: 0.08,
+        gammonLoseRate: 0.14,
+        backgammonWinRate: 0.01,
+        backgammonLoseRate: 0.02,
+      },
+    ],
+  };
+
+  evaluate("state.current = autoTakePosition; state.answered = false; state.selectedCubeCandidateIndex = null");
+  evaluate("showAnswer()");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-actions/AUTO-T-1.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />0\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">2<\/span>/);
+
+  evaluate("selectCubeCandidate(0)");
+  assert.equal(evaluate("state.selectedCubeCandidateIndex"), null);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
+  );
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />44\.0%<\/span>/);
+  assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
 });
 
 console.log("All app regression tests passed.");

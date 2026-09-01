@@ -304,12 +304,12 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
 .action-option.is-best { color: var(--white); font-size: var(--font-md); font-weight: 700; }
 
-.quiz-card.is-answered .action-option.is-checker-candidate {
+.quiz-card.is-answered .action-option.is-action-candidate {
   cursor: pointer;
   touch-action: manipulation;
 }
 
-.quiz-card.is-answered .action-option.is-checker-candidate.is-selected {
+.quiz-card.is-answered .action-option.is-action-candidate.is-selected {
   width: calc(100% + 30px);
   margin-left: -15px;
   margin-right: -15px;
@@ -633,11 +633,11 @@ main { width: min(920px, calc(100% - 24px)); margin: 0 auto; padding: 16px 0 48p
 
   .action-error { font-size: var(--font-md); }
 
-  .action-option.is-checker-candidate .best-marker {
+  .action-option.is-action-candidate .best-marker {
     align-self: center;
   }
 
-  .quiz-card.is-answered .action-option.is-checker-candidate.is-selected {
+  .quiz-card.is-answered .action-option.is-action-candidate.is-selected {
     width: calc(100% + 20px);
     margin-left: -10px;
     margin-right: -10px;

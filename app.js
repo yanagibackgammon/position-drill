@@ -39,6 +39,7 @@ const state = {
   answered: false,
   pipRevealed: false,
   selectedCheckerCandidateIndex: null,
+  selectedCubeCandidateIndex: null,
   progress: {},
   daily: { day: "", correct: 0, wrong: 0 },
   dailyResetTimer: null,
@@ -384,6 +385,10 @@ function absoluteCheckerMoveBoardUrl(candidate) {
   return candidate?.moveBoardImage ? absoluteAssetUrl(candidate.moveBoardImage) : "";
 }
 
+function absoluteCubeActionBoardUrl(candidate) {
+  return candidate?.actionBoardImage ? absoluteAssetUrl(candidate.actionBoardImage) : "";
+}
+
 const boardPreloadCache = new Map();
 
 function trimBoardPreloadCache() {
@@ -583,6 +588,43 @@ function checkerCandidateHasRates(candidate) {
   ].every((key) => candidate[key] != null && Number.isFinite(Number(candidate[key])));
 }
 
+function orderedCheckerCandidates(position) {
+  return (Array.isArray(position?.candidates) ? position.candidates : [])
+    .filter((candidate) => {
+      const loss = Number(candidate?.equityLoss);
+      return Number.isFinite(loss) && loss >= 0 && loss < 100;
+    })
+    .slice()
+    .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+}
+
+function cubeActionCandidates(position) {
+  if (!position || position.decisionType !== "cube") return [];
+  const source = position.decisionKind === "take" ? position.quizCandidates : position.candidates;
+  return (Array.isArray(source) ? source : [])
+    .filter((candidate) => candidate && candidate.action)
+    .slice(0, position.decisionKind === "take" ? 2 : 3);
+}
+
+function bestCubeCandidateIndex(position) {
+  const candidates = cubeActionCandidates(position);
+  if (!candidates.length) return null;
+  if (position.decisionKind === "take") return 0;
+
+  const bestAction = String(position.bestAction || "").trim();
+  const exact = candidates.findIndex(
+    (candidate) => String(candidate.action || "").trim() === bestAction,
+  );
+  if (exact >= 0) return exact;
+
+  // Too Good is the same no-offer continuation as the first cube candidate.
+  return 0;
+}
+
+function candidateHasRates(candidate) {
+  return checkerCandidateHasRates(candidate);
+}
+
 function actionAnalysisHTML(position) {
   const playedAction = displayedPlayedAction(position);
   const isPlayed = (action) => playedAction && String(action || "").trim() === playedAction;
@@ -596,7 +638,7 @@ function actionAnalysisHTML(position) {
         const best = index === 0;
         const tone = best ? "" : errorToneClass(candidate.equityDifference);
         return `
-        <div class="action-option ${best ? "is-best" : ""}">
+        <div class="action-option is-action-candidate is-cube-candidate ${best ? "is-best" : ""}" data-cube-candidate-index="${index}" role="button" tabindex="0">
           <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
           <span class="action-error ${best ? "best-marker" : tone}">${escapeHTML(best ? "BEST" : formatSignedEquity(candidate.equityDifference))}</span>
         </div>`;
@@ -608,12 +650,13 @@ function actionAnalysisHTML(position) {
       .slice(0, 3);
     const hasPlayedOutcome = outcomes.some((candidate) => isPlayed(candidate.action));
     const bestAction = position.bestAction || "—";
+    const bestIndex = bestCubeCandidateIndex(position);
     const rows = [
-      `<div class="action-option is-best"><span class="action-text ${!hasPlayedOutcome && isPlayed(bestAction) ? "is-played" : ""}">${escapeHTML(bestAction)}</span><span class="action-error best-marker">BEST</span></div>`,
-      ...outcomes.map((candidate) => {
+      `<div class="action-option is-best is-action-candidate is-cube-candidate"${bestIndex != null ? ` data-cube-candidate-index="${bestIndex}" role="button" tabindex="0"` : ""}><span class="action-text ${!hasPlayedOutcome && isPlayed(bestAction) ? "is-played" : ""}">${escapeHTML(bestAction)}</span><span class="action-error best-marker">BEST</span></div>`,
+      ...outcomes.map((candidate, index) => {
         const tone = errorToneClass(candidate.equityDifference);
         return `
-        <div class="action-option">
+        <div class="action-option is-action-candidate is-cube-candidate" data-cube-candidate-index="${index}" role="button" tabindex="0">
           <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
           <span class="action-error ${tone}">${escapeHTML(formatSignedEquity(candidate.equityDifference))}</span>
         </div>`;
@@ -622,13 +665,7 @@ function actionAnalysisHTML(position) {
     return `<div class="action-list">${rows.join("")}</div>`;
   }
 
-  const ordered = (Array.isArray(position.candidates) ? position.candidates : [])
-    .filter((candidate) => {
-      const loss = Number(candidate?.equityLoss);
-      return Number.isFinite(loss) && loss >= 0 && loss < 100;
-    })
-    .slice()
-    .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+  const ordered = orderedCheckerCandidates(position);
 
   // Checker Play shows every analysed move exported by XG, not just the top three.
   const candidates = ordered.slice();
@@ -649,17 +686,17 @@ function actionAnalysisHTML(position) {
   return `<div class="action-list">${candidates.map((candidate, index) => {
     const best = index === 0 || Number(candidate.rank) === 1;
     const tone = best ? "" : errorToneClass(candidate.equityLoss, { lossMagnitude: true });
-    const inspectable = checkerCandidateHasRates(candidate);
     return `
-      <div class="action-option ${best ? "is-best" : ""} ${inspectable ? "is-checker-candidate" : ""}"${inspectable ? ` data-checker-candidate-index="${index}" role="button" tabindex="0"` : ""}>
+      <div class="action-option is-action-candidate is-checker-candidate ${best ? "is-best" : ""}" data-checker-candidate-index="${index}" role="button" tabindex="0">
         <span class="action-text ${isPlayed(candidate.action) ? "is-played" : ""}">${escapeHTML(candidate.action || "—")}</span>
         <span class="action-error ${best ? "best-marker" : tone}">${escapeHTML(best ? "BEST" : formatError(candidate.equityLoss))}</span>
       </div>`;
   }).join("")}</div>`;
 }
 
-function summaryAnalysisHTML(position, checkerCandidate = null) {
-  const pips = position.decisionKind === "checker" && checkerCandidate
+function summaryAnalysisHTML(position, selectedCandidate = null) {
+  const checkerCandidate = position.decisionKind === "checker" ? selectedCandidate : null;
+  const pips = checkerCandidate
     ? checkerCandidatePipCounts(position, checkerCandidate)
     : pipCounts(position);
   const pipDisplay = pipDisplayValues(pips);
@@ -674,28 +711,31 @@ function summaryAnalysisHTML(position, checkerCandidate = null) {
   const rawOpponentScore = isTake && position.quizOpponentScore != null
     ? position.quizOpponentScore
     : position.opponentScore;
-  const rawCubeValue = position.cubeValue;
-  const checkerRateSource = position.decisionKind === "checker" && checkerCandidate
+  const rawCubeValue = selectedCandidate?.cubeValue ?? position.cubeValue;
+  const selectedRateSource = selectedCandidate && candidateHasRates(selectedCandidate)
+    ? selectedCandidate
+    : null;
+  const checkerRateSource = checkerCandidate && checkerCandidateHasRates(checkerCandidate)
     ? checkerCandidate
     : position;
-  const winRate = isTake && position.quizWinRate != null
+  const winRate = selectedRateSource?.winRate ?? (isTake && position.quizWinRate != null
     ? position.quizWinRate
-    : checkerRateSource.winRate;
-  const loseRate = isTake && position.quizLoseRate != null
+    : checkerRateSource.winRate);
+  const loseRate = selectedRateSource?.loseRate ?? (isTake && position.quizLoseRate != null
     ? position.quizLoseRate
-    : checkerRateSource.loseRate;
-  const gammonWinRate = isTake && position.quizGammonWinRate != null
+    : checkerRateSource.loseRate);
+  const gammonWinRate = selectedRateSource?.gammonWinRate ?? (isTake && position.quizGammonWinRate != null
     ? position.quizGammonWinRate
-    : checkerRateSource.gammonWinRate;
-  const gammonLoseRate = isTake && position.quizGammonLoseRate != null
+    : checkerRateSource.gammonWinRate);
+  const gammonLoseRate = selectedRateSource?.gammonLoseRate ?? (isTake && position.quizGammonLoseRate != null
     ? position.quizGammonLoseRate
-    : checkerRateSource.gammonLoseRate;
-  const backgammonWinRate = isTake && position.quizBackgammonWinRate != null
+    : checkerRateSource.gammonLoseRate);
+  const backgammonWinRate = selectedRateSource?.backgammonWinRate ?? (isTake && position.quizBackgammonWinRate != null
     ? position.quizBackgammonWinRate
-    : checkerRateSource.backgammonWinRate;
-  const backgammonLoseRate = isTake && position.quizBackgammonLoseRate != null
+    : checkerRateSource.backgammonWinRate);
+  const backgammonLoseRate = selectedRateSource?.backgammonLoseRate ?? (isTake && position.quizBackgammonLoseRate != null
     ? position.quizBackgammonLoseRate
-    : checkerRateSource.backgammonLoseRate;
+    : checkerRateSource.backgammonLoseRate);
 
   const rawMatchLength = Number(position.matchLength) || 0;
   const isDmp = rawMatchLength === 1;
@@ -961,16 +1001,10 @@ function selectCheckerCandidate(index) {
   if (!state.current || !state.answered || state.current.decisionKind !== "checker") return;
 
   const numericIndex = Number(index);
-  const candidates = (Array.isArray(state.current.candidates) ? state.current.candidates : [])
-    .filter((candidate) => {
-      const loss = Number(candidate?.equityLoss);
-      return Number.isFinite(loss) && loss >= 0 && loss < 100;
-    })
-    .slice()
-    .sort((a, b) => Number(a.rank || 0) - Number(b.rank || 0));
+  const candidates = orderedCheckerCandidates(state.current);
 
   const candidate = candidates[numericIndex];
-  if (!checkerCandidateHasRates(candidate)) return;
+  if (!candidate) return;
 
   elements.actionAnalysis
     .querySelectorAll(".action-option.is-selected")
@@ -1005,6 +1039,47 @@ function selectCheckerCandidate(index) {
   }
 }
 
+function selectCubeCandidate(index) {
+  if (!state.current || !state.answered || state.current.decisionType !== "cube") return;
+
+  const numericIndex = Number(index);
+  const candidates = cubeActionCandidates(state.current);
+  const candidate = candidates[numericIndex];
+  if (!candidate) return;
+
+  elements.actionAnalysis
+    .querySelectorAll(".action-option.is-selected")
+    .forEach((row) => row.classList.remove("is-selected"));
+
+  if (state.selectedCubeCandidateIndex === numericIndex) {
+    state.selectedCubeCandidateIndex = null;
+    elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
+    elements.summaryAnalysis.scrollTop = 0;
+    resetSummaryTextScroll();
+    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
+    return;
+  }
+
+  state.selectedCubeCandidateIndex = numericIndex;
+  const selected = elements.actionAnalysis.querySelector(
+    `[data-cube-candidate-index="${numericIndex}"]`,
+  );
+  if (selected) selected.classList.add("is-selected");
+
+  elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current, candidate);
+  elements.summaryAnalysis.scrollTop = 0;
+  resetSummaryTextScroll();
+
+  const actionBoardUrl = absoluteCubeActionBoardUrl(candidate);
+  if (actionBoardUrl) {
+    elements.board.src = actionBoardUrl;
+    elements.board.alt = `${candidate.action || "Cube action"} position`;
+  } else {
+    elements.board.src = absoluteBoardUrl(state.current);
+  }
+}
+
 function handleCheckerCandidateInteraction(event) {
   if (!state.current || !state.answered || state.current.decisionKind !== "checker") return;
 
@@ -1017,10 +1092,23 @@ function handleCheckerCandidateInteraction(event) {
   selectCheckerCandidate(row.dataset.checkerCandidateIndex);
 }
 
+function handleCubeCandidateInteraction(event) {
+  if (!state.current || !state.answered || state.current.decisionType !== "cube") return;
+
+  const row = event.target.closest?.("[data-cube-candidate-index]");
+  if (!row || !elements.actionAnalysis.contains(row)) return;
+
+  if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") return;
+  if (event.type === "keydown") event.preventDefault();
+
+  selectCubeCandidate(row.dataset.cubeCandidateIndex);
+}
+
 function resetAnswerUI() {
   state.answered = false;
   state.pipRevealed = false;
   state.selectedCheckerCandidateIndex = null;
+  state.selectedCubeCandidateIndex = null;
   elements.card.classList.remove("is-answered");
   elements.card.classList.remove("is-pip-revealed");
   elements.answerPanel.hidden = false;
@@ -1039,6 +1127,7 @@ function renderEmptyDrillState() {
   state.answered = false;
   state.pipRevealed = false;
   state.selectedCheckerCandidateIndex = null;
+  state.selectedCubeCandidateIndex = null;
 
   // Keep every layout area mounted so filtering to zero positions does not
   // cause the page to jump or collapse.
@@ -1130,6 +1219,7 @@ function showAnswer() {
   state.answered = true;
   state.pipRevealed = false;
   state.selectedCheckerCandidateIndex = null;
+  state.selectedCubeCandidateIndex = null;
   elements.card.classList.remove("is-pip-revealed");
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
@@ -1137,6 +1227,14 @@ function showAnswer() {
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
+
+  if (state.current.decisionKind === "checker") {
+    selectCheckerCandidate(0);
+  } else if (state.current.decisionType === "cube") {
+    const bestIndex = bestCubeCandidateIndex(state.current);
+    if (bestIndex != null) selectCubeCandidate(bestIndex);
+  }
+
   elements.answerPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
@@ -1351,6 +1449,8 @@ function installEvents() {
   elements.summaryAnalysis.addEventListener("click", togglePreAnswerPip);
   elements.actionAnalysis.addEventListener("click", handleCheckerCandidateInteraction);
   elements.actionAnalysis.addEventListener("keydown", handleCheckerCandidateInteraction);
+  elements.actionAnalysis.addEventListener("click", handleCubeCandidateInteraction);
+  elements.actionAnalysis.addEventListener("keydown", handleCubeCandidateInteraction);
 }
 
 async function syncPositions({ initial = false } = {}) {

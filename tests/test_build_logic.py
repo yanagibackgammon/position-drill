@@ -11,6 +11,43 @@ from vendor.xgread._notation import _collapse_unambiguous_hops
 
 
 class BuildLogicTests(unittest.TestCase):
+    def test_terminal_probability_fields_are_single_game_results(self) -> None:
+        winner = build.terminal_probability_fields(win=True)
+        loser = build.terminal_probability_fields(win=False)
+        self.assertEqual((winner["winRate"], winner["loseRate"]), (1.0, 0.0))
+        self.assertEqual((loser["winRate"], loser["loseRate"]), (0.0, 1.0))
+        self.assertEqual(winner["gammonWinRate"], 0.0)
+        self.assertEqual(loser["backgammonLoseRate"], 0.0)
+
+    def test_cube_action_render_state_applies_selected_cube_to_take_view(self) -> None:
+        row = {
+            "decisionKind": "take",
+            "position": [0] * 26,
+            "quizPosition": [0] * 26,
+            "player": "Doubler",
+            "opponent": "Taker",
+            "quizPlayer": "Taker",
+            "quizOpponent": "Doubler",
+            "playerScore": 2,
+            "opponentScore": 1,
+            "quizPlayerScore": 1,
+            "quizOpponentScore": 2,
+            "onRollScore": 2,
+            "onRollOpponentScore": 1,
+            "quizOnRollScore": 1,
+            "quizOnRollOpponentScore": 2,
+            "cubeValue": 2,
+            "cubeOwner": "onRoll",
+        }
+        rendered, marker = build.cube_action_render_state(
+            row,
+            {"cubeValue": 4, "cubeOwner": "onRoll"},
+        )
+        self.assertEqual(rendered["position"], row["quizPosition"])
+        self.assertEqual(rendered["cubeValue"], 4)
+        self.assertEqual(rendered["cubeOwner"], "onRoll")
+        self.assertEqual(marker, "white")
+
     def test_new_window_is_seven_days(self) -> None:
         now = datetime(2026, 8, 24, 0, 0, tzinfo=UTC)
         self.assertTrue(build.source_is_new((now - timedelta(days=7)).isoformat(), now))

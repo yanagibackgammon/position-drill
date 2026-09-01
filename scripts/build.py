@@ -291,6 +291,23 @@ def probability_fields(evaluation: Evaluation | None, invert: bool = False) -> d
     }
 
 
+def terminal_probability_fields(*, win: bool) -> dict[str, float]:
+    """Return a terminal single-game result for an accepted Pass/Drop.
+
+    Once a player passes, the game is over: the winner's game win rate is
+    100%, the loser's is 0%, and no gammon/backgammon continuation remains.
+    """
+    return {
+        "winRate": 1.0 if win else 0.0,
+        "gammonWinRate": 0.0,
+        "backgammonWinRate": 0.0,
+        "loseRate": 0.0 if win else 1.0,
+        "gammonLoseRate": 0.0,
+        "backgammonLoseRate": 0.0,
+        "equity": None,
+    }
+
+
 RATE_FIELD_KEYS = (
     "winRate",
     "gammonWinRate",
@@ -716,6 +733,8 @@ def cube_candidate_payload(
         reference_key = "no_offer"
         reference_equity = no_offer_equity
 
+    current_cube = cube_value_number(cube.cube_value)
+    current_owner = "center" if cube.cube_value == 0 else "onRoll"
     raw_rows = [
         (
             "no_offer",
@@ -724,7 +743,7 @@ def cube_candidate_payload(
             first_available_evaluation(cube.no_double_analysis, position_evaluation),
         ),
         ("take", labels["take"], take_equity, position_evaluation),
-        ("pass", labels["pass"], pass_equity, position_evaluation),
+        ("pass", labels["pass"], pass_equity, None),
     ]
 
     return [
@@ -732,7 +751,13 @@ def cube_candidate_payload(
             "rank": order,
             "action": action,
             "equityDifference": None if key == reference_key else equity - reference_equity,
-            **probability_fields(evaluation),
+            "cubeValue": current_cube if key == "no_offer" else current_cube * 2,
+            "cubeOwner": current_owner if key == "no_offer" else "opponent",
+            **(
+                terminal_probability_fields(win=True)
+                if key == "pass"
+                else probability_fields(evaluation)
+            ),
         }
         for order, (key, action, equity, evaluation) in enumerate(raw_rows, start=1)
     ]
@@ -954,14 +979,32 @@ def take_quiz_candidate_payload(cube: CubeAction) -> list[dict[str, Any]]:
     ]
     responder_rows.sort(key=lambda item: item[1], reverse=True)
     best_equity = responder_rows[0][1]
-    return [
-        {
-            "rank": rank,
-            "action": action,
-            "equityDifference": None if rank == 1 else equity - best_equity,
-        }
-        for rank, (action, equity) in enumerate(responder_rows, start=1)
-    ]
+    offered_cube = cube_value_number(cube.cube_value) * 2
+    take_rates = probability_fields(
+        first_available_evaluation(cube.double_take_analysis, cube.no_double_analysis),
+        invert=True,
+    )
+    rows: list[dict[str, Any]] = []
+    for rank, (action, equity) in enumerate(responder_rows, start=1):
+        rows.append(
+            {
+                "rank": rank,
+                "action": action,
+                "equityDifference": None if rank == 1 else equity - best_equity,
+                "cubeValue": offered_cube,
+                # In the Take drill view the responder is black/bottom.  Once
+                # Take is chosen the cube belongs to that black player; for a
+                # Pass we keep the offered cube in the same visible location
+                # to show the action being answered.
+                "cubeOwner": "onRoll",
+                **(
+                    take_rates
+                    if action == "Take"
+                    else terminal_probability_fields(win=False)
+                ),
+            }
+        )
+    return rows
 
 
 def make_take_row(
@@ -1113,6 +1156,20 @@ def quiz_render_state(row: dict[str, Any]) -> tuple[dict[str, Any], str]:
         "cubeOwner": "center" if row["cubeOwner"] == "center" else "opponent",
     }
     return quiz_row, "white"
+
+
+def cube_action_render_state(
+    row: dict[str, Any],
+    candidate: dict[str, Any],
+) -> tuple[dict[str, Any], str]:
+    """Return the board state after selecting a cube-action candidate."""
+    render_row, marker = quiz_render_state(row)
+    action_row = dict(render_row)
+    if candidate.get("cubeValue") is not None:
+        action_row["cubeValue"] = candidate["cubeValue"]
+    if candidate.get("cubeOwner"):
+        action_row["cubeOwner"] = candidate["cubeOwner"]
+    return action_row, marker
 
 
 def render_board_svg(
@@ -1672,6 +1729,27 @@ def build() -> None:
                                 move_board_row,
                                 show_pip_counts=False,
                                 move_highlights=move_highlights,
+                            ),
+                            encoding="utf-8",
+                        )
+                elif row.get("decisionKind") in {"double", "take"}:
+                    action_candidates = (
+                        row.get("quizCandidates")
+                        if row.get("decisionKind") == "take"
+                        else row.get("candidates")
+                    ) or []
+                    for candidate in action_candidates:
+                        action_board_relative = (
+                            f"assets/boards-actions/{row['id']}-{int(candidate.get('rank') or 0)}.svg"
+                        )
+                        action_board_row, action_marker = cube_action_render_state(row, candidate)
+                        candidate["actionBoardImage"] = action_board_relative
+                        (DIST_DIR / action_board_relative).parent.mkdir(parents=True, exist_ok=True)
+                        (DIST_DIR / action_board_relative).write_text(
+                            render_board_svg(
+                                action_board_row,
+                                show_pip_counts=False,
+                                on_roll_marker=action_marker,
                             ),
                             encoding="utf-8",
                         )
