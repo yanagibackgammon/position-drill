@@ -13,6 +13,8 @@ const BOARD_PRELOAD_CACHE_LIMIT = 8;
 const LOCAL_DB_NAME = "position-drill-local-v1";
 const LOCAL_DB_STORE = "records";
 const NEW_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const SMARTPHONE_MEDIA_QUERY = "(max-width: 790px)";
+const DESKTOP_MEDIA_QUERY = "(min-width: 791px)";
 
 const KIND_LABELS = {
   all: "ALL",
@@ -26,6 +28,11 @@ const MATCH_TYPE_LABELS = {
   point: "Point Match",
   dmp: "DMP",
   unlimited: "Unlimited",
+};
+
+const FILTER_LABELS = {
+  task: "Task",
+  new: "New",
 };
 
 const KIND_ORDER = ["checker", "double", "take"];
@@ -351,11 +358,6 @@ function positionMatchType(position) {
 function positionsForKind(kind) {
   if (kind === "all") return state.positions.slice();
   return state.positions.filter((position) => decisionKind(position) === kind);
-}
-
-function positionsForMatchType(matchType) {
-  if (matchType === "all") return state.positions.slice();
-  return state.positions.filter((position) => positionMatchType(position) === matchType);
 }
 
 function normalizedSourceFolder(position) {
@@ -1348,13 +1350,7 @@ function judge(result) {
 }
 
 function kindDisplayLabels(kind) {
-  const label = kind === "checker"
-    ? "Checker Play"
-    : kind === "double"
-      ? "Double Action"
-      : kind === "take"
-        ? "Take/Pass"
-        : "ALL";
+  const label = KIND_LABELS[kind] || KIND_LABELS.all;
   return { full: label, short: label };
 }
 
@@ -1397,12 +1393,16 @@ function normalizeMatchTypeForKind(kind, matchType) {
   return matchTypeOrderForKind(kind).includes(matchType) ? matchType : "all";
 }
 
+function resetCurrentSelection() {
+  state.current = null;
+  resetBoardQueue();
+}
+
 function setKind(kind) {
   if (!KIND_ORDER.includes(kind)) return;
   state.currentKind = kind;
   state.matchType = normalizeMatchTypeForKind(kind, state.matchType);
-  state.current = null;
-  resetBoardQueue();
+  resetCurrentSelection();
   syncKindButtons();
   syncMatchTypeButtons();
   saveSettings();
@@ -1422,8 +1422,7 @@ function setMatchType(matchType) {
   if (!matchTypeOrderForKind().includes(matchType)) return;
   state.matchType = matchType;
 
-  state.current = null;
-  resetBoardQueue();
+  resetCurrentSelection();
   syncMatchTypeButtons();
   syncKindButtons();
   saveSettings();
@@ -1465,7 +1464,7 @@ function syncFilterButtons() {
   elements.filterButtons.forEach((button) => {
     const filter = button.dataset.filter;
     const active = Boolean(state.filters[filter]);
-    const activeLabel = filter === "task" ? "Task" : "New";
+    const activeLabel = FILTER_LABELS[filter] || FILTER_LABELS.new;
     const label = button.querySelector(".filter-label");
     if (label) label.textContent = activeLabel;
     button.classList.toggle("is-active", active);
@@ -1477,8 +1476,7 @@ function syncFilterButtons() {
 function toggleFilter(filter) {
   if (!(filter in state.filters)) return;
   state.filters[filter] = !state.filters[filter];
-  state.current = null;
-  resetBoardQueue();
+  resetCurrentSelection();
   syncFilterButtons();
   saveSettings();
   renderCurrent();
@@ -1525,7 +1523,7 @@ function positionFolderModalBelowMenu() {
   const top = Math.max(0, Math.round(menuRect.bottom));
   elements.folderModal.style.setProperty("--folder-modal-top", `${top}px`);
 
-  if (window.matchMedia("(min-width: 791px)").matches) {
+  if (window.matchMedia(DESKTOP_MEDIA_QUERY).matches) {
     const answerColumn = document.querySelector(".answer-column");
     const answerRect = answerColumn?.getBoundingClientRect?.();
     if (answerRect) {
@@ -1571,22 +1569,22 @@ function toggleFolderModal() {
 
 function setFolderFilter(filter) {
   const requested = String(filter || "");
-  if (!requested || !availableFolderFilters().includes(requested)) return;
+  const available = availableFolderFilters();
+  if (!requested || !available.includes(requested)) return;
 
   const selected = new Set(state.folderFilters);
   if (selected.has(requested)) selected.delete(requested);
   else selected.add(requested);
-  state.folderFilters = availableFolderFilters().filter((value) => selected.has(value));
+  state.folderFilters = available.filter((value) => selected.has(value));
 
-  state.current = null;
-  resetBoardQueue();
+  resetCurrentSelection();
   saveSettings();
   renderCurrent();
   renderFolderModal();
 }
 
 function installSmartphoneZoomGuard() {
-  const smartphone = window.matchMedia("(max-width: 790px)");
+  const smartphone = window.matchMedia(SMARTPHONE_MEDIA_QUERY);
   const preventGesture = (event) => {
     if (smartphone.matches) event.preventDefault();
   };
@@ -1615,6 +1613,8 @@ function installSmartphoneZoomGuard() {
 }
 
 function installEvents() {
+  const smartphone = window.matchMedia(SMARTPHONE_MEDIA_QUERY);
+
   elements.sortButton?.addEventListener("click", toggleFolderModal);
   elements.folderModalList?.addEventListener("click", (event) => {
     const option = event.target.closest?.("[data-folder-filter]");
@@ -1636,13 +1636,13 @@ function installEvents() {
     let startPoint = null;
 
     slot.addEventListener("touchstart", (event) => {
-      if (!window.matchMedia("(max-width: 790px)").matches || event.touches.length !== 1) return;
+      if (!smartphone.matches || event.touches.length !== 1) return;
       const touch = event.touches[0];
       startPoint = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
 
     slot.addEventListener("touchend", (event) => {
-      if (!startPoint || !window.matchMedia("(max-width: 790px)").matches) {
+      if (!startPoint || !smartphone.matches) {
         startPoint = null;
         return;
       }
