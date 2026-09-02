@@ -1032,7 +1032,7 @@ run("SP kind labels keep full Checker Play / Double Action names", () => {
   assert.equal(evaluate('kindDisplayLabels("double").short'), "Double Action");
 });
 
-run("Sort modal uses ALL as title state, not a selectable row, and root is 未分類", () => {
+run("Sort modal has no ALL row and root is 未分類", () => {
   evaluate(`
     state.positions = [
       {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7},
@@ -1044,6 +1044,19 @@ run("Sort modal uses ALL as title state, not a selectable row, and root is 未�
   assert.equal(evaluate('folderFilterDisplayLabel(ROOT_FOLDER_FILTER)'), "未分類");
   assert.equal(evaluate('elements.folderModalList.innerHTML.includes("未分類")'), true);
   assert.equal(evaluate('elements.folderModalList.innerHTML.includes("data-folder-filter=\\"\\"")'), false);
+});
+
+run("Folder selection keeps the sort modal open until the hamburger/X is pressed", () => {
+  evaluate(`
+    state.positions = [
+      {id:"A",decisionKind:"checker",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp",matchLength:7}
+    ];
+    state.folderFilter = "";
+    elements.folderModal.hidden = false;
+    setFolderFilter("MATCH");
+  `);
+  assert.equal(evaluate('state.folderFilter'), "MATCH");
+  assert.equal(evaluate('elements.folderModal.hidden'), false);
 });
 
 console.log("All app regression tests passed.");

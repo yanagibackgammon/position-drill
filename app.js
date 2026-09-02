@@ -1496,9 +1496,14 @@ function renderFolderModal() {
 function positionFolderModalBelowMenu() {
   if (!elements.folderModal || !elements.sortButton) return;
   const menuBar = elements.sortButton.closest?.(".menu-bar");
-  const rect = menuBar?.getBoundingClientRect?.();
-  if (!rect) return;
-  elements.folderModal.style.top = `${Math.max(0, Math.round(rect.bottom))}px`;
+  const menuRect = menuBar?.getBoundingClientRect?.();
+  const buttonRect = elements.sortButton.getBoundingClientRect?.();
+  if (!menuRect || !buttonRect) return;
+
+  const top = Math.max(0, Math.round(menuRect.bottom));
+  const right = Math.max(0, Math.round(window.innerWidth - buttonRect.right));
+  elements.folderModal.style.setProperty("--folder-modal-top", `${top}px`);
+  elements.folderModal.style.setProperty("--folder-modal-right", `${right}px`);
 }
 
 function setFolderModalOpenState(open) {
@@ -1542,7 +1547,7 @@ function setFolderFilter(filter) {
   resetBoardQueue();
   saveSettings();
   renderCurrent();
-  closeFolderModal();
+  renderFolderModal();
 }
 
 function installSmartphoneZoomGuard() {
@@ -1576,18 +1581,10 @@ function installSmartphoneZoomGuard() {
 
 function installEvents() {
   elements.sortButton?.addEventListener("click", toggleFolderModal);
-  elements.folderModal?.addEventListener("click", (event) => {
-    if (event.target === elements.folderModal) closeFolderModal();
-  });
   elements.folderModalList?.addEventListener("click", (event) => {
     const option = event.target.closest?.("[data-folder-filter]");
     if (!option) return;
     setFolderFilter(option.dataset.folderFilter || "");
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && elements.folderModal && !elements.folderModal.hidden) {
-      closeFolderModal();
-    }
   });
   window.addEventListener("resize", () => {
     if (elements.folderModal && !elements.folderModal.hidden) positionFolderModalBelowMenu();

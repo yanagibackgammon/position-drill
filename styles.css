@@ -1607,3 +1607,55 @@ main { padding-top: 0; }
     min-height: 40px;
   }
 }
+
+
+/* v121: persistent sort choices, desktop dropdown anchored below hamburger */
+.folder-modal {
+  top: var(--folder-modal-top, 116px) !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  padding: 0 !important;
+  place-items: initial !important;
+  background: transparent !important;
+  pointer-events: none;
+}
+
+.folder-modal-panel {
+  position: fixed;
+  top: var(--folder-modal-top, 116px);
+  right: var(--folder-modal-right, 16px);
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100svh - var(--folder-modal-top, 116px) - 12px);
+  border: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 15px 15px;
+  background: var(--black);
+  box-shadow: 0 20px 60px #000;
+  pointer-events: auto;
+}
+
+body.folder-modal-open { overflow: auto; }
+
+@media (max-width: 790px) {
+  .folder-modal {
+    background: rgba(0, 0, 0, .78) !important;
+    pointer-events: none;
+  }
+
+  .folder-modal-panel {
+    position: fixed;
+    top: var(--folder-modal-top, 106px);
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100svh - var(--folder-modal-top, 106px) - 8px);
+    border: 1px solid var(--line);
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: var(--black);
+    pointer-events: auto;
+  }
+
+  body.folder-modal-open { overflow: hidden; }
+}
