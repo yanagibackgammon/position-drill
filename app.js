@@ -62,6 +62,9 @@ const elements = {
   sortButton: document.getElementById("sort-button"),
   folderModal: document.getElementById("folder-modal"),
   folderModalList: document.getElementById("folder-modal-list"),
+  sortAllCount: document.getElementById("sort-all-count"),
+  sortTaskCount: document.getElementById("sort-task-count"),
+  sortNewCount: document.getElementById("sort-new-count"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -1447,7 +1450,18 @@ function cycleSelector(selector, delta) {
   if (selector === "match") cycleMatchType(delta);
 }
 
+function updateSortModalCounts() {
+  if (elements.sortAllCount) elements.sortAllCount.textContent = String(state.positions.length);
+  if (elements.sortTaskCount) {
+    elements.sortTaskCount.textContent = String(state.positions.filter(isChallenge).length);
+  }
+  if (elements.sortNewCount) {
+    elements.sortNewCount.textContent = String(state.positions.filter(isNewPosition).length);
+  }
+}
+
 function syncFilterButtons() {
+  updateSortModalCounts();
   elements.filterButtons.forEach((button) => {
     const filter = button.dataset.filter;
     const active = Boolean(state.filters[filter]);
@@ -1484,6 +1498,7 @@ function folderFilterCount(filter) {
 function renderFolderModal() {
   if (!elements.folderModalList) return;
 
+  updateSortModalCounts();
   const filters = availableFolderFilters();
   elements.folderModalList.innerHTML = filters.map((filter) => {
     const selected = state.folderFilters.includes(filter);
@@ -1505,13 +1520,22 @@ function positionFolderModalBelowMenu() {
   if (!elements.folderModal || !elements.sortButton) return;
   const menuBar = elements.sortButton.closest?.(".menu-bar");
   const menuRect = menuBar?.getBoundingClientRect?.();
-  const buttonRect = elements.sortButton.getBoundingClientRect?.();
-  if (!menuRect || !buttonRect) return;
+  if (!menuRect) return;
 
   const top = Math.max(0, Math.round(menuRect.bottom));
-  const right = Math.max(0, Math.round(window.innerWidth - buttonRect.right));
   elements.folderModal.style.setProperty("--folder-modal-top", `${top}px`);
-  elements.folderModal.style.setProperty("--folder-modal-right", `${right}px`);
+
+  if (window.matchMedia("(min-width: 791px)").matches) {
+    const answerColumn = document.querySelector(".answer-column");
+    const answerRect = answerColumn?.getBoundingClientRect?.();
+    if (answerRect) {
+      elements.folderModal.style.setProperty("--folder-modal-left", `${Math.round(answerRect.left)}px`);
+      elements.folderModal.style.setProperty("--folder-modal-width", `${Math.round(answerRect.width)}px`);
+    }
+  } else {
+    elements.folderModal.style.removeProperty("--folder-modal-left");
+    elements.folderModal.style.removeProperty("--folder-modal-width");
+  }
 }
 
 function setFolderModalOpenState(open) {

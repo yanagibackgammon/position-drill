@@ -1688,3 +1688,48 @@ body.folder-modal-open { overflow: auto; }
     box-shadow: none !important;
   }
 }
+
+
+/* v123: sort totals + desktop panel aligned to the right analysis column */
+.sort-all-option,
+.sort-filter-option {
+  min-height: 56px;
+  border-bottom: 1px solid #242424;
+}
+
+.sort-all-option {
+  padding: 4px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: var(--white);
+  background: var(--black);
+}
+
+.sort-all-label {
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.sort-option-count {
+  color: var(--gray);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (min-width: 791px) {
+  .folder-modal-panel {
+    left: var(--folder-modal-left, 50%) !important;
+    right: auto !important;
+    width: var(--folder-modal-width, 514px) !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 790px) {
+  .sort-all-option { min-height: 56px; padding: 4px 14px; }
+}

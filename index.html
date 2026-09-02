@@ -114,13 +114,19 @@
   <div id="folder-modal" class="folder-modal" role="dialog" aria-modal="true" aria-label="Sort positions" hidden>
     <div class="folder-modal-panel">
       <div class="sort-modal-filters">
+        <div class="sort-all-option" aria-label="All positions">
+          <span class="sort-all-label">ALL</span>
+          <span id="sort-all-count" class="sort-option-count">0</span>
+        </div>
         <button type="button" class="sort-filter-option" data-filter="task" aria-pressed="false" aria-label="Task filter: off">
           <span class="filter-checkbox" aria-hidden="true"></span>
           <span class="sort-filter-copy"><span class="filter-label">Task</span><span class="sort-filter-description">Correct ≤ Incorrect</span></span>
+          <span id="sort-task-count" class="sort-option-count">0</span>
         </button>
         <button type="button" class="sort-filter-option" data-filter="new" aria-pressed="false" aria-label="New filter: off">
           <span class="filter-checkbox" aria-hidden="true"></span>
           <span class="sort-filter-copy"><span class="filter-label">New</span><span class="sort-filter-description">Uploaded in the last 7 days</span></span>
+          <span id="sort-new-count" class="sort-option-count">0</span>
         </button>
       </div>
       <div id="folder-modal-list" class="folder-modal-list" role="listbox" aria-label="Position group"></div>

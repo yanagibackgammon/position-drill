@@ -1039,7 +1039,7 @@ run("SP kind labels keep full Checker Play / Double Action names", () => {
   assert.equal(evaluate('kindDisplayLabels("double").short'), "Double Action");
 });
 
-run("Sort modal has no ALL row and root is 未分類", () => {
+run("Folder choices exclude selectable ALL and root is 未分類", () => {
   evaluate(`
     state.positions = [
       {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7},
@@ -1067,3 +1067,26 @@ run("Folder selection keeps the sort modal open until the hamburger/X is pressed
 });
 
 console.log("All app regression tests passed.");
+
+
+run("Sort modal exposes ALL, Task and New total counts", () => {
+  evaluate(`
+    state.positions = [
+      {id:"A",decisionKind:"checker",isNew:true},
+      {id:"B",decisionKind:"checker",isNew:false},
+      {id:"C",decisionKind:"double",isNew:true}
+    ];
+    state.progress = {
+      [progressKey(state.positions[0])]: {correct:0, wrong:1},
+      [progressKey(state.positions[1])]: {correct:2, wrong:0},
+      [progressKey(state.positions[2])]: {correct:0, wrong:0}
+    };
+    elements.sortAllCount = {textContent:""};
+    elements.sortTaskCount = {textContent:""};
+    elements.sortNewCount = {textContent:""};
+    updateSortModalCounts();
+  `);
+  assert.equal(evaluate('elements.sortAllCount.textContent'), "3");
+  assert.equal(evaluate('elements.sortTaskCount.textContent'), "2");
+  assert.equal(evaluate('elements.sortNewCount.textContent'), "2");
+});
