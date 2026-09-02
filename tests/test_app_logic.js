@@ -1039,7 +1039,7 @@ run("SP kind labels keep full Checker Play / Double Action names", () => {
   assert.equal(evaluate('kindDisplayLabels("double").short'), "Double Action");
 });
 
-run("Folder choices exclude selectable ALL and root is 未分類", () => {
+run("Folder choices exclude selectable ALL and root is フォルダ未分類", () => {
   evaluate(`
     state.positions = [
       {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7},
@@ -1048,8 +1048,8 @@ run("Folder choices exclude selectable ALL and root is 未分類", () => {
     state.folderFilters = [];
     renderFolderModal();
   `);
-  assert.equal(evaluate('folderFilterDisplayLabel(ROOT_FOLDER_FILTER)'), "未分類");
-  assert.equal(evaluate('elements.folderModalList.innerHTML.includes("未分類")'), true);
+  assert.equal(evaluate('folderFilterDisplayLabel(ROOT_FOLDER_FILTER)'), "フォルダ未分類");
+  assert.equal(evaluate('elements.folderModalList.innerHTML.includes("フォルダ未分類")'), true);
   assert.equal(evaluate('elements.folderModalList.innerHTML.includes("data-folder-filter=\\"\\"")'), false);
 });
 

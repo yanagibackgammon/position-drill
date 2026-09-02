@@ -1733,3 +1733,25 @@ body.folder-modal-open { overflow: auto; }
 @media (max-width: 790px) {
   .sort-all-option { min-height: 56px; padding: 4px 14px; }
 }
+
+
+/* v124: balanced menu widths + unified modal counts */
+.menu-bar {
+  grid-template-columns: minmax(82px, .78fr) minmax(136px, 1.28fr) minmax(174px, 1.58fr) minmax(68px, .56fr);
+}
+
+.sort-option-count,
+.folder-option-count {
+  color: var(--gray);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 790px) {
+  .menu-bar {
+    grid-template-columns: 18% 30% 38% 14%;
+  }
+}

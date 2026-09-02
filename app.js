@@ -1486,7 +1486,7 @@ function toggleFilter(filter) {
 
 function folderFilterDisplayLabel(filter) {
   if (!filter) return "ALL";
-  if (filter === ROOT_FOLDER_FILTER) return "未分類";
+  if (filter === ROOT_FOLDER_FILTER) return "フォルダ未分類";
   const parts = String(filter).split("/");
   return parts[parts.length - 1] || filter;
 }
@@ -1503,7 +1503,7 @@ function renderFolderModal() {
   elements.folderModalList.innerHTML = filters.map((filter) => {
     const selected = state.folderFilters.includes(filter);
     const depth = filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
-    const fullLabel = filter === ROOT_FOLDER_FILTER ? "未分類" : filter;
+    const fullLabel = filter === ROOT_FOLDER_FILTER ? "フォルダ未分類" : filter;
     const label = folderFilterDisplayLabel(filter);
     return `
       <button type="button" class="folder-option ${selected ? "is-selected" : ""}"
