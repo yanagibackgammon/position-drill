@@ -529,7 +529,7 @@ run("Kind selector cycles Checker / Double / Take only", () => {
 run("Checker match selector includes DMP, Double/Take selector skips it", () => {
   assert.deepEqual(
     Array.from(evaluate('matchTypeOrderForKind("checker")')),
-    ["all", "point", "unlimited", "dmp"],
+    ["all", "point", "dmp", "unlimited"],
   );
   assert.deepEqual(
     Array.from(evaluate('matchTypeOrderForKind("double")')),
@@ -539,16 +539,20 @@ run("Checker match selector includes DMP, Double/Take selector skips it", () => 
     Array.from(evaluate('matchTypeOrderForKind("take")')),
     ["all", "point", "unlimited"],
   );
-  assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("checker"), "unlimited", 1)'), "dmp");
+  assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("checker"), "point", 1)'), "dmp");
+  assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("checker"), "dmp", 1)'), "unlimited");
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("double"), "unlimited", 1)'), "all");
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("take"), "all", -1)'), "unlimited");
   assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point Match");
   assert.equal(evaluate('matchTypeDisplayLabels("all").full'), "ALL");
+  assert.equal(evaluate('kindDisplayLabels("checker").full'), "Checker");
+  assert.equal(evaluate('kindDisplayLabels("double").full'), "Double");
+  assert.equal(evaluate('kindDisplayLabels("take").full'), "Take/Pass");
 });
 
 
 
-run("Kind count stays total while match count follows all active filters", () => {
+run("Positions count follows every active condition", () => {
   evaluate(`
     state.positions = [
       {id:"C7",decisionKind:"checker",matchLength:7,isNew:true},
@@ -564,8 +568,7 @@ run("Kind count stays total while match count follows all active filters", () =>
     updateCounts();
   `);
 
-  assert.equal(evaluate("elements.kindCount.textContent"), "3");
-  assert.equal(evaluate("elements.matchCount.textContent"), "1");
+  assert.equal(evaluate("elements.positionCount.textContent"), "1");
 });
 
 

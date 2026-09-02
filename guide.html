@@ -266,33 +266,23 @@
     .menu-demo {
       margin: 0 0 14px;
       min-width: 0;
-      height: 44px;
+      min-height: 54px;
       display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      gap: 8px;
-    }
-
-    .menu-pair {
-      min-width: 0;
-      height: 44px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      overflow: hidden;
+      grid-template-columns: .72fr 1.08fr 1.28fr .62fr;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
       background: var(--black);
     }
 
     .menu-cell {
       min-width: 0;
-      height: 44px;
-      padding: 0 6px;
+      min-height: 54px;
+      padding: 0 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 2px;
-      border-right: 1px solid var(--line);
       color: var(--white);
       background: var(--black);
       font-size: var(--font-sm);
@@ -302,9 +292,7 @@
       white-space: nowrap;
     }
 
-    .menu-cell:last-child { border-right: 0; }
     .menu-cell small { color: var(--gray); font-size: var(--font-xs); font-weight: 600; }
-    .menu-cell.active { background: var(--active); }
 
     .grid-2,
     .grid-3 {
@@ -607,14 +595,10 @@
     <section id="menu" class="guide-section">
       <h2>上部メニュー</h2>
       <div class="menu-demo" aria-hidden="true">
-        <div class="menu-pair">
-          <div class="menu-cell">Checker Play<small>POSITION TYPE</small></div>
-          <div class="menu-cell">ALL<small>MATCH TYPE</small></div>
-        </div>
-        <div class="menu-pair">
-          <div class="menu-cell active">Task</div>
-          <div class="menu-cell">New</div>
-        </div>
+        <div class="menu-cell menu-count-demo"><strong>3398</strong><small>Positions</small></div>
+        <div class="menu-cell">Checker</div>
+        <div class="menu-cell">ALL</div>
+        <div class="menu-cell">Sort▼</div>
       </div>
 
       <div class="grid-2">
@@ -625,23 +609,23 @@
         </div>
         <div class="info-card">
           <span class="tag gold">MATCH TYPE</span>
-          <h3>ALL / Point Match / Unlimited / DMP</h3>
-          <p>Checkerでは4種類、Double / Take/PassではDMPを除く3種類から選択できます。</p>
+          <h3>ALL / Point Match / DMP / Unlimited</h3>
+          <p>CheckerではALL → Point Match → DMP → Unlimitedの順で切り替わり、Double / Take/PassではDMPを除く3種類から選択できます。</p>
         </div>
         <div class="info-card">
-          <span class="tag">Task</span>
+          <span class="tag">Sort → Task</span>
           <h3>要復習ポジション</h3>
           <p>未正解、または正解数が不正解数を上回っていないポジションだけを表示します。</p>
         </div>
         <div class="info-card">
-          <span class="tag">New</span>
+          <span class="tag">Sort → New</span>
           <h3>新着ポジション</h3>
           <p>直近7日間に追加・更新されたポジションだけを表示します。</p>
         </div>
         <div class="info-card">
-          <span class="tag gold">FOLDER</span>
-          <h3>タイトルからフォルダを選択</h3>
-          <p>POSITION DRILLのタイトルをタップするとフォルダ選択が開きます。親フォルダを選ぶと、その配下のサブフォルダもまとめて出題対象になります。</p>
+          <span class="tag gold">SORT</span>
+          <h3>Task / New / フォルダ</h3>
+          <p>上部メニューのSort▼から絞り込みを開きます。Task・Newは同時に指定でき、フォルダは親を選ぶと配下のサブフォルダもまとめて出題対象になります。</p>
         </div>
       </div>
     </section>

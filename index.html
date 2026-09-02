@@ -24,36 +24,34 @@
 <body>
   <header class="page-header">
     <div class="title-group">
-      <h1 id="page-title" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="folder-modal" aria-label="POSITION DRILL: source folder filter">POSITION DRILL</h1>
+      <h1 id="page-title">POSITION DRILL</h1>
       <a class="creator" href="https://yanagibackgammon.github.io/" target="_blank" rel="noopener noreferrer"><span class="creator-prefix">Created by</span><span class="creator-name">YANAGI Backgammon</span></a>
     </div>
   </header>
 
   <main>
     <section class="controls" aria-label="Drill settings">
-      <div class="menu-grid">
-        <div class="menu-group menu-group-primary">
-          <div id="kind-selector-slot" class="menu-slot selector-slot" data-selector="kind">
-            <button id="kind-selector" type="button" class="menu-selector" aria-label="Position type">
-              <span class="selector-label-full">Checker Play</span>
-              <span class="selector-label-short">Checker</span>
-              <span id="kind-count" class="selector-count">0</span>
-            </button>
-          </div>
-
-          <div id="match-selector-slot" class="menu-slot selector-slot" data-selector="match">
-            <button id="match-selector" type="button" class="menu-selector" aria-label="Match type">
-              <span class="selector-label-full">ALL</span>
-              <span class="selector-label-short">ALL</span>
-              <span id="match-count" class="selector-count">0</span>
-            </button>
-          </div>
+      <div class="menu-bar">
+        <div class="menu-position-count" aria-label="Matching positions">
+          <strong id="position-count">0</strong>
+          <span>Positions</span>
         </div>
 
-        <div class="menu-group menu-group-filters">
-          <button type="button" class="menu-slot filter-tab" data-filter="task" aria-pressed="false" aria-label="Task filter: off"><span class="filter-label">Task</span><span class="filter-check" aria-hidden="true"></span></button>
-          <button type="button" class="menu-slot filter-tab" data-filter="new" aria-pressed="false" aria-label="New filter: off"><span class="filter-label">New</span><span class="filter-check" aria-hidden="true"></span></button>
+        <div id="kind-selector-slot" class="menu-bar-cell selector-slot" data-selector="kind">
+          <button id="kind-selector" type="button" class="menu-selector" aria-label="Position type">
+            <span class="selector-label-full">Checker</span>
+            <span class="selector-label-short">Checker</span>
+          </button>
         </div>
+
+        <div id="match-selector-slot" class="menu-bar-cell selector-slot" data-selector="match">
+          <button id="match-selector" type="button" class="menu-selector" aria-label="Match type">
+            <span class="selector-label-full">ALL</span>
+            <span class="selector-label-short">ALL</span>
+          </button>
+        </div>
+
+        <button id="sort-button" type="button" class="menu-bar-cell sort-button" aria-haspopup="dialog" aria-controls="folder-modal">Sort<span aria-hidden="true">▼</span></button>
       </div>
     </section>
 
@@ -113,16 +111,20 @@
     </div>
   </main>
 
-  <div id="folder-modal" class="folder-modal" role="dialog" aria-modal="true" aria-labelledby="folder-modal-title" hidden>
+  <div id="folder-modal" class="folder-modal" role="dialog" aria-modal="true" aria-label="Sort positions" hidden>
     <div class="folder-modal-panel">
-      <div class="folder-modal-header">
-        <div>
-          <div class="folder-modal-eyebrow">POSITION SELECT</div>
-          <h2 id="folder-modal-title">Folder</h2>
-        </div>
-        <button id="folder-modal-close" class="folder-modal-close" type="button" aria-label="Close folder filter">×</button>
+      <button id="folder-modal-close" class="folder-modal-close" type="button" aria-label="Close sort menu">×</button>
+      <div class="sort-modal-filters">
+        <button type="button" class="sort-filter-option" data-filter="task" aria-pressed="false" aria-label="Task filter: off">
+          <span class="sort-filter-copy"><span class="filter-label">Task</span><span class="sort-filter-description">corrects ≤ incorrect</span></span>
+          <span class="filter-checkbox" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="sort-filter-option" data-filter="new" aria-pressed="false" aria-label="New filter: off">
+          <span class="sort-filter-copy"><span class="filter-label">New</span><span class="sort-filter-description">Uploaded within the last 7 days</span></span>
+          <span class="filter-checkbox" aria-hidden="true"></span>
+        </button>
       </div>
-      <div id="folder-modal-list" class="folder-modal-list" role="listbox" aria-label="Source folder"></div>
+      <div id="folder-modal-list" class="folder-modal-list" role="listbox" aria-label="Position group"></div>
     </div>
   </div>
 

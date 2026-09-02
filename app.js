@@ -29,7 +29,7 @@ const MATCH_TYPE_LABELS = {
 };
 
 const KIND_ORDER = ["checker", "double", "take"];
-const MATCH_TYPE_ORDER = ["all", "point", "unlimited", "dmp"];
+const MATCH_TYPE_ORDER = ["all", "point", "dmp", "unlimited"];
 const CUBE_MATCH_TYPE_ORDER = ["all", "point", "unlimited"];
 
 const state = {
@@ -55,12 +55,11 @@ const elements = {
   empty: document.getElementById("empty-state"),
   kindSelector: document.getElementById("kind-selector"),
   kindSelectorSlot: document.getElementById("kind-selector-slot"),
-  kindCount: document.getElementById("kind-count"),
   matchSelector: document.getElementById("match-selector"),
   matchSelectorSlot: document.getElementById("match-selector-slot"),
-  matchCount: document.getElementById("match-count"),
+  positionCount: document.getElementById("position-count"),
   filterButtons: [...document.querySelectorAll("[data-filter]")],
-  pageTitle: document.getElementById("page-title"),
+  sortButton: document.getElementById("sort-button"),
   folderModal: document.getElementById("folder-modal"),
   folderModalList: document.getElementById("folder-modal-list"),
   folderModalClose: document.getElementById("folder-modal-close"),
@@ -1041,16 +1040,10 @@ function updateTotals() {
 }
 
 function updateCounts() {
-  // 1st menu: total positions for the selected decision kind, independent of
-  // match type / Task / New filters.
-  const kindTotal = positionsForKind(state.currentKind)
-    .filter((position) => folderFilterMatches(position)).length;
-
-  // 2nd menu: positions remaining after every active filter is applied.
+  // The left menu cell shows the final number of positions after every current
+  // condition has been applied: kind, match type, Task/New and source folder.
   const filteredCount = filteredPositionsForKind(state.currentKind).length;
-
-  if (elements.kindCount) elements.kindCount.textContent = String(kindTotal);
-  if (elements.matchCount) elements.matchCount.textContent = String(filteredCount);
+  if (elements.positionCount) elements.positionCount.textContent = String(filteredCount);
 }
 
 function sourceFileLabel(position) {
@@ -1345,16 +1338,14 @@ function judge(result) {
 }
 
 function kindDisplayLabels(kind) {
-  return {
-    full: KIND_LABELS[kind] || "Checker Play",
-    short: kind === "checker"
-      ? "Checker"
-      : kind === "double"
-        ? "Double"
-        : kind === "take"
-          ? "Take/Pass"
-          : "ALL",
-  };
+  const label = kind === "checker"
+    ? "Checker"
+    : kind === "double"
+      ? "Double"
+      : kind === "take"
+        ? "Take/Pass"
+        : "ALL";
+  return { full: label, short: label };
 }
 
 function matchTypeDisplayLabels(matchType) {
@@ -1517,7 +1508,7 @@ function closeFolderModal() {
   if (!elements.folderModal || elements.folderModal.hidden) return;
   elements.folderModal.hidden = true;
   document.body.classList.remove("folder-modal-open");
-  elements.pageTitle?.focus?.({ preventScroll: true });
+  elements.sortButton?.focus?.({ preventScroll: true });
 }
 
 function setFolderFilter(filter) {
@@ -1562,12 +1553,7 @@ function installSmartphoneZoomGuard() {
 }
 
 function installEvents() {
-  elements.pageTitle?.addEventListener("click", openFolderModal);
-  elements.pageTitle?.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    openFolderModal();
-  });
+  elements.sortButton?.addEventListener("click", openFolderModal);
   elements.folderModalClose?.addEventListener("click", closeFolderModal);
   elements.folderModal?.addEventListener("click", (event) => {
     if (event.target === elements.folderModal) closeFolderModal();
