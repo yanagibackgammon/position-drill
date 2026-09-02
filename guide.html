@@ -25,6 +25,7 @@
       --font-sm: 15px;
       --font-md: 19px;
       --font-lg: 23px;
+      --font-xl: 27px;
       --title-mobile: 31px;
       --title-desktop: 39px;
     }
@@ -219,7 +220,7 @@
     }
 
     p { margin: 0; }
-    .muted { color: var(--gray); font-size: 13px; }
+    .muted { color: var(--gray); font-size: var(--font-sm); }
 
     .steps {
       display: grid;
@@ -260,7 +261,7 @@
     .info-card p,
     .term-card p {
       color: var(--gray);
-      font-size: 13px;
+      font-size: var(--font-sm);
     }
 
     .menu-demo {
@@ -353,7 +354,7 @@
       gap: 14px;
       border-bottom: 1px solid var(--line);
       color: var(--white);
-      font-size: 13px;
+      font-size: var(--font-sm);
     }
 
     .answer-row:last-child { border-bottom: 0; }
@@ -398,7 +399,7 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--black);
-      font-size: 24px;
+      font-size: var(--font-lg);
       font-weight: 900;
     }
 
@@ -412,7 +413,7 @@
       border-spacing: 0;
       border-radius: 12px;
       overflow: hidden;
-      font-size: 13px;
+      font-size: var(--font-sm);
     }
 
     .data-table th,
@@ -444,7 +445,7 @@
       border-radius: 0 8px 8px 0;
       color: var(--gray);
       background: var(--black);
-      font-size: 13px;
+      font-size: var(--font-sm);
     }
 
     .record-demo {
@@ -481,18 +482,18 @@
       .header-inner { width: 100%; min-height: 38px; gap: 8px; }
 
       .brand { gap: 6px; }
-      .brand strong { font-size: clamp(24px, 7.4vw, var(--title-mobile)); transform: translateY(2px); }
+      .brand strong { font-size: var(--font-xl); transform: translateY(2px); }
       .brand span { display: none; }
 
       .header-actions { border-radius: 8px; }
-      .header-link { min-height: 34px; padding: 0 8px; font-size: 10px; }
+      .header-link { min-height: 34px; padding: 0 8px; font-size: var(--font-xs); }
       .home-full { display: none; }
       .home-short { display: inline; }
 
       main { width: min(100% - 20px, 920px); padding-top: 10px; }
       .hero { padding: 14px 12px 12px; }
       .hero h1 { font-size: var(--font-md); }
-      .lead { font-size: 13px; }
+      .lead { font-size: var(--font-sm); }
 
       section.guide-section { padding: 14px 12px; }
       h2 { font-size: var(--font-md); }
