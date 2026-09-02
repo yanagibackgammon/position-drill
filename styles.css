@@ -1450,3 +1450,27 @@ main { padding-top: 0; }
   .sort-filter-option { padding-right: 48px; }
   .folder-modal-list { padding: 0; }
 }
+
+
+/* v119: compact menu typography, arrow-only Sort, gold-only board boundary */
+.quiz-card { border-top: 0; }
+
+.menu-selector { font-size: var(--font-sm); }
+.menu-position-count strong { font-size: var(--font-md); }
+.sort-button { font-size: var(--font-sm); }
+.sort-button span {
+  color: var(--white);
+  font-size: var(--font-lg);
+  line-height: 1;
+}
+
+@media (max-width: 790px) {
+  .menu-position-count strong { font-size: var(--font-md); }
+
+  .menu-selector {
+    font-size: clamp(var(--font-xs), 4vw, var(--font-sm));
+  }
+
+  .sort-button { font-size: var(--font-xs); }
+  .sort-button span { font-size: var(--font-lg); }
+}
