@@ -545,8 +545,8 @@ run("Checker match selector includes DMP, Double/Take selector skips it", () => 
   assert.equal(evaluate('cycleOptionValue(matchTypeOrderForKind("take"), "all", -1)'), "unlimited");
   assert.equal(evaluate('matchTypeDisplayLabels("point").short'), "Point Match");
   assert.equal(evaluate('matchTypeDisplayLabels("all").full'), "ALL");
-  assert.equal(evaluate('kindDisplayLabels("checker").full'), "Checker");
-  assert.equal(evaluate('kindDisplayLabels("double").full'), "Double");
+  assert.equal(evaluate('kindDisplayLabels("checker").full'), "Checker Play");
+  assert.equal(evaluate('kindDisplayLabels("double").full'), "Double Action");
   assert.equal(evaluate('kindDisplayLabels("take").full'), "Take/Pass");
 });
 
@@ -1024,6 +1024,26 @@ run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
+});
+
+
+run("SP kind labels keep full Checker Play / Double Action names", () => {
+  assert.equal(evaluate('kindDisplayLabels("checker").short'), "Checker Play");
+  assert.equal(evaluate('kindDisplayLabels("double").short'), "Double Action");
+});
+
+run("Sort modal uses ALL as title state, not a selectable row, and root is 未分類", () => {
+  evaluate(`
+    state.positions = [
+      {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7},
+      {id:"A",decisionKind:"checker",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp",matchLength:7}
+    ];
+    state.folderFilter = "";
+    renderFolderModal();
+  `);
+  assert.equal(evaluate('folderFilterDisplayLabel(ROOT_FOLDER_FILTER)'), "未分類");
+  assert.equal(evaluate('elements.folderModalList.innerHTML.includes("未分類")'), true);
+  assert.equal(evaluate('elements.folderModalList.innerHTML.includes("data-folder-filter=\\"\\"")'), false);
 });
 
 console.log("All app regression tests passed.");

@@ -62,7 +62,6 @@ const elements = {
   sortButton: document.getElementById("sort-button"),
   folderModal: document.getElementById("folder-modal"),
   folderModalList: document.getElementById("folder-modal-list"),
-  folderModalClose: document.getElementById("folder-modal-close"),
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -1339,9 +1338,9 @@ function judge(result) {
 
 function kindDisplayLabels(kind) {
   const label = kind === "checker"
-    ? "Checker"
+    ? "Checker Play"
     : kind === "double"
-      ? "Double"
+      ? "Double Action"
       : kind === "take"
         ? "Take/Pass"
         : "ALL";
@@ -1465,7 +1464,7 @@ function toggleFilter(filter) {
 
 function folderFilterDisplayLabel(filter) {
   if (!filter) return "ALL";
-  if (filter === ROOT_FOLDER_FILTER) return "imports直下";
+  if (filter === ROOT_FOLDER_FILTER) return "未分類";
   const parts = String(filter).split("/");
   return parts[parts.length - 1] || filter;
 }
@@ -1477,11 +1476,11 @@ function folderFilterCount(filter) {
 function renderFolderModal() {
   if (!elements.folderModalList) return;
 
-  const filters = ["", ...availableFolderFilters()];
+  const filters = availableFolderFilters();
   elements.folderModalList.innerHTML = filters.map((filter) => {
     const selected = filter === state.folderFilter;
-    const depth = !filter || filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
-    const fullLabel = !filter ? "ALL" : (filter === ROOT_FOLDER_FILTER ? "imports直下" : filter);
+    const depth = filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
+    const fullLabel = filter === ROOT_FOLDER_FILTER ? "未分類" : filter;
     const label = folderFilterDisplayLabel(filter);
     return `
       <button type="button" class="folder-option ${selected ? "is-selected" : ""}"
@@ -1494,11 +1493,27 @@ function renderFolderModal() {
   }).join("");
 }
 
+function positionFolderModalBelowMenu() {
+  if (!elements.folderModal || !elements.sortButton) return;
+  const menuBar = elements.sortButton.closest?.(".menu-bar");
+  const rect = menuBar?.getBoundingClientRect?.();
+  if (!rect) return;
+  elements.folderModal.style.top = `${Math.max(0, Math.round(rect.bottom))}px`;
+}
+
+function setFolderModalOpenState(open) {
+  elements.sortButton?.classList.toggle("is-open", open);
+  elements.sortButton?.setAttribute("aria-expanded", String(open));
+  elements.sortButton?.setAttribute("aria-label", open ? "Close sort menu" : "Open sort menu");
+}
+
 function openFolderModal() {
   if (!elements.folderModal) return;
   renderFolderModal();
+  positionFolderModalBelowMenu();
   elements.folderModal.hidden = false;
   document.body.classList.add("folder-modal-open");
+  setFolderModalOpenState(true);
   window.setTimeout(() => {
     elements.folderModalList?.querySelector('[aria-selected="true"]')?.focus?.();
   }, 0);
@@ -1508,11 +1523,18 @@ function closeFolderModal() {
   if (!elements.folderModal || elements.folderModal.hidden) return;
   elements.folderModal.hidden = true;
   document.body.classList.remove("folder-modal-open");
+  setFolderModalOpenState(false);
   elements.sortButton?.focus?.({ preventScroll: true });
 }
 
+function toggleFolderModal() {
+  if (!elements.folderModal || elements.folderModal.hidden) openFolderModal();
+  else closeFolderModal();
+}
+
 function setFolderFilter(filter) {
-  const next = String(filter || "");
+  const requested = String(filter || "");
+  const next = requested && requested === state.folderFilter ? "" : requested;
   const valid = next === "" || availableFolderFilters().includes(next);
   if (!valid) return;
   state.folderFilter = next;
@@ -1553,8 +1575,7 @@ function installSmartphoneZoomGuard() {
 }
 
 function installEvents() {
-  elements.sortButton?.addEventListener("click", openFolderModal);
-  elements.folderModalClose?.addEventListener("click", closeFolderModal);
+  elements.sortButton?.addEventListener("click", toggleFolderModal);
   elements.folderModal?.addEventListener("click", (event) => {
     if (event.target === elements.folderModal) closeFolderModal();
   });
@@ -1567,6 +1588,9 @@ function installEvents() {
     if (event.key === "Escape" && elements.folderModal && !elements.folderModal.hidden) {
       closeFolderModal();
     }
+  });
+  window.addEventListener("resize", () => {
+    if (elements.folderModal && !elements.folderModal.hidden) positionFolderModalBelowMenu();
   });
 
   elements.kindSelector.addEventListener("click", () => cycleKind(1));

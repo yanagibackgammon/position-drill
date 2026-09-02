@@ -1474,3 +1474,136 @@ main { padding-top: 0; }
   .sort-button { font-size: var(--font-xs); }
   .sort-button span { font-size: var(--font-lg); }
 }
+
+
+/* v120: menu-attached sort sheet, hamburger toggle, large aligned checks */
+.sort-button {
+  position: relative;
+}
+
+.menu-toggle-icon {
+  position: relative;
+  width: 28px;
+  height: 22px;
+  display: inline-block;
+}
+
+.menu-toggle-icon i {
+  position: absolute;
+  left: 0;
+  width: 28px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--white);
+  transform-origin: center;
+  transition: top .16s ease, transform .16s ease, opacity .12s ease;
+}
+
+.menu-toggle-icon i:nth-child(1) { top: 2px; }
+.menu-toggle-icon i:nth-child(2) { top: 10px; }
+.menu-toggle-icon i:nth-child(3) { top: 18px; }
+
+.sort-button.is-open .menu-toggle-icon i:nth-child(1) {
+  top: 10px;
+  transform: rotate(45deg);
+}
+.sort-button.is-open .menu-toggle-icon i:nth-child(2) { opacity: 0; }
+.sort-button.is-open .menu-toggle-icon i:nth-child(3) {
+  top: 10px;
+  transform: rotate(-45deg);
+}
+
+.folder-modal {
+  inset: auto 0 0 0;
+  padding: 0 24px 24px;
+  place-items: start center;
+  background: rgba(0, 0, 0, .78);
+}
+
+.folder-modal-panel {
+  width: min(520px, 100%);
+  max-height: calc(100% - 12px);
+  border-top: 0;
+  border-radius: 0 0 15px 15px;
+}
+
+.folder-modal-title {
+  flex: 0 0 56px;
+  min-height: 56px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #242424;
+  color: var(--white);
+  background: var(--black);
+  font-size: var(--font-md);
+  font-weight: 800;
+}
+
+.sort-filter-option,
+.folder-option {
+  min-height: 56px;
+  padding: 4px 14px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.sort-filter-option { padding-right: 14px; }
+
+.sort-filter-option .filter-checkbox,
+.folder-option-mark {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-width: 1px;
+  font-size: var(--font-md);
+}
+
+.sort-filter-option.is-active .filter-checkbox::after {
+  font-size: var(--font-md);
+}
+
+/* Desktop keeps the gray top edge around board/analysis; mobile uses only the gold menu line. */
+@media (min-width: 791px) {
+  .quiz-card { border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 790px) {
+  .quiz-card { border-top: 0; }
+
+  .folder-modal {
+    inset: auto 0 0 0;
+    padding: 0 8px 8px;
+    place-items: start center;
+  }
+
+  .folder-modal-panel {
+    width: 100%;
+    max-height: calc(100% - 8px);
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+  }
+
+  .folder-modal-title {
+    flex-basis: 56px;
+    min-height: 56px;
+    padding: 0 14px;
+    font-size: var(--font-md);
+  }
+
+  .sort-filter-option,
+  .folder-option {
+    min-height: 56px;
+    padding: 4px 14px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .sort-filter-option .filter-checkbox,
+  .folder-option-mark {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
