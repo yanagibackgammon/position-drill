@@ -4,7 +4,7 @@ const POSITIONS_ROOT = new URL("./", window.location.href).href;
 const DATA_URL = `${POSITIONS_ROOT}data/positions.json`;
 const STORAGE_KEY = "yanagi-backgammon-quiz-progress-v1";
 const SETTINGS_KEY = "yanagi-backgammon-quiz-settings-v1";
-const FILTER_MODE_VERSION = 4;
+const FILTER_MODE_VERSION = 5;
 const ROOT_FOLDER_FILTER = "__root__";
 const DAILY_STORAGE_KEY = "yanagi-backgammon-quiz-daily-v1";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -47,7 +47,7 @@ const state = {
   dataVersion: "",
   boardQueue: [],
   filters: { task: false, new: false },
-  folderFilter: "",
+  folderFilters: [],
 };
 
 const elements = {
@@ -197,7 +197,8 @@ function saveSettings() {
     matchType: state.matchType,
     taskOnly: state.filters.task,
     newOnly: state.filters.new,
-    sourceFolder: state.folderFilter,
+    sourceFolders: state.folderFilters.slice(),
+    sourceFolder: state.folderFilters[0] || "",
     filterModeVersion: FILTER_MODE_VERSION,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
@@ -363,12 +364,19 @@ function normalizedSourceFolder(position) {
   return slash >= 0 ? path.slice(0, slash) : "";
 }
 
-function folderFilterMatches(position, filter = state.folderFilter) {
-  const selected = String(filter || "");
+function normalizedFolderFilters(filters = state.folderFilters) {
+  const values = Array.isArray(filters) ? filters : [filters];
+  return [...new Set(values.map((value) => String(value || "")).filter(Boolean))];
+}
+
+function folderFilterMatches(position, filters = state.folderFilters) {
+  const selected = normalizedFolderFilters(filters);
   const folder = normalizedSourceFolder(position);
-  if (!selected) return true;
-  if (selected === ROOT_FOLDER_FILTER) return folder === "";
-  return folder === selected || folder.startsWith(`${selected}/`);
+  if (!selected.length) return true;
+  return selected.some((filter) => {
+    if (filter === ROOT_FOLDER_FILTER) return folder === "";
+    return folder === filter || folder.startsWith(`${filter}/`);
+  });
 }
 
 function availableFolderFilters() {
@@ -396,7 +404,7 @@ function availableFolderFilters() {
 
 function filteredPositionsForKind(kind) {
   let pool = positionsForKind(kind);
-  if (state.folderFilter) {
+  if (state.folderFilters.length) {
     pool = pool.filter((position) => folderFilterMatches(position));
   }
   if (state.matchType !== "all") {
@@ -1470,7 +1478,7 @@ function folderFilterDisplayLabel(filter) {
 }
 
 function folderFilterCount(filter) {
-  return state.positions.filter((position) => folderFilterMatches(position, filter)).length;
+  return state.positions.filter((position) => folderFilterMatches(position, [filter])).length;
 }
 
 function renderFolderModal() {
@@ -1478,7 +1486,7 @@ function renderFolderModal() {
 
   const filters = availableFolderFilters();
   elements.folderModalList.innerHTML = filters.map((filter) => {
-    const selected = filter === state.folderFilter;
+    const selected = state.folderFilters.includes(filter);
     const depth = filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
     const fullLabel = filter === ROOT_FOLDER_FILTER ? "未分類" : filter;
     const label = folderFilterDisplayLabel(filter);
@@ -1539,10 +1547,13 @@ function toggleFolderModal() {
 
 function setFolderFilter(filter) {
   const requested = String(filter || "");
-  const next = requested && requested === state.folderFilter ? "" : requested;
-  const valid = next === "" || availableFolderFilters().includes(next);
-  if (!valid) return;
-  state.folderFilter = next;
+  if (!requested || !availableFolderFilters().includes(requested)) return;
+
+  const selected = new Set(state.folderFilters);
+  if (selected.has(requested)) selected.delete(requested);
+  else selected.add(requested);
+  state.folderFilters = availableFolderFilters().filter((value) => selected.has(value));
+
   state.current = null;
   resetBoardQueue();
   saveSettings();
@@ -1651,8 +1662,10 @@ async function syncPositions({ initial = false } = {}) {
 
   const previousId = state.current?.id || null;
   state.positions = (payload.positions || []).filter((position) => decisionKind(position));
-  if (state.folderFilter && !availableFolderFilters().includes(state.folderFilter)) {
-    state.folderFilter = "";
+  const availableFolders = new Set(availableFolderFilters());
+  const validFolderFilters = state.folderFilters.filter((filter) => availableFolders.has(filter));
+  if (validFolderFilters.length !== state.folderFilters.length) {
+    state.folderFilters = validFolderFilters;
     saveSettings();
   }
   migrateProgressKeys();
@@ -1700,7 +1713,13 @@ async function start() {
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);
-    state.folderFilter = typeof settings.sourceFolder === "string" ? settings.sourceFolder : "";
+    if (Array.isArray(settings.sourceFolders)) {
+      state.folderFilters = normalizedFolderFilters(settings.sourceFolders);
+    } else if (typeof settings.sourceFolder === "string" && settings.sourceFolder) {
+      state.folderFilters = [settings.sourceFolder];
+    } else {
+      state.folderFilters = [];
+    }
   } else {
     state.filters.task = false;
     state.filters.new = false;

@@ -1659,3 +1659,32 @@ body.folder-modal-open { overflow: auto; }
 
   body.folder-modal-open { overflow: hidden; }
 }
+
+
+/* v122: wide desktop sort panel, edge-to-edge mobile panel, no shadows */
+.folder-modal-panel {
+  left: 50% !important;
+  right: auto !important;
+  width: min(920px, calc(100vw - 24px)) !important;
+  transform: translateX(-50%);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 790px) {
+  .folder-modal {
+    background: rgba(0, 0, 0, .78) !important;
+  }
+
+  .folder-modal-panel {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    transform: none;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-top: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}

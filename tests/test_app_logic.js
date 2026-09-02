@@ -146,6 +146,7 @@ run("Task + New filters intersect and counts are per decision kind", () => {
     };
     state.matchType = "point";
     state.filters = {task:true,new:true};
+    state.folderFilters = [];
   `);
 
   assert.deepEqual(
@@ -174,16 +175,21 @@ run("Folder filter includes descendants and can isolate imports root", () => {
     state.progress = {};
     state.matchType = "all";
     state.filters = {task:false,new:false};
-    state.folderFilter = "MATCH";
+    state.folderFilters = ["MATCH"];
   `);
   assert.deepEqual(
     Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
     ["A", "B"],
   );
-  evaluate('state.folderFilter = ROOT_FOLDER_FILTER');
+  evaluate('state.folderFilters = [ROOT_FOLDER_FILTER]');
   assert.deepEqual(
     Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
     ["R"],
+  );
+  evaluate('state.folderFilters = ["MATCH", "CUBE"]');
+  assert.deepEqual(
+    Array.from(evaluate('filteredPositionsForKind("checker").map(p => p.id)')),
+    ["A", "B", "C"],
   );
   assert.deepEqual(
     Array.from(evaluate('availableFolderFilters()')),
@@ -504,6 +510,7 @@ run("ALL decision kind and match type filter compose with Task/New", () => {
     };
     state.matchType = "point";
     state.filters = {task:true,new:true};
+    state.folderFilters = [];
   `);
 
   assert.deepEqual(
@@ -1038,7 +1045,7 @@ run("Sort modal has no ALL row and root is 未分類", () => {
       {id:"R",decisionKind:"checker",sourceFolder:"",sourcePath:"root.xgp",matchLength:7},
       {id:"A",decisionKind:"checker",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp",matchLength:7}
     ];
-    state.folderFilter = "";
+    state.folderFilters = [];
     renderFolderModal();
   `);
   assert.equal(evaluate('folderFilterDisplayLabel(ROOT_FOLDER_FILTER)'), "未分類");
@@ -1051,11 +1058,11 @@ run("Folder selection keeps the sort modal open until the hamburger/X is pressed
     state.positions = [
       {id:"A",decisionKind:"checker",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp",matchLength:7}
     ];
-    state.folderFilter = "";
+    state.folderFilters = [];
     elements.folderModal.hidden = false;
     setFolderFilter("MATCH");
   `);
-  assert.equal(evaluate('state.folderFilter'), "MATCH");
+  assert.deepEqual(Array.from(evaluate('state.folderFilters')), ["MATCH"]);
   assert.equal(evaluate('elements.folderModal.hidden'), false);
 });
 
