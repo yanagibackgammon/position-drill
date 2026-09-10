@@ -197,6 +197,35 @@ run("Folder filter includes descendants and can isolate imports root", () => {
   );
 });
 
+run("Progress merge keeps the highest non-negative counters", () => {
+  context.recordA = { correct: 3, wrong: -2 };
+  context.recordB = { correct: 1, wrong: 4 };
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(evaluate("mergedRecord(recordA, recordB)"))),
+    { correct: 3, wrong: 4 },
+  );
+});
+
+run("Folder catalog counts parents, descendants and uncategorized positions in one pass", () => {
+  evaluate(`
+    state.positions = [
+      {id:"R",sourceFolder:"",sourcePath:"root.xgp"},
+      {id:"A",sourceFolder:"MATCH",sourcePath:"MATCH/a.xgp"},
+      {id:"B",sourceFolder:"MATCH/2026",sourcePath:"MATCH/2026/b.xgp"},
+      {id:"C",sourceFolder:"MATCH/2026",sourcePath:"MATCH/2026/c.xgp"},
+      {id:"D",sourceFolder:"CUBE",sourcePath:"CUBE/d.xgp"}
+    ];
+  `);
+  assert.deepEqual(
+    Array.from(evaluate("folderFilterCatalog().filters")),
+    ["__root__", "CUBE", "MATCH", "MATCH/2026"],
+  );
+  assert.deepEqual(
+    Object.fromEntries(Array.from(evaluate("folderFilterCatalog().counts.entries()"))),
+    { "__root__": 1, CUBE: 1, MATCH: 3, "MATCH/2026": 2 },
+  );
+});
+
 run("Take/Pass game info always uses pre-offer No Double state", () => {
   context.takePosition = {
     decisionKind: "take",

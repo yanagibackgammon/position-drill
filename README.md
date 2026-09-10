@@ -45,10 +45,16 @@ Cube-decision display convention:
 
 ### Task
 
-A position is included when either condition is true:
+A position is included while **Correct ≤ Incorrect**. Once Correct becomes strictly greater than Incorrect, it leaves Task.
 
-- Correct count is 0
-- Correct count is lower than incorrect count
+### Folder
+
+Source folders under `imports/` are exposed as hierarchical Sort filters.
+
+- Parent folders include all descendant folders
+- Multiple folder selections are combined with OR
+- Folder filters are combined with Task/New and decision/match-type filters using AND
+- Files directly under `imports/` are shown as `フォルダ未分類`
 
 ### New
 
@@ -96,6 +102,9 @@ python scripts/build.py
 
 ## Maintenance rules
 
+- Treat the current UI design and interaction behavior as a compatibility contract unless a change is explicitly requested.
+- `tests/test_ui_contract.py` protects the settled design tokens and Sort modal conventions.
+- `tests/test_repo_contract.py` prevents known Match Replay-only paths/entrypoint markers from being mixed into this repository.
 - Do not add another build script at the repository root. Use `scripts/build.py`.
 - Do not commit `dist/`, `__pycache__/`, or `.pyc` files.
 - Do not keep two filenames for the same parsed XG match.

@@ -13,6 +13,9 @@ const BOARD_PRELOAD_CACHE_LIMIT = 8;
 const LOCAL_DB_NAME = "position-drill-local-v1";
 const LOCAL_DB_STORE = "records";
 const NEW_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const NEW_POSITION_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const SELECTOR_SWIPE_THRESHOLD_PX = 28;
+const DOUBLE_TAP_GUARD_MS = 350;
 const SMARTPHONE_MEDIA_QUERY = "(max-width: 790px)";
 const DESKTOP_MEDIA_QUERY = "(min-width: 791px)";
 
@@ -168,23 +171,29 @@ function mirrorLocalDB(key, value) {
   writeLocalDB(key, value).catch(() => {});
 }
 
+async function loadLocalOrBackupObject(key, fallback = {}) {
+  const local = loadJSON(key, null);
+  if (local) return local;
+
+  const backup = await readLocalDB(key);
+  return backup && typeof backup === "object" ? backup : fallback;
+}
+
+function mergedRecord(...records) {
+  return records.reduce((merged, raw) => ({
+    correct: Math.max(merged.correct, Math.max(0, Number(raw?.correct) || 0)),
+    wrong: Math.max(merged.wrong, Math.max(0, Number(raw?.wrong) || 0)),
+  }), { correct: 0, wrong: 0 });
+}
+
 function mergeProgress(primary, backup) {
-  const merged = { ...(backup || {}), ...(primary || {}) };
   const keys = new Set([
     ...Object.keys(primary || {}),
     ...Object.keys(backup || {}),
   ]);
-
-  keys.forEach((key) => {
-    const a = primary?.[key] || {};
-    const b = backup?.[key] || {};
-    merged[key] = {
-      correct: Math.max(0, Number(a.correct) || 0, Number(b.correct) || 0),
-      wrong: Math.max(0, Number(a.wrong) || 0, Number(b.wrong) || 0),
-    };
-  });
-
-  return merged;
+  return Object.fromEntries(
+    [...keys].map((key) => [key, mergedRecord(primary?.[key], backup?.[key])]),
+  );
 }
 
 async function loadProgress() {
@@ -234,10 +243,7 @@ function progressKey(position) {
 }
 
 function normalizedRecord(raw) {
-  return {
-    correct: Math.max(0, Number(raw?.correct) || 0),
-    wrong: Math.max(0, Number(raw?.wrong) || 0),
-  };
+  return mergedRecord(raw);
 }
 
 function recordFor(position) {
@@ -246,20 +252,9 @@ function recordFor(position) {
   const key = progressKey(position);
   const stable = state.progress[key];
   const legacy = position.id ? state.progress[position.id] : null;
-
-  if (!stable) return normalizedRecord(legacy);
-  if (!legacy || key === position.id) return normalizedRecord(stable);
-
-  return {
-    correct: Math.max(
-      Math.max(0, Number(stable.correct) || 0),
-      Math.max(0, Number(legacy.correct) || 0),
-    ),
-    wrong: Math.max(
-      Math.max(0, Number(stable.wrong) || 0),
-      Math.max(0, Number(legacy.wrong) || 0),
-    ),
-  };
+  return key === position.id
+    ? normalizedRecord(stable)
+    : mergedRecord(stable, legacy);
 }
 
 function migrateProgressKeys() {
@@ -273,18 +268,7 @@ function migrateProgressKeys() {
     if (!legacy) return;
 
     const current = state.progress[key];
-    const merged = {
-      correct: Math.max(
-        Math.max(0, Number(current?.correct) || 0),
-        Math.max(0, Number(legacy.correct) || 0),
-      ),
-      wrong: Math.max(
-        Math.max(0, Number(current?.wrong) || 0),
-        Math.max(0, Number(legacy.wrong) || 0),
-      ),
-    };
-
-    state.progress[key] = merged;
+    state.progress[key] = mergedRecord(current, legacy);
     delete state.progress[position.id];
     changed = true;
   });
@@ -312,7 +296,7 @@ function isNewPosition(position, now = Date.now()) {
   if (!Number.isFinite(uploadedAt)) return false;
 
   const age = now - uploadedAt;
-  return age >= -(5 * 60 * 1000) && age <= NEW_POSITION_WINDOW_MS;
+  return age >= -NEW_POSITION_CLOCK_SKEW_MS && age <= NEW_POSITION_WINDOW_MS;
 }
 
 function decisionKind(position) {
@@ -355,11 +339,6 @@ function positionMatchType(position) {
   return "point";
 }
 
-function positionsForKind(kind) {
-  if (kind === "all") return state.positions.slice();
-  return state.positions.filter((position) => decisionKind(position) === kind);
-}
-
 function normalizedSourceFolder(position) {
   const explicit = String(position?.sourceFolder || "").replace(/^\/+|\/+$/g, "");
   if (explicit) return explicit;
@@ -384,40 +363,45 @@ function folderFilterMatches(position, filters = state.folderFilters) {
   });
 }
 
-function availableFolderFilters() {
-  const folders = new Set();
-  let hasRoot = false;
+function folderFilterAncestors(position) {
+  const folder = normalizedSourceFolder(position);
+  if (!folder) return [ROOT_FOLDER_FILTER];
 
+  const parts = folder.split("/").filter(Boolean);
+  return parts.map((_, index) => parts.slice(0, index + 1).join("/"));
+}
+
+function folderFilterCatalog() {
+  const counts = new Map();
   state.positions.forEach((position) => {
-    const folder = normalizedSourceFolder(position);
-    if (!folder) {
-      hasRoot = true;
-      return;
-    }
-
-    const parts = folder.split("/").filter(Boolean);
-    for (let index = 1; index <= parts.length; index += 1) {
-      folders.add(parts.slice(0, index).join("/"));
-    }
+    folderFilterAncestors(position).forEach((filter) => {
+      counts.set(filter, (counts.get(filter) || 0) + 1);
+    });
   });
 
-  return [
-    ...(hasRoot ? [ROOT_FOLDER_FILTER] : []),
-    ...Array.from(folders).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-  ];
+  const filters = [...counts.keys()].sort((a, b) => {
+    if (a === ROOT_FOLDER_FILTER) return -1;
+    if (b === ROOT_FOLDER_FILTER) return 1;
+    return a.localeCompare(b, undefined, { numeric: true });
+  });
+  return { filters, counts };
+}
+
+function availableFolderFilters() {
+  return folderFilterCatalog().filters;
+}
+
+function positionMatchesActiveFilters(position, kind) {
+  if (kind !== "all" && decisionKind(position) !== kind) return false;
+  if (state.folderFilters.length && !folderFilterMatches(position)) return false;
+  if (state.matchType !== "all" && positionMatchType(position) !== state.matchType) return false;
+  if (state.filters.task && !isChallenge(position)) return false;
+  if (state.filters.new && !isNewPosition(position)) return false;
+  return true;
 }
 
 function filteredPositionsForKind(kind) {
-  let pool = positionsForKind(kind);
-  if (state.folderFilters.length) {
-    pool = pool.filter((position) => folderFilterMatches(position));
-  }
-  if (state.matchType !== "all") {
-    pool = pool.filter((position) => positionMatchType(position) === state.matchType);
-  }
-  if (state.filters.task) pool = pool.filter(isChallenge);
-  if (state.filters.new) pool = pool.filter(isNewPosition);
-  return pool;
+  return state.positions.filter((position) => positionMatchesActiveFilters(position, kind));
 }
 
 function activePool() {
@@ -1450,13 +1434,16 @@ function cycleSelector(selector, delta) {
 }
 
 function updateSortModalCounts() {
+  let taskCount = 0;
+  let newCount = 0;
+  state.positions.forEach((position) => {
+    if (isChallenge(position)) taskCount += 1;
+    if (isNewPosition(position)) newCount += 1;
+  });
+
   if (elements.sortAllCount) elements.sortAllCount.textContent = String(state.positions.length);
-  if (elements.sortTaskCount) {
-    elements.sortTaskCount.textContent = String(state.positions.filter(isChallenge).length);
-  }
-  if (elements.sortNewCount) {
-    elements.sortNewCount.textContent = String(state.positions.filter(isNewPosition).length);
-  }
+  if (elements.sortTaskCount) elements.sortTaskCount.textContent = String(taskCount);
+  if (elements.sortNewCount) elements.sortNewCount.textContent = String(newCount);
 }
 
 function syncFilterButtons() {
@@ -1489,15 +1476,11 @@ function folderFilterDisplayLabel(filter) {
   return parts[parts.length - 1] || filter;
 }
 
-function folderFilterCount(filter) {
-  return state.positions.filter((position) => folderFilterMatches(position, [filter])).length;
-}
-
 function renderFolderModal() {
   if (!elements.folderModalList) return;
 
   updateSortModalCounts();
-  const filters = availableFolderFilters();
+  const { filters, counts } = folderFilterCatalog();
   elements.folderModalList.innerHTML = filters.map((filter) => {
     const selected = state.folderFilters.includes(filter);
     const depth = filter === ROOT_FOLDER_FILTER ? 0 : Math.max(0, filter.split("/").length - 1);
@@ -1509,7 +1492,7 @@ function renderFolderModal() {
         title="${escapeHTML(fullLabel)}" style="--folder-depth:${depth}">
         <span class="folder-option-mark" aria-hidden="true">${selected ? "✓" : ""}</span>
         <span class="folder-option-label">${escapeHTML(label)}</span>
-        <span class="folder-option-count">${folderFilterCount(filter)}</span>
+        <span class="folder-option-count">${counts.get(filter) || 0}</span>
       </button>`;
   }).join("");
 }
@@ -1604,7 +1587,7 @@ function installSmartphoneZoomGuard() {
 
     const now = Date.now();
     const sameTarget = event.target === lastTouchTarget;
-    if (sameTarget && now - lastTouchEnd < 350) {
+    if (sameTarget && now - lastTouchEnd < DOUBLE_TAP_GUARD_MS) {
       event.preventDefault();
     }
     lastTouchEnd = now;
@@ -1657,7 +1640,7 @@ function installEvents() {
       const dy = touch.clientY - startPoint.y;
       startPoint = null;
 
-      if (Math.abs(dy) < 28 || Math.abs(dy) <= Math.abs(dx)) return;
+      if (Math.abs(dy) < SELECTOR_SWIPE_THRESHOLD_PX || Math.abs(dy) <= Math.abs(dx)) return;
       cycleSelector(selector, dy < 0 ? 1 : -1);
     }, { passive: true });
   };
@@ -1717,20 +1700,13 @@ async function refreshPositionsSilently() {
 async function start() {
   state.progress = await loadProgress();
 
-  const localDaily = loadJSON(DAILY_STORAGE_KEY, null);
-  const backupDaily = await readLocalDB(DAILY_STORAGE_KEY);
-  state.daily = localDaily || (
-    backupDaily && typeof backupDaily === "object"
-      ? backupDaily
-      : { day: "", correct: 0, wrong: 0 }
+  state.daily = await loadLocalOrBackupObject(
+    DAILY_STORAGE_KEY,
+    { day: "", correct: 0, wrong: 0 },
   );
   saveDaily();
   ensureDailyRecord({ seedFromTotal: true });
-  const localSettings = loadJSON(SETTINGS_KEY, null);
-  const backupSettings = await readLocalDB(SETTINGS_KEY);
-  const settings = localSettings || (
-    backupSettings && typeof backupSettings === "object" ? backupSettings : {}
-  );
+  const settings = await loadLocalOrBackupObject(SETTINGS_KEY);
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
   state.matchType = normalizeMatchTypeForKind(state.currentKind, state.matchType);
@@ -1777,11 +1753,9 @@ async function start() {
       return;
     }
 
-    if (!document.hidden) {
-      if (ensureDailyRecord()) updateToday();
-      scheduleDailyReset();
-      refreshPositionsSilently();
-    }
+    if (ensureDailyRecord()) updateToday();
+    scheduleDailyReset();
+    refreshPositionsSilently();
   });
 }
 
