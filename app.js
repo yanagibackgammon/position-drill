@@ -41,6 +41,7 @@ const FILTER_LABELS = {
 const KIND_ORDER = ["checker", "double", "take"];
 const MATCH_TYPE_ORDER = ["all", "point", "dmp", "unlimited"];
 const CUBE_MATCH_TYPE_ORDER = ["all", "point", "unlimited"];
+const SORT_MODE_ORDER = ["filename", "added", "random"];
 
 const state = {
   positions: [],
@@ -58,6 +59,7 @@ const state = {
   boardQueue: [],
   filters: { task: false, new: false },
   folderFilters: [],
+  sortMode: "random",
 };
 
 const elements = {
@@ -75,6 +77,7 @@ const elements = {
   sortAllCount: document.getElementById("sort-all-count"),
   sortTaskCount: document.getElementById("sort-task-count"),
   sortNewCount: document.getElementById("sort-new-count"),
+  sortModeButtons: [...document.querySelectorAll("[data-sort-mode]")],
   board: document.getElementById("board-image"),
   positionCorrect: document.getElementById("position-correct"),
   positionWrong: document.getElementById("position-wrong"),
@@ -218,6 +221,7 @@ function saveSettings() {
     newOnly: state.filters.new,
     sourceFolders: state.folderFilters.slice(),
     sourceFolder: state.folderFilters[0] || "",
+    sortMode: state.sortMode,
     filterModeVersion: FILTER_MODE_VERSION,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
@@ -416,6 +420,77 @@ function randomPosition(pool, avoidId = null) {
   return choices[Math.floor(Math.random() * choices.length)] || pool[0];
 }
 
+function sourceFilename(position) {
+  return String(position?.sourceFile || position?.sourcePath || "");
+}
+
+function sourcePathname(position) {
+  return String(position?.sourcePath || position?.sourceFile || "");
+}
+
+function sourceAddedAtMs(position) {
+  const numeric = Number(position?.sourceUploadedAtMs);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  const parsed = Date.parse(position?.sourceUploadedAt || position?.sourceAddedAt || "");
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function compareNaturalText(left, right) {
+  return String(left || "").localeCompare(String(right || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function comparePositionWithinSource(left, right) {
+  const gameDiff = Number(left?.gameNumber || 0) - Number(right?.gameNumber || 0);
+  if (gameDiff) return gameDiff;
+  const moveDiff = Number(left?.moveNumber || 0) - Number(right?.moveNumber || 0);
+  if (moveDiff) return moveDiff;
+  return compareNaturalText(left?.id, right?.id);
+}
+
+function comparePositionsByFilename(left, right) {
+  const fileDiff = compareNaturalText(sourceFilename(left), sourceFilename(right));
+  if (fileDiff) return fileDiff;
+  const pathDiff = compareNaturalText(sourcePathname(left), sourcePathname(right));
+  if (pathDiff) return pathDiff;
+  return comparePositionWithinSource(left, right);
+}
+
+function comparePositionsByAddedDate(left, right) {
+  const leftDate = sourceAddedAtMs(left);
+  const rightDate = sourceAddedAtMs(right);
+  if (leftDate !== rightDate) {
+    if (!Number.isFinite(leftDate)) return 1;
+    if (!Number.isFinite(rightDate)) return -1;
+    return rightDate - leftDate;
+  }
+  return comparePositionsByFilename(left, right);
+}
+
+function orderedPositions(pool, mode = state.sortMode) {
+  if (mode === "filename") return pool.slice().sort(comparePositionsByFilename);
+  if (mode === "added") return pool.slice().sort(comparePositionsByAddedDate);
+  return pool.slice();
+}
+
+function firstPositionForCurrentSort(pool) {
+  if (!pool.length) return null;
+  if (state.sortMode === "random") return randomPosition(pool);
+  return orderedPositions(pool)[0] || null;
+}
+
+function nextPositionForCurrentSort(pool, currentId = null) {
+  if (!pool.length) return null;
+  if (state.sortMode === "random") return randomPosition(pool, currentId);
+
+  const ordered = orderedPositions(pool);
+  const index = ordered.findIndex((position) => position.id === currentId);
+  if (index < 0) return ordered[0] || null;
+  return ordered[(index + 1) % ordered.length] || ordered[0] || null;
+}
+
 function absoluteAssetUrl(path) {
   const url = new URL(path || "", POSITIONS_ROOT);
   if (state.dataVersion) url.searchParams.set("v", state.dataVersion);
@@ -477,6 +552,21 @@ function refillBoardQueue() {
     return;
   }
 
+  if (state.sortMode !== "random") {
+    const ordered = orderedPositions(pool);
+    const currentIndex = ordered.findIndex((position) => position.id === state.current?.id);
+    const startIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
+    const preloadCount = Math.min(BOARD_PRELOAD_COUNT, Math.max(0, ordered.length - 1));
+    state.boardQueue = [];
+    for (let offset = 0; offset < preloadCount; offset += 1) {
+      const position = ordered[(startIndex + offset) % ordered.length];
+      if (!position || position.id === state.current?.id) continue;
+      state.boardQueue.push(position);
+      preloadBoard(position);
+    }
+    return;
+  }
+
   const activeIds = new Set(pool.map((position) => position.id));
   state.boardQueue = state.boardQueue.filter(
     (position) => position?.id && position.id !== state.current?.id && activeIds.has(position.id),
@@ -506,7 +596,7 @@ function queuedNextPosition() {
     }
   }
 
-  return randomPosition(pool, state.current?.id || null);
+  return nextPositionForCurrentSort(pool, state.current?.id || null);
 }
 
 function formatError(value) {
@@ -1251,7 +1341,7 @@ function renderCurrent() {
   updateTotals();
 
   if (!state.current || !pool.some((position) => position.id === state.current.id)) {
-    state.current = randomPosition(pool, state.current?.id || null);
+    state.current = firstPositionForCurrentSort(pool);
   }
 
   if (!state.current) {
@@ -1446,6 +1536,27 @@ function updateSortModalCounts() {
   if (elements.sortNewCount) elements.sortNewCount.textContent = String(newCount);
 }
 
+function syncSortModeButtons() {
+  elements.sortModeButtons.forEach((button) => {
+    const mode = button.dataset.sortMode;
+    const active = mode === state.sortMode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function setSortMode(mode) {
+  if (!SORT_MODE_ORDER.includes(mode) || mode === state.sortMode) {
+    syncSortModeButtons();
+    return;
+  }
+  state.sortMode = mode;
+  resetCurrentSelection();
+  syncSortModeButtons();
+  saveSettings();
+  renderCurrent();
+}
+
 function syncFilterButtons() {
   updateSortModalCounts();
   elements.filterButtons.forEach((button) => {
@@ -1480,6 +1591,7 @@ function renderFolderModal() {
   if (!elements.folderModalList) return;
 
   updateSortModalCounts();
+  syncSortModeButtons();
   const { filters, counts } = folderFilterCatalog();
   elements.folderModalList.innerHTML = filters.map((filter) => {
     const selected = state.folderFilters.includes(filter);
@@ -1599,6 +1711,9 @@ function installEvents() {
   const smartphone = window.matchMedia(SMARTPHONE_MEDIA_QUERY);
 
   elements.sortButton?.addEventListener("click", toggleFolderModal);
+  elements.sortModeButtons.forEach((button) => {
+    button.addEventListener("click", () => setSortMode(button.dataset.sortMode));
+  });
   elements.folderModalList?.addEventListener("click", (event) => {
     const option = event.target.closest?.("[data-folder-filter]");
     if (!option) return;
@@ -1710,6 +1825,7 @@ async function start() {
   if (KIND_ORDER.includes(settings.kind)) state.currentKind = settings.kind;
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
   state.matchType = normalizeMatchTypeForKind(state.currentKind, state.matchType);
+  if (SORT_MODE_ORDER.includes(settings.sortMode)) state.sortMode = settings.sortMode;
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);
@@ -1726,6 +1842,7 @@ async function start() {
   }
   syncKindButtons();
   syncMatchTypeButtons();
+  syncSortModeButtons();
   syncFilterButtons();
   installSmartphoneZoomGuard();
   installEvents();

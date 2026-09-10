@@ -1095,9 +1095,6 @@ run("Folder selection keeps the sort modal open until the hamburger/X is pressed
   assert.equal(evaluate('elements.folderModal.hidden'), false);
 });
 
-console.log("All app regression tests passed.");
-
-
 run("Sort modal exposes ALL, Task and New total counts", () => {
   evaluate(`
     state.positions = [
@@ -1119,3 +1116,76 @@ run("Sort modal exposes ALL, Task and New total counts", () => {
   assert.equal(evaluate('elements.sortTaskCount.textContent'), "2");
   assert.equal(evaluate('elements.sortNewCount.textContent'), "2");
 });
+
+run("Sort modes order by filename, newest added date, or random", () => {
+  evaluate(`
+    state.positions = [
+      {id:"B2",decisionKind:"checker",sourceFile:"B10.xgp",sourcePath:"Z/B10.xgp",gameNumber:1,moveNumber:2,sourceUploadedAtMs:100},
+      {id:"A2",decisionKind:"checker",sourceFile:"A2.xgp",sourcePath:"A/A2.xgp",gameNumber:2,moveNumber:1,sourceUploadedAtMs:300},
+      {id:"A1",decisionKind:"checker",sourceFile:"A2.xgp",sourcePath:"A/A2.xgp",gameNumber:1,moveNumber:4,sourceUploadedAtMs:300},
+      {id:"B1",decisionKind:"checker",sourceFile:"B2.xgp",sourcePath:"B/B2.xgp",gameNumber:1,moveNumber:1,sourceUploadedAtMs:200},
+      {id:"U",decisionKind:"checker",sourceFile:"Undated.xgp",sourcePath:"U/Undated.xgp"}
+    ];
+  `);
+  assert.deepEqual(
+    Array.from(evaluate('orderedPositions(state.positions, "filename").map(p => p.id)')),
+    ["A1", "A2", "B1", "B2", "U"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('orderedPositions(state.positions, "added").map(p => p.id)')),
+    ["A1", "A2", "B1", "B2", "U"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('orderedPositions(state.positions, "random").map(p => p.id)')),
+    ["B2", "A2", "A1", "B1", "U"],
+  );
+});
+
+run("Sequential sort modes start at the first item, advance and wrap", () => {
+  evaluate(`
+    state.positions = [
+      {id:"C",decisionKind:"checker",sourceFile:"C.xgp",sourceUploadedAtMs:100},
+      {id:"A",decisionKind:"checker",sourceFile:"A.xgp",sourceUploadedAtMs:300},
+      {id:"B",decisionKind:"checker",sourceFile:"B.xgp",sourceUploadedAtMs:200}
+    ];
+    state.matchType = "all";
+    state.filters = {task:false,new:false};
+    state.folderFilters = [];
+    state.sortMode = "filename";
+  `);
+  assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "A");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "B");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "A");
+
+  evaluate('state.sortMode = "added"');
+  assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "A");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "B");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "A");
+});
+
+run("Sort mode buttons are mutually exclusive and keep the modal open", () => {
+  evaluate(`
+    const makeSortButton = (mode) => ({
+      dataset:{sortMode:mode},
+      classList:{toggle(name, active){ this.active = active; }},
+      setAttribute(name, value){ this[name] = value; }
+    });
+    elements.sortModeButtons = [makeSortButton("filename"), makeSortButton("added"), makeSortButton("random")];
+    elements.folderModal.hidden = false;
+    state.sortMode = "random";
+    state.positions = [];
+    setSortMode("filename");
+  `);
+  assert.equal(evaluate('state.sortMode'), "filename");
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b.classList.active)')),
+    [true, false, false],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b["aria-pressed"])')),
+    ["true", "false", "false"],
+  );
+  assert.equal(evaluate('elements.folderModal.hidden'), false);
+});
+
+console.log("All app regression tests passed.");

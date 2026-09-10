@@ -1675,3 +1675,33 @@ body.folder-modal-open { overflow: auto; }
     grid-template-columns: 18% 30% 38% 14%;
   }
 }
+
+/* v128: exclusive position ordering controls */
+.sort-mode-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 56px;
+  border-bottom: 1px solid var(--line);
+  background: var(--black);
+}
+
+.sort-mode-button {
+  min-width: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 0 6px;
+  color: var(--white);
+  background: var(--black);
+  font: inherit;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort-mode-button:last-child { border-right: 0; }
+.sort-mode-button:hover,
+.sort-mode-button:focus-visible { background: var(--line); }
+.sort-mode-button.is-active,
+.sort-mode-button.is-active:hover,
+.sort-mode-button.is-active:focus-visible { background: var(--active); }
