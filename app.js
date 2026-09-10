@@ -42,6 +42,7 @@ const KIND_ORDER = ["checker", "double", "take"];
 const MATCH_TYPE_ORDER = ["all", "point", "dmp", "unlimited"];
 const CUBE_MATCH_TYPE_ORDER = ["all", "point", "unlimited"];
 const SORT_MODE_ORDER = ["filename", "added", "random"];
+const SORT_DIRECTION_ORDER = ["desc", "asc"];
 
 const state = {
   positions: [],
@@ -60,6 +61,7 @@ const state = {
   filters: { task: false, new: false },
   folderFilters: [],
   sortMode: "random",
+  sortDirection: "desc",
 };
 
 const elements = {
@@ -222,6 +224,7 @@ function saveSettings() {
     sourceFolders: state.folderFilters.slice(),
     sourceFolder: state.folderFilters[0] || "",
     sortMode: state.sortMode,
+    sortDirection: state.sortDirection,
     filterModeVersion: FILTER_MODE_VERSION,
   };
   saveLocalJSON(SETTINGS_KEY, settings);
@@ -450,28 +453,34 @@ function comparePositionWithinSource(left, right) {
   return compareNaturalText(left?.id, right?.id);
 }
 
-function comparePositionsByFilename(left, right) {
+function comparePositionsByFilename(left, right, direction = "asc") {
+  const directionMultiplier = direction === "desc" ? -1 : 1;
   const fileDiff = compareNaturalText(sourceFilename(left), sourceFilename(right));
-  if (fileDiff) return fileDiff;
+  if (fileDiff) return fileDiff * directionMultiplier;
   const pathDiff = compareNaturalText(sourcePathname(left), sourcePathname(right));
-  if (pathDiff) return pathDiff;
+  if (pathDiff) return pathDiff * directionMultiplier;
+  // Keep positions inside the same source file in natural Game/Move order.
   return comparePositionWithinSource(left, right);
 }
 
-function comparePositionsByAddedDate(left, right) {
+function comparePositionsByAddedDate(left, right, direction = "desc") {
   const leftDate = sourceAddedAtMs(left);
   const rightDate = sourceAddedAtMs(right);
   if (leftDate !== rightDate) {
     if (!Number.isFinite(leftDate)) return 1;
     if (!Number.isFinite(rightDate)) return -1;
-    return rightDate - leftDate;
+    return direction === "asc" ? leftDate - rightDate : rightDate - leftDate;
   }
-  return comparePositionsByFilename(left, right);
+  return comparePositionsByFilename(left, right, "asc");
 }
 
-function orderedPositions(pool, mode = state.sortMode) {
-  if (mode === "filename") return pool.slice().sort(comparePositionsByFilename);
-  if (mode === "added") return pool.slice().sort(comparePositionsByAddedDate);
+function orderedPositions(pool, mode = state.sortMode, direction = state.sortDirection) {
+  if (mode === "filename") {
+    return pool.slice().sort((left, right) => comparePositionsByFilename(left, right, direction));
+  }
+  if (mode === "added") {
+    return pool.slice().sort((left, right) => comparePositionsByAddedDate(left, right, direction));
+  }
   return pool.slice();
 }
 
@@ -1536,21 +1545,42 @@ function updateSortModalCounts() {
   if (elements.sortNewCount) elements.sortNewCount.textContent = String(newCount);
 }
 
+function sortModeButtonLabel(mode, active = mode === state.sortMode) {
+  if (mode === "random") return "ランダム";
+  const prefix = mode === "filename" ? "ファイル名" : "追加日";
+  const direction = active ? state.sortDirection : "desc";
+  return `${prefix}${direction === "asc" ? "昇順" : "降順"}`;
+}
+
 function syncSortModeButtons() {
   elements.sortModeButtons.forEach((button) => {
     const mode = button.dataset.sortMode;
     const active = mode === state.sortMode;
+    const label = sortModeButtonLabel(mode, active);
+    button.textContent = label;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-label", `${label}${active ? ": selected" : ""}`);
   });
 }
 
 function setSortMode(mode) {
-  if (!SORT_MODE_ORDER.includes(mode) || mode === state.sortMode) {
+  if (!SORT_MODE_ORDER.includes(mode)) {
     syncSortModeButtons();
     return;
   }
-  state.sortMode = mode;
+
+  if (mode === state.sortMode) {
+    if (mode === "random") {
+      syncSortModeButtons();
+      return;
+    }
+    state.sortDirection = state.sortDirection === "desc" ? "asc" : "desc";
+  } else {
+    state.sortMode = mode;
+    state.sortDirection = "desc";
+  }
+
   resetCurrentSelection();
   syncSortModeButtons();
   saveSettings();
@@ -1826,6 +1856,7 @@ async function start() {
   if (MATCH_TYPE_ORDER.includes(settings.matchType)) state.matchType = settings.matchType;
   state.matchType = normalizeMatchTypeForKind(state.currentKind, state.matchType);
   if (SORT_MODE_ORDER.includes(settings.sortMode)) state.sortMode = settings.sortMode;
+  if (SORT_DIRECTION_ORDER.includes(settings.sortDirection)) state.sortDirection = settings.sortDirection;
   if (Number(settings.filterModeVersion) >= 2) {
     state.filters.task = Boolean(settings.taskOnly ?? settings.challengeOnly ?? false);
     state.filters.new = Boolean(settings.newOnly ?? false);

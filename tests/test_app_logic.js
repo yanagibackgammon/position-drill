@@ -1117,7 +1117,7 @@ run("Sort modal exposes ALL, Task and New total counts", () => {
   assert.equal(evaluate('elements.sortNewCount.textContent'), "2");
 });
 
-run("Sort modes order by filename, newest added date, or random", () => {
+run("Sort modes support filename and added-date ascending/descending order", () => {
   evaluate(`
     state.positions = [
       {id:"B2",decisionKind:"checker",sourceFile:"B10.xgp",sourcePath:"Z/B10.xgp",gameNumber:1,moveNumber:2,sourceUploadedAtMs:100},
@@ -1128,20 +1128,28 @@ run("Sort modes order by filename, newest added date, or random", () => {
     ];
   `);
   assert.deepEqual(
-    Array.from(evaluate('orderedPositions(state.positions, "filename").map(p => p.id)')),
+    Array.from(evaluate('orderedPositions(state.positions, "filename", "asc").map(p => p.id)')),
     ["A1", "A2", "B1", "B2", "U"],
   );
   assert.deepEqual(
-    Array.from(evaluate('orderedPositions(state.positions, "added").map(p => p.id)')),
+    Array.from(evaluate('orderedPositions(state.positions, "filename", "desc").map(p => p.id)')),
+    ["U", "B2", "B1", "A1", "A2"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('orderedPositions(state.positions, "added", "desc").map(p => p.id)')),
     ["A1", "A2", "B1", "B2", "U"],
   );
   assert.deepEqual(
-    Array.from(evaluate('orderedPositions(state.positions, "random").map(p => p.id)')),
+    Array.from(evaluate('orderedPositions(state.positions, "added", "asc").map(p => p.id)')),
+    ["B2", "B1", "A1", "A2", "U"],
+  );
+  assert.deepEqual(
+    Array.from(evaluate('orderedPositions(state.positions, "random", "desc").map(p => p.id)')),
     ["B2", "A2", "A1", "B1", "U"],
   );
 });
 
-run("Sequential sort modes start at the first item, advance and wrap", () => {
+run("Sequential sort modes follow the selected direction and wrap", () => {
   evaluate(`
     state.positions = [
       {id:"C",decisionKind:"checker",sourceFile:"C.xgp",sourceUploadedAtMs:100},
@@ -1152,38 +1160,82 @@ run("Sequential sort modes start at the first item, advance and wrap", () => {
     state.filters = {task:false,new:false};
     state.folderFilters = [];
     state.sortMode = "filename";
+    state.sortDirection = "desc";
   `);
+  assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "C");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "B");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "C");
+
+  evaluate('state.sortDirection = "asc"');
   assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "A");
   assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "B");
   assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "A");
 
-  evaluate('state.sortMode = "added"');
+  evaluate('state.sortMode = "added"; state.sortDirection = "desc"');
   assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "A");
   assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "B");
   assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "A");
+
+  evaluate('state.sortDirection = "asc"');
+  assert.equal(evaluate('firstPositionForCurrentSort(activePool()).id'), "C");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "C").id'), "B");
+  assert.equal(evaluate('nextPositionForCurrentSort(activePool(), "A").id'), "C");
 });
 
-run("Sort mode buttons are mutually exclusive and keep the modal open", () => {
+run("Sort buttons select one mode and toggle filename/added direction on repeat clicks", () => {
   evaluate(`
     const makeSortButton = (mode) => ({
       dataset:{sortMode:mode},
+      textContent:"",
       classList:{toggle(name, active){ this.active = active; }},
       setAttribute(name, value){ this[name] = value; }
     });
     elements.sortModeButtons = [makeSortButton("filename"), makeSortButton("added"), makeSortButton("random")];
     elements.folderModal.hidden = false;
     state.sortMode = "random";
+    state.sortDirection = "desc";
     state.positions = [];
     setSortMode("filename");
   `);
   assert.equal(evaluate('state.sortMode'), "filename");
+  assert.equal(evaluate('state.sortDirection'), "desc");
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b.textContent)')),
+    ["ファイル名降順", "追加日降順", "ランダム"],
+  );
   assert.deepEqual(
     Array.from(evaluate('elements.sortModeButtons.map(b => b.classList.active)')),
     [true, false, false],
   );
+
+  evaluate('setSortMode("filename")');
+  assert.equal(evaluate('state.sortDirection'), "asc");
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b.textContent)')),
+    ["ファイル名昇順", "追加日降順", "ランダム"],
+  );
+
+  evaluate('setSortMode("filename")');
+  assert.equal(evaluate('state.sortDirection'), "desc");
+
+  evaluate('setSortMode("added")');
+  assert.equal(evaluate('state.sortMode'), "added");
+  assert.equal(evaluate('state.sortDirection'), "desc");
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b.textContent)')),
+    ["ファイル名降順", "追加日降順", "ランダム"],
+  );
+
+  evaluate('setSortMode("added")');
+  assert.equal(evaluate('state.sortDirection'), "asc");
+  assert.deepEqual(
+    Array.from(evaluate('elements.sortModeButtons.map(b => b.textContent)')),
+    ["ファイル名降順", "追加日昇順", "ランダム"],
+  );
+
   assert.deepEqual(
     Array.from(evaluate('elements.sortModeButtons.map(b => b["aria-pressed"])')),
-    ["true", "false", "false"],
+    ["false", "true", "false"],
   );
   assert.equal(evaluate('elements.folderModal.hidden'), false);
 });

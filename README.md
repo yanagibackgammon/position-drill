@@ -47,8 +47,8 @@ Cube-decision display convention:
 
 The Sort modal offers exactly one active position order at a time.
 
-- `ファイル名順`: source filename ascending; positions from the same file use Game/Move order
-- `追加日順`: newest Git upload/update first, then filename/Game/Move
+- `ファイル名降順 / ファイル名昇順`: selecting Filename starts descending; pressing the active button toggles descending/ascending. Positions from the same file keep Game/Move order.
+- `追加日降順 / 追加日昇順`: selecting Added Date starts newest-first; pressing the active button toggles newest-first/oldest-first.
 - `ランダム`: existing random drill order (default)
 
 The selected order is persisted in browser settings and composes with all filters below.
