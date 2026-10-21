@@ -610,11 +610,11 @@ class BuildLogicTests(unittest.TestCase):
         white_pips += 25 * max(-position[0], 0)
         top = (
             f'<text x="34.5" y="42.0" text-anchor="middle" '
-            f'dominant-baseline="middle">{white_pips}</text>'
+            f'dominant-baseline="central">{white_pips}</text>'
         )
         bottom = (
             f'<text x="34.5" y="504.0" text-anchor="middle" '
-            f'dominant-baseline="middle">{black_pips}</text>'
+            f'dominant-baseline="central">{black_pips}</text>'
         )
         self.assertIn(top, svg)
         self.assertIn(bottom, svg)

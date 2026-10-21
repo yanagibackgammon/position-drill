@@ -1445,9 +1445,9 @@ def render_board_svg(
         # around the centre of the board.
         elements.extend([
             f'<text x="{score_x:.1f}" y="{pip_top_y:.1f}" text-anchor="middle" '
-            f'dominant-baseline="middle">{opponent_pips}</text>',
+            f'dominant-baseline="central">{opponent_pips}</text>',
             f'<text x="{score_x:.1f}" y="{pip_bottom_y:.1f}" text-anchor="middle" '
-            f'dominant-baseline="middle">{on_roll_pips}</text>',
+            f'dominant-baseline="central">{on_roll_pips}</text>',
         ])
 
     for col, point in enumerate(range(13, 19)):
