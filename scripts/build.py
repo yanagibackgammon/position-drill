@@ -1348,9 +1348,12 @@ def render_board_svg(
     score_bottom_y = side_band_bottom + 31
     unlimited_y = (side_band_top + side_band_bottom) / 2 + 11
     point_w = (left_board_x2 - left_board_x1) / 6
-    # Centre bar contents on the actually rendered bar: the left boundary is
-    # the line at left_board_x2 and the right boundary is the line at bar_x2.
+    # Centre bar contents on the actually rendered bar.
     bar_center = (left_board_x2 + bar_x2) / 2
+    board_center_y = (board_top + board_bottom) / 2
+    pip_offset_y = 118
+    pip_top_y = board_center_y - pip_offset_y
+    pip_bottom_y = board_center_y + pip_offset_y
     checker_r = 21.1
 
     points = row["position"]
@@ -1438,9 +1441,14 @@ def render_board_svg(
             f'fill="#000000" font-size="27" font-weight="700">{on_roll_score_label}</text>',
         ])
     if show_pip_counts:
+        # PIP counts live in the left score tray, above/below the scores.
+        # They share the point-number typography and are vertically symmetric
+        # around the centre of the board.
         elements.extend([
-            f'<text x="{bar_center:.1f}" y="{top_label_y}" text-anchor="middle">{opponent_pips}</text>',
-            f'<text x="{bar_center:.1f}" y="{bottom_label_y}" text-anchor="middle">{on_roll_pips}</text>',
+            f'<text x="{score_x:.1f}" y="{pip_top_y:.1f}" text-anchor="middle" '
+            f'dominant-baseline="middle">{opponent_pips}</text>',
+            f'<text x="{score_x:.1f}" y="{pip_bottom_y:.1f}" text-anchor="middle" '
+            f'dominant-baseline="middle">{on_roll_pips}</text>',
         ])
 
     for col, point in enumerate(range(13, 19)):
@@ -1855,10 +1863,18 @@ def build() -> None:
                 quiz_board_relative = f"assets/boards-quiz/{row['id']}.svg"
                 row["boardImage"] = board_relative
                 row["quizBoardImage"] = quiz_board_relative
-                (DIST_DIR / board_relative).write_text(render_board_svg(row), encoding="utf-8")
-                (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
                 quiz_render_row, quiz_marker = quiz_render_state(row)
-
+                # Keep both variants of the exact same quiz position:
+                # boardImage reveals PIP counts; quizBoardImage keeps them hidden.
+                (DIST_DIR / board_relative).write_text(
+                    render_board_svg(
+                        quiz_render_row,
+                        show_pip_counts=True,
+                        on_roll_marker=quiz_marker,
+                    ),
+                    encoding="utf-8",
+                )
+                (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
                 (DIST_DIR / quiz_board_relative).write_text(
                     render_board_svg(
                         quiz_render_row,
@@ -1884,7 +1900,7 @@ def build() -> None:
                         (DIST_DIR / move_board_relative).write_text(
                             render_board_svg(
                                 move_board_row,
-                                show_pip_counts=False,
+                                show_pip_counts=True,
                                 move_highlights=move_highlights,
                             ),
                             encoding="utf-8",
@@ -1905,7 +1921,7 @@ def build() -> None:
                         (DIST_DIR / action_board_relative).write_text(
                             render_board_svg(
                                 action_board_row,
-                                show_pip_counts=False,
+                                show_pip_counts=True,
                                 on_roll_marker=action_marker,
                             ),
                             encoding="utf-8",

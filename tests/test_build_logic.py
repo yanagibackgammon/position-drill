@@ -585,6 +585,48 @@ class BuildLogicTests(unittest.TestCase):
         )
         self.assertIn('fill="#ffffff" stroke="#6F5424" stroke-width="4.0"', white_svg)
 
+
+    def test_pip_counts_use_left_score_tray_and_point_label_typography(self) -> None:
+        position = [0] * 26
+        position[6] = 2
+        position[8] = 3
+        position[19] = -4
+        position[24] = -2
+        row = {
+            "id": "TEST-PIP-TRAY",
+            "position": position,
+            "matchLength": 7,
+            "onRollScore": 2,
+            "onRollOpponentScore": 3,
+            "cubeOwner": "center",
+            "cubeValue": 1,
+            "diceValues": [],
+        }
+
+        svg = build.render_board_svg(row, show_pip_counts=True)
+        black_pips = sum(point * max(position[point], 0) for point in range(1, 25))
+        black_pips += 25 * max(position[25], 0)
+        white_pips = sum((25 - point) * max(-position[point], 0) for point in range(1, 25))
+        white_pips += 25 * max(-position[0], 0)
+        top = (
+            f'<text x="34.5" y="155.0" text-anchor="middle" '
+            f'dominant-baseline="middle">{white_pips}</text>'
+        )
+        bottom = (
+            f'<text x="34.5" y="391.0" text-anchor="middle" '
+            f'dominant-baseline="middle">{black_pips}</text>'
+        )
+        self.assertIn(top, svg)
+        self.assertIn(bottom, svg)
+        # PIP text intentionally has no font-size/weight override: it inherits
+        # the same Arial/default-size group used by the point numbers.
+        self.assertNotIn(f'font-size="19">{white_pips}</text>', svg)
+        self.assertNotIn(f'font-weight="700">{black_pips}</text>', svg)
+
+        hidden_svg = build.render_board_svg(row, show_pip_counts=False)
+        self.assertNotIn(top, hidden_svg)
+        self.assertNotIn(bottom, hidden_svg)
+
     def test_match_board_separates_match_length_and_scores(self) -> None:
         row = {
             "id": "TEST-MATCH",

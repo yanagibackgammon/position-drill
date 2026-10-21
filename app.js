@@ -506,8 +506,10 @@ function absoluteAssetUrl(path) {
   return url.href;
 }
 
-function absoluteBoardUrl(position) {
-  return absoluteAssetUrl(position.quizBoardImage || position.boardImage || "");
+function absoluteBoardUrl(position, { showPip = false } = {}) {
+  const primary = showPip ? position.boardImage : position.quizBoardImage;
+  const fallback = showPip ? position.quizBoardImage : position.boardImage;
+  return absoluteAssetUrl(primary || fallback || "");
 }
 
 function absoluteCheckerMoveBoardUrl(candidate) {
@@ -1184,7 +1186,7 @@ function selectCheckerCandidate(index) {
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
-    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
     elements.board.alt = `${KIND_LABELS.checker} quiz position`;
     return;
   }
@@ -1204,7 +1206,7 @@ function selectCheckerCandidate(index) {
     elements.board.src = moveBoardUrl;
     elements.board.alt = `${candidate.action || "Checker move"} after position`;
   } else {
-    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
   }
 }
 
@@ -1234,7 +1236,7 @@ function selectCubeCandidate(index) {
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
-    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
     elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
     return;
   }
@@ -1244,7 +1246,7 @@ function selectCubeCandidate(index) {
     elements.summaryAnalysis.innerHTML = summaryAnalysisHTML(state.current);
     elements.summaryAnalysis.scrollTop = 0;
     resetSummaryTextScroll();
-    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
     elements.board.alt = `${KIND_LABELS[state.current.decisionKind] || "Cube Action"} quiz position`;
     return;
   }
@@ -1264,7 +1266,7 @@ function selectCubeCandidate(index) {
     elements.board.src = actionBoardUrl;
     elements.board.alt = `${candidate.action || "Cube action"} position`;
   } else {
-    elements.board.src = absoluteBoardUrl(state.current);
+    elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
   }
 }
 
@@ -1308,6 +1310,7 @@ function resetAnswerUI() {
   elements.actionAnalysis.scrollTop = 0;
   elements.summaryAnalysis.scrollTop = 0;
   resetSummaryTextScroll();
+  if (state.current) elements.board.src = absoluteBoardUrl(state.current);
 }
 
 function renderEmptyDrillState() {
@@ -1400,6 +1403,7 @@ function togglePreAnswerPip() {
   if (!state.current || state.answered) return;
   state.pipRevealed = !state.pipRevealed;
   elements.card.classList.toggle("is-pip-revealed", state.pipRevealed);
+  elements.board.src = absoluteBoardUrl(state.current, { showPip: state.pipRevealed });
 }
 
 function showAnswer() {
@@ -1415,6 +1419,7 @@ function showAnswer() {
   elements.card.classList.add("is-answered");
   elements.answerButton.hidden = true;
   elements.judgeButtons.hidden = false;
+  elements.board.src = absoluteBoardUrl(state.current, { showPip: true });
 
   if (state.current.decisionKind === "checker") {
     selectCheckerCandidate(0);

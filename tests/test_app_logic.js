@@ -699,6 +699,8 @@ run("Pre-answer PIP starts hidden as -- and toggles without answering", () => {
     gammonLoseRate: 0,
     backgammonWinRate: 0,
     backgammonLoseRate: 0,
+    boardImage: "assets/boards/PIP1.svg",
+    quizBoardImage: "assets/boards-quiz/PIP1.svg",
   };
   context.pipPosition.position[1] = 15;
   context.pipPosition.position[24] = -15;
@@ -707,12 +709,24 @@ run("Pre-answer PIP starts hidden as -- and toggles without answering", () => {
   assert.match(html, /class="pip-placeholder">--<\/span>/);
   assert.match(html, /class="pip-real">15<\/span>/);
 
-  evaluate("state.current = pipPosition; state.answered = false; state.pipRevealed = false");
+  evaluate("state.current = pipPosition; state.answered = false; state.pipRevealed = false; elements.board.src = absoluteBoardUrl(pipPosition)");
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/PIP1.svg",
+  );
   evaluate("togglePreAnswerPip()");
   assert.equal(evaluate("state.pipRevealed"), true);
   assert.equal(evaluate("state.answered"), false);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards/PIP1.svg",
+  );
   evaluate("togglePreAnswerPip()");
   assert.equal(evaluate("state.pipRevealed"), false);
+  assert.equal(
+    evaluate("elements.board.src"),
+    "https://example.test/position-drill/assets/boards-quiz/PIP1.svg",
+  );
 });
 
 run("Checker candidate can be selected and deselected by pressing the same move", () => {
@@ -739,6 +753,7 @@ run("Checker candidate can be selected and deselected by pressing the same move"
     preRollGammonLoseRate: 0.12,
     preRollBackgammonWinRate: 0.01,
     preRollBackgammonLoseRate: 0.02,
+    boardImage: "assets/boards/CHK1.svg",
     quizBoardImage: "assets/boards-quiz/CHK1.svg",
     candidates: [{
       rank: 1,
@@ -771,7 +786,7 @@ run("Checker candidate can be selected and deselected by pressing the same move"
   assert.doesNotMatch(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/CHK1.svg",
+    "https://example.test/position-drill/assets/boards/CHK1.svg",
   );
 });
 
@@ -799,6 +814,7 @@ run("CHECK auto-selects the best Checker move and deselect restores pre-roll sta
     preRollGammonLoseRate: 0.11,
     preRollBackgammonWinRate: 0.01,
     preRollBackgammonLoseRate: 0.02,
+    boardImage: "assets/boards/AUTO-C.svg",
     quizBoardImage: "assets/boards-quiz/AUTO-C.svg",
     candidates: [{
       rank: 1,
@@ -830,7 +846,7 @@ run("CHECK auto-selects the best Checker move and deselect restores pre-roll sta
   assert.equal(evaluate("state.selectedCheckerCandidateIndex"), null);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-C.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-C.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />47\.0%<\/span>/);
   assert.doesNotMatch(evaluate("elements.summaryAnalysis.innerHTML"), />50\.0%<\/span>/);
@@ -881,6 +897,7 @@ run("Double keeps the best-action band fixed with No Double game info and pre-ac
     gammonLoseRate: 0.10,
     backgammonWinRate: 0.01,
     backgammonLoseRate: 0.01,
+    boardImage: "assets/boards/AUTO-D.svg",
     quizBoardImage: "assets/boards-quiz/AUTO-D.svg",
     bestAction: "Double/Take",
     candidates: [
@@ -920,7 +937,7 @@ run("Double keeps the best-action band fixed with No Double game info and pre-ac
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-D.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -929,7 +946,7 @@ run("Double keeps the best-action band fixed with No Double game info and pre-ac
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-D.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -940,14 +957,14 @@ run("Double keeps the best-action band fixed with No Double game info and pre-ac
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-D.svg",
   );
 
   evaluate("selectCubeCandidate(1)");
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 1);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-D.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-D.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />51\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -974,6 +991,7 @@ run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
     quizGammonLoseRate: 0.13,
     quizBackgammonWinRate: 0.01,
     quizBackgammonLoseRate: 0.02,
+    boardImage: "assets/boards/AUTO-T.svg",
     quizBoardImage: "assets/boards-quiz/AUTO-T.svg",
     candidates: [
       {
@@ -1038,7 +1056,7 @@ run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-T.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -1047,7 +1065,7 @@ run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-T.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
@@ -1056,7 +1074,7 @@ run("Take/Pass keeps the best-action band and pre-offer board fixed", () => {
   assert.equal(evaluate("state.selectedCubeCandidateIndex"), 0);
   assert.equal(
     evaluate("elements.board.src"),
-    "https://example.test/position-drill/assets/boards-quiz/AUTO-T.svg",
+    "https://example.test/position-drill/assets/boards/AUTO-T.svg",
   );
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />43\.0%<\/span>/);
   assert.match(evaluate("elements.summaryAnalysis.innerHTML"), />CB<\/span><span class="stat-value ">1<\/span>/);
