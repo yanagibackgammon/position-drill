@@ -1350,10 +1350,9 @@ def render_board_svg(
     point_w = (left_board_x2 - left_board_x1) / 6
     # Centre bar contents on the actually rendered bar.
     bar_center = (left_board_x2 + bar_x2) / 2
-    board_center_y = (board_top + board_bottom) / 2
-    pip_offset_y = 118
-    pip_top_y = board_center_y - pip_offset_y
-    pip_bottom_y = board_center_y + pip_offset_y
+    pip_edge_inset_y = 14
+    pip_top_y = board_top + pip_edge_inset_y
+    pip_bottom_y = board_bottom - pip_edge_inset_y
     checker_r = 21.1
 
     points = row["position"]
@@ -1441,7 +1440,7 @@ def render_board_svg(
             f'fill="#000000" font-size="27" font-weight="700">{on_roll_score_label}</text>',
         ])
     if show_pip_counts:
-        # PIP counts live in the left score tray, above/below the scores.
+        # PIP counts live at the top/bottom edges of the left score tray.
         # They share the point-number typography and are vertically symmetric
         # around the centre of the board.
         elements.extend([
