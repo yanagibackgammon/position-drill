@@ -627,6 +627,29 @@ class BuildLogicTests(unittest.TestCase):
         self.assertNotIn(top, hidden_svg)
         self.assertNotIn(bottom, hidden_svg)
 
+
+    def test_point_labels_and_on_roll_markers_are_centered_in_outer_margins(self) -> None:
+        row = {
+            "id": "TEST-OUTER-MARGIN-CENTERING",
+            "position": [0] * 26,
+            "matchLength": 7,
+            "onRollScore": 0,
+            "onRollOpponentScore": 0,
+            "cubeOwner": "center",
+            "cubeValue": 1,
+            "diceValues": [],
+        }
+
+        black_svg = build.render_board_svg(row, show_pip_counts=False, on_roll_marker="black")
+        white_svg = build.render_board_svg(row, show_pip_counts=False, on_roll_marker="white")
+
+        # SVG is 546px high, while the board spans y=28..518.  The 28px
+        # outer margins therefore have exact vertical centres at y=14 and y=532.
+        self.assertIn('y="14.0" text-anchor="middle" dominant-baseline="central">13</text>', black_svg)
+        self.assertIn('y="532.0" text-anchor="middle" dominant-baseline="central">12</text>', black_svg)
+        self.assertIn('<circle cx="667.5" cy="532.0" r="8.5" fill="#000000"/>', black_svg)
+        self.assertIn('<circle cx="667.5" cy="14.0" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>', white_svg)
+
     def test_match_board_separates_match_length_and_scores(self) -> None:
         row = {
             "id": "TEST-MATCH",

@@ -1332,7 +1332,9 @@ def render_board_svg(
     """
     width, height = 702, 546
     board_top, board_bottom = 28, 518
-    top_label_y, bottom_label_y = 18, 540
+    top_margin_center_y = board_top / 2
+    bottom_margin_center_y = (height + board_bottom) / 2
+    top_label_y, bottom_label_y = top_margin_center_y, bottom_margin_center_y
 
     left_tray_x1, left_tray_x2 = 10.5, 58.5
     left_board_x1, left_board_x2 = 59.5, 326.5
@@ -1452,16 +1454,16 @@ def render_board_svg(
 
     for col, point in enumerate(range(13, 19)):
         x = left_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{top_label_y}" text-anchor="middle">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{top_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
     for col, point in enumerate(range(19, 25)):
         x = right_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{top_label_y}" text-anchor="middle">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{top_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
     for col, point in enumerate(range(12, 6, -1)):
         x = left_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y}" text-anchor="middle">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
     for col, point in enumerate(range(6, 0, -1)):
         x = right_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y}" text-anchor="middle">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
     elements.append('</g>')
 
     def point_center(point: int) -> tuple[float, bool]:
@@ -1638,9 +1640,9 @@ def render_board_svg(
     # player on roll.  In the quiz Take Action view, the responder is shown
     # as black near-side while the doubler (white/far-side) remains on roll.
     if on_roll_marker == "white":
-        elements.append('<circle cx="667.5" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+        elements.append(f'<circle cx="667.5" cy="{top_margin_center_y:.1f}" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
     else:
-        elements.append('<circle cx="667.5" cy="535" r="8.5" fill="#000000"/>')
+        elements.append(f'<circle cx="667.5" cy="{bottom_margin_center_y:.1f}" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
