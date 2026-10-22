@@ -1332,9 +1332,8 @@ def render_board_svg(
     """
     width, height = 702, 546
     board_top, board_bottom = 28, 518
-    top_margin_center_y = board_top / 2
-    bottom_margin_center_y = (height + board_bottom) / 2
-    top_label_y, bottom_label_y = top_margin_center_y, bottom_margin_center_y
+    top_label_y, bottom_label_y = 18, 540
+    pip_top_y, pip_bottom_y = 13, 545
 
     left_tray_x1, left_tray_x2 = 10.5, 58.5
     left_board_x1, left_board_x2 = 59.5, 326.5
@@ -1350,11 +1349,9 @@ def render_board_svg(
     score_bottom_y = side_band_bottom + 31
     unlimited_y = (side_band_top + side_band_bottom) / 2 + 11
     point_w = (left_board_x2 - left_board_x1) / 6
-    # Centre bar contents on the actually rendered bar.
+    # Centre bar contents on the actually rendered bar: the left boundary is
+    # the line at left_board_x2 and the right boundary is the line at bar_x2.
     bar_center = (left_board_x2 + bar_x2) / 2
-    pip_edge_inset_y = 14
-    pip_top_y = board_top + pip_edge_inset_y
-    pip_bottom_y = board_bottom - pip_edge_inset_y
     checker_r = 21.1
 
     points = row["position"]
@@ -1442,28 +1439,23 @@ def render_board_svg(
             f'fill="#000000" font-size="27" font-weight="700">{on_roll_score_label}</text>',
         ])
     if show_pip_counts:
-        # PIP counts live at the top/bottom edges of the left score tray.
-        # They share the point-number typography and are vertically symmetric
-        # around the centre of the board.
         elements.extend([
-            f'<text x="{score_x:.1f}" y="{pip_top_y:.1f}" text-anchor="middle" '
-            f'dominant-baseline="central">{opponent_pips}</text>',
-            f'<text x="{score_x:.1f}" y="{pip_bottom_y:.1f}" text-anchor="middle" '
-            f'dominant-baseline="central">{on_roll_pips}</text>',
+            f'<text x="{bar_center:.1f}" y="{pip_top_y}" text-anchor="middle">{opponent_pips}</text>',
+            f'<text x="{bar_center:.1f}" y="{pip_bottom_y}" text-anchor="middle">{on_roll_pips}</text>',
         ])
 
     for col, point in enumerate(range(13, 19)):
         x = left_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{top_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{top_label_y}" text-anchor="middle">{point}</text>')
     for col, point in enumerate(range(19, 25)):
         x = right_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{top_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{top_label_y}" text-anchor="middle">{point}</text>')
     for col, point in enumerate(range(12, 6, -1)):
         x = left_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y}" text-anchor="middle">{point}</text>')
     for col, point in enumerate(range(6, 0, -1)):
         x = right_board_x1 + (col + 0.5) * point_w
-        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y:.1f}" text-anchor="middle" dominant-baseline="central">{point}</text>')
+        elements.append(f'<text x="{x:.2f}" y="{bottom_label_y}" text-anchor="middle">{point}</text>')
     elements.append('</g>')
 
     def point_center(point: int) -> tuple[float, bool]:
@@ -1640,9 +1632,9 @@ def render_board_svg(
     # player on roll.  In the quiz Take Action view, the responder is shown
     # as black near-side while the doubler (white/far-side) remains on roll.
     if on_roll_marker == "white":
-        elements.append(f'<circle cx="667.5" cy="{top_margin_center_y:.1f}" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
+        elements.append('<circle cx="667.5" cy="11" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>')
     else:
-        elements.append(f'<circle cx="667.5" cy="{bottom_margin_center_y:.1f}" r="8.5" fill="#000000"/>')
+        elements.append('<circle cx="667.5" cy="535" r="8.5" fill="#000000"/>')
     elements.append('</svg>')
     return "".join(elements)
 
@@ -1864,18 +1856,10 @@ def build() -> None:
                 quiz_board_relative = f"assets/boards-quiz/{row['id']}.svg"
                 row["boardImage"] = board_relative
                 row["quizBoardImage"] = quiz_board_relative
-                quiz_render_row, quiz_marker = quiz_render_state(row)
-                # Keep both variants of the exact same quiz position:
-                # boardImage reveals PIP counts; quizBoardImage keeps them hidden.
-                (DIST_DIR / board_relative).write_text(
-                    render_board_svg(
-                        quiz_render_row,
-                        show_pip_counts=True,
-                        on_roll_marker=quiz_marker,
-                    ),
-                    encoding="utf-8",
-                )
+                (DIST_DIR / board_relative).write_text(render_board_svg(row), encoding="utf-8")
                 (DIST_DIR / quiz_board_relative).parent.mkdir(parents=True, exist_ok=True)
+                quiz_render_row, quiz_marker = quiz_render_state(row)
+
                 (DIST_DIR / quiz_board_relative).write_text(
                     render_board_svg(
                         quiz_render_row,
@@ -1901,7 +1885,7 @@ def build() -> None:
                         (DIST_DIR / move_board_relative).write_text(
                             render_board_svg(
                                 move_board_row,
-                                show_pip_counts=True,
+                                show_pip_counts=False,
                                 move_highlights=move_highlights,
                             ),
                             encoding="utf-8",
@@ -1922,7 +1906,7 @@ def build() -> None:
                         (DIST_DIR / action_board_relative).write_text(
                             render_board_svg(
                                 action_board_row,
-                                show_pip_counts=True,
+                                show_pip_counts=False,
                                 on_roll_marker=action_marker,
                             ),
                             encoding="utf-8",
